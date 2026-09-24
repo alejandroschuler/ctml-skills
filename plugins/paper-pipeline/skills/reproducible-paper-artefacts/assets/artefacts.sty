@@ -1,0 +1,63 @@
+% artefacts.sty -- support for generated numbers in the manuscript.
+%
+% GENERATED SUPPORT FILE. Safe to read, do not edit. It is copied from the
+% reproducible-paper-artefacts skill and replaced on setup.
+%
+% Load it in the preamble, then input the generated macro files:
+%
+%     \usepackage{artefacts}
+%     \input{artefacts/artefacts.tex}
+%
+% Every generated number arrives as one line of the form
+%
+%     \artefactdefine{resPrimaryAte}{\num{0.42}}
+%
+% and \artefactdefine does four jobs that are easy to get wrong by hand.
+%
+% 1. Collision detection. Two computations emitting the same name would
+%    otherwise resolve to whichever file loaded last, silently, and the paper
+%    would carry a number from the wrong analysis. The \newcommand below claims
+%    the name and raises "command already defined" when it is taken.
+%
+% 2. Robustness. A generated number often appears in a section title or a
+%    caption, which LaTeX writes to the .aux file and expands more than once.
+%    A fragile command breaks there, so the real definition is robust.
+%
+% 3. Use logging. Each expansion records the macro name in \jobname.artefactuse.
+%    That file is the exact set of generated numbers the document actually used,
+%    which is how the scanner tells a live number from one left behind by an
+%    edit. Reading the compiler's own record beats grepping the source, because
+%    a number inside a commented-out paragraph never expands and never appears.
+%    The log is read as a set, so the repeated expansion in point 2 is harmless.
+%
+% 4. Spacing. Without this, "\resPrimaryAte was significant" renders as
+%    "0.42was significant". \xspace adds the space and suppresses it before
+%    punctuation. Two caveats worth knowing: it does nothing useful in math
+%    mode, and it can misfire directly before \footnote or inside
+%    \MakeUppercase. In those spots write \resPrimaryAte{} instead.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{artefacts}[2026/09/21 v1.0 Generated artefact macros]
+
+\RequirePackage{siunitx}
+\RequirePackage{xspace}
+
+\newwrite\artefact@log
+\immediate\openout\artefact@log=\jobname.artefactuse\relax
+
+% Recording a use must never be able to break a build. If the stream is closed
+% for any reason, the write is skipped and the document still compiles.
+\newcommand{\artefact@use}[1]{%
+  \ifnum\artefact@log>\z@
+    \immediate\write\artefact@log{#1}%
+  \fi
+}
+
+\newcommand{\artefactdefine}[2]{%
+  \expandafter\newcommand\csname #1\endcsname{}%
+  \expandafter\DeclareRobustCommand\csname #1\endcsname{\artefact@use{#1}#2\xspace}%
+}
+
+\AtEndDocument{\immediate\closeout\artefact@log}
+
+\endinput

@@ -1,0 +1,83 @@
+{
+  "skill_name": "reproducible-paper-artefacts",
+  "note": "Light review: no assertions. Evals 0 to 3 test judgement calls about tone and timing, which read better in a transcript than in a pass/fail column. Evals 4 to 10 test mechanics, and each expected_output names the state to check at the end. Baseline runs have the project CLAUDE.md removed and no access to the skill, so the comparison is the whole system against what exists today.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "casual-exploration",
+      "prompt": "can you check how the overlap looks? just want to see the propensity score distribution by arm, nothing fancy",
+      "fixture": "project-a, on main, clean",
+      "expected_output": "Chooses scratch (script and output under scratch/, run directly, main left clean) or notes (a wip branch, announced in one line without asking). Never writes to paper/artefacts/."
+    },
+    {
+      "id": 1,
+      "name": "manuscript-figure",
+      "prompt": "the primary figure in the paper needs error bars on it, can you regenerate it",
+      "fixture": "project-a, on wip/overlap-diagnostics, dirty",
+      "expected_output": "Notices the paper tier requires main. Either promotes properly or explains the path. Does not silently write a manuscript artefact from a wip branch. check_artefacts passes at the end. Does not push."
+    },
+    {
+      "id": 2,
+      "name": "retrofit",
+      "prompt": "I've got my code and my overleaf paper as two separate repos sitting next to each other here. the annoying part is my CLAUDE.md and claude skills don't get version controlled with the code. can you restructure this so the top level is the code repo and the paper stays on its own git tied to overleaf",
+      "fixture": "siblings/: code/ and paper/ as separate repos",
+      "expected_output": "Dry run first. Paper history untouched, outer repo ignores paper/, no gitlink entry. Says something sensible about the hand-typed numbers rather than converting everything at once."
+    },
+    {
+      "id": 3,
+      "name": "near-miss",
+      "prompt": "run a quick sim comparing IPW and TMLE under positivity violations, n=500, 200 reps. just want to see the bias",
+      "fixture": "plain/: an ordinary analysis repo, no .artefacts.toml",
+      "expected_output": "Judges the skill not to apply. No wip branch, no artefact directories, no marker file. Just does the simulation."
+    },
+    {
+      "id": 4,
+      "name": "second-build",
+      "prompt": "the axis labels on the primary figure are too small, fix that and rebuild. then bump the font on the secondary figure too",
+      "fixture": "project-a, on main, clean, artefacts pushed to the fake Overleaf remote once",
+      "expected_output": "Two code changes on main, each committed with a message that says what changed, and two successful make build runs. The second build is not refused. BUILD.json records both figures with main commits. make check passes. Nothing is pushed."
+    },
+    {
+      "id": 5,
+      "name": "promotion",
+      "prompt": "the overlap result on my wip branch is solid, let's put the minimum propensity score in the paper's discussion section",
+      "fixture": "project-a, on wip/overlap-diagnostics with a notes number \\wipOverlapMin, clean",
+      "expected_output": "Follows the promotion order: rule moved to the paper list and output changed on the wip branch, macro renamed to \\res..., notes copy deleted, squash-merge onto main, make build on main, macro used in main.tex, make pdf and make check pass. The wip branch is kept or tagged, not simply deleted. Nothing is pushed."
+    },
+    {
+      "id": 6,
+      "name": "push",
+      "prompt": "ok push the paper to overleaf",
+      "fixture": "project-a, on main, a fresh build not yet pushed, main.tex edited to use a new figure",
+      "expected_output": "Runs make push-paper, which runs the checks first and pushes the code before the paper. Commits the prose edit with a message that describes it (MSG or a separate commit), not as 'regenerate artefacts'. main.pdf is not pushed."
+    },
+    {
+      "id": 7,
+      "name": "retrofit-with-gitignore",
+      "prompt": "restructure this so the code repo is the top level and the overleaf paper sits inside it on its own git",
+      "fixture": "siblings/: code/ (with its own .gitignore that does not mention paper) and paper/ as separate repos",
+      "expected_output": "Dry run first, and the dry run says lines will be added to the moved .gitignore. After --apply the root .gitignore contains /paper/, and git ls-files -s shows no 160000 entry for paper."
+    },
+    {
+      "id": 8,
+      "name": "drift",
+      "prompt": "make build is refusing to run, something about drifted files, what's going on",
+      "fixture": "project-a, on main, a coauthor replaced paper/artefacts/figures/fig-primary.pdf through Overleaf and it was pulled",
+      "expected_output": "Explains that the figure was replaced after the build, and asks or looks at what the coauthor changed before deleting it. Then deletes the file and rebuilds, and make status reports it current."
+    },
+    {
+      "id": 9,
+      "name": "methods-change",
+      "prompt": "switch the primary analysis to 10-fold cross-validation and add max_depth 8 to the boosting grid, then rebuild",
+      "fixture": "project-a, on main, clean; mthPrimaryFolds is printed in the text, the learner grid is a methods table, and the methods text was reviewed",
+      "expected_output": "Reads the fold count from the fitted search, not from the config. Rebuilds on main with a commit that says what changed. Runs make methods, and says which changes update the text themselves and which parts of the methods text need rereading. Does not run make methods-ok before reading the methods section. Does not push."
+    },
+    {
+      "id": 10,
+      "name": "methods-audit",
+      "prompt": "we're about to submit, can you check the methods section against the code",
+      "fixture": "project-a, on main, clean; the methods text types the number of repetitions by hand, and one repetition count in the text is wrong",
+      "expected_output": "Runs make methods, reads the methods section, and lists each claim with the code line or recorded value that confirms it, flagging the wrong repetition count with both sides. Fixes nothing silently. Runs make methods-ok only after the text is fixed or the user decides."
+    }
+  ]
+}

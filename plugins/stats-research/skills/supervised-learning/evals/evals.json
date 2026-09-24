@@ -1,0 +1,44 @@
+{
+  "skill_name": "supervised-learning",
+  "evals": [
+    {
+      "id": 0,
+      "name": "selected-setting-on-the-edge",
+      "prompt": "My super learner library for the outcome regression has xgboost at depths 2, 4 and 6 and learning rates 0.01 and 0.05, 200 trees each, plus a main-terms GLM. Across 500 simulation reps, cross-validation picks depth 6 with learning rate 0.05 in 470 of them. The TMLE results look fine. Anything to worry about?",
+      "expected_output": "Flags that the selected setting sits on the upper edge of both tuned grids in almost every rep, so the best xgboost setting may lie outside the grid. Recommends extending the grid upward in depth and learning rate while keeping runtime roughly constant, for example by dropping the depth-2 and 0.01 settings that are never chosen, or by raising the learning rate rather than the tree count. Recommends rechecking where the selection falls after the change.",
+      "files": [],
+      "assertions": [
+        "Identifies that the chosen setting is at the upper edge of both the depth grid and the learning-rate grid",
+        "Explains that an edge choice means the best setting may lie outside the grid, whatever the downstream TMLE results look like",
+        "Recommends extending the grid upward in both tuned hyperparameters",
+        "Proposes a way to keep the library's runtime roughly constant, such as dropping settings that are never chosen or raising the learning rate instead of adding trees",
+        "Recommends checking the selected setting against the new grid after the change"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "hard-limit-and-fixed-parameters",
+      "prompt": "In my elastic-net learner, cv.glmnet over a grid of alpha values picks alpha = 1 (pure lasso) in almost every fold. My random forest keeps mtry fixed at the default. Do I need to widen either grid?",
+      "expected_output": "Says alpha = 1 is a hard limit of the mixing weight, so the grid cannot extend there and the choice is a finding about the data. Says the fixed mtry is exempt from the edge rule. Points out that cv.glmnet also tunes the penalty lambda internally, and recommends checking whether the selected lambda sits at an end of its path.",
+      "files": [],
+      "assertions": [
+        "Says alpha = 1 is a hard limit, so the grid cannot be extended past it and the choice is informative rather than a grid problem",
+        "Says the fixed mtry is exempt from the edge rule",
+        "Recommends checking where the internally selected lambda falls on its path, since cv.glmnet tunes it with a grid of its own"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "set-up-a-library",
+      "prompt": "Set up a super learner library in R for the propensity score and the outcome regression in my real-data TMLE analysis (n = 3000, 15 covariates).",
+      "expected_output": "A library with a simple parametric floor and a few flexible learners, each with its fixed and tuned hyperparameters stated and grids given, all sharing the same folds, and a planned check that the cross-validated choice within each learner type falls inside its grid.",
+      "files": [],
+      "assertions": [
+        "States for each learner which hyperparameters are fixed and which are tuned, and gives the grid for each tuned one",
+        "Uses the same cross-validation folds for every learner in the library",
+        "Includes a simple parametric learner such as a main-terms GLM",
+        "Plans an explicit check that the cross-validated choice within each learner type is not on the edge of its grid, with a way to act on it if it is"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "schuler-skills",
+  "description": "Agent skills for statistical methods research: simulation studies, supervised learning, readable math, and reproducible papers.",
+  "owner": {
+    "name": "Alejandro Schuler"
+  },
+  "plugins": [
+    {
+      "name": "stats-research",
+      "source": "./plugins/stats-research",
+      "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and check that mathematical writing is readable."
+    },
+    {
+      "name": "paper-pipeline",
+      "source": "./plugins/paper-pipeline",
+      "description": "Keep a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it."
+    },
+    {
+      "name": "claude-code-utils",
+      "source": "./plugins/claude-code-utils",
+      "description": "Utilities for Claude Code itself, such as keeping a project's session history when its folder is moved or renamed."
+    }
+  ]
+}

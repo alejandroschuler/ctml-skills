@@ -1,0 +1,12 @@
+{
+  "name": "stats-research",
+  "version": "0.1.1",
+  "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and check that mathematical writing is readable.",
+  "author": {
+    "name": "Alejandro Schuler"
+  },
+  "homepage": "https://github.com/alejandroschuler/schuler-skills",
+  "repository": "https://github.com/alejandroschuler/schuler-skills",
+  "license": "MIT",
+  "keywords": ["statistics", "simulation", "monte-carlo", "machine-learning", "super-learner", "causal-inference", "writing"]
+}

@@ -1,0 +1,70 @@
+{
+  "skill_name": "design-and-report-simulations",
+  "evals": [
+    {
+      "id": 0,
+      "name": "writeup-from-raw-results",
+      "prompt": "I've got simulation results sitting in results.csv (columns: rep, dgp, estimator, est, se). Three estimators (gcomp, aipw, tmle), three DGPs (simple, moderate, complex), n=500, 1000 reps, true ATE is 1.0 for all three DGPs. Write me the simulation section for the paper.",
+      "expected_output": "Organized claim-by-claim, not table-by-table. Each piece of evidence sandwiched: goal stated, evidence shown, interpretation given. Captions name the claim they serve. Design choices get reasons. Should ask what the paper is actually claiming rather than dumping a table.",
+      "files": [
+        "results.csv"
+      ],
+      "assertions": [
+        "Section is organized around claims (claims appear as headings or lead sentences that each piece of evidence then serves), rather than ordered by table number with purpose explained only at the end",
+        "Each table or figure is both introduced by a statement of what it will show AND followed by an interpretation tying it back to a claim (the tell-em sandwich)",
+        "At least one table or figure caption states the claim it supports, not merely its contents",
+        "Design choices are given explicit reasons in the text (why these DGPs, why this estimand, why these performance measures)",
+        "Reports the correct qualitative findings from the data: gcomp is badly biased with severe undercoverage in the complex DGP, aipw undercovers moderately in complex, tmle performs best overall",
+        "Does not open the results with Monte Carlo SE machinery or a failure/non-convergence count as the headline item",
+        "States explicitly what it is assuming the paper claims, since the user never said"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "design-backwards-not-code-first",
+      "prompt": "I'm writing a paper on a new doubly-robust estimator for the ATE under outcome-dependent sampling. I need to set up the simulation study. Can you help me get started?",
+      "expected_output": "Starts with the claims the paper makes, sharpens them into answerable goals, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
+      "files": [],
+      "assertions": [
+        "Establishes or asks about the paper's claims before proposing any data-generating mechanism",
+        "Sharpens vague goals by naming what is unpinned (at least two of: metric, sample size, which DGPs, learners/nuisances, baseline)",
+        "Mocks up at least one table or figure (empty cells, or described axes and facets) before specifying DGPs",
+        "Does not deliver executable simulation code as the primary or first deliverable",
+        "Proposed DGPs are each tied to a stated claim rather than offered as generically reasonable",
+        "Mentions DGP diagnostics (overlap/positivity, signal-to-noise, or degree of nonlinearity) as things to check",
+        "Recommends ramping up repetitions (a tiny run first, then a moderate one) rather than committing to a fixed large number up front"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "results-contradict-claim",
+      "prompt": "Bad news. My simulation shows the plug-in estimator actually beats my proposed debiased estimator on MSE in the moderate-confounding DGP. Debiasing cuts the bias but the variance blows up. I was going to claim my method dominates. How do I present this?",
+      "expected_output": "Does not bury or drop the DGP. Walks: check for a bug, understand why theoretically, then narrow the claim with an added condition, framed as a better claim.",
+      "files": [],
+      "assertions": [
+        "Does not suggest dropping, hiding, or relegating the inconvenient DGP or result",
+        "Recommends checking for a bug or implementation error before reinterpreting",
+        "Recommends understanding theoretically why the bias-variance tradeoff goes this way",
+        "Proposes a concrete rewritten claim with an added scoping condition, in actual sentence form",
+        "Frames the narrowed claim as a better claim rather than as a concession",
+        "Recommends reporting the unfavorable result with the same prominence as favorable ones"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "code-shared-rerunnable-cached",
+      "prompt": "Claims and mockups for my simulation are settled. Table 1 compares three learner libraries (main-terms GLM; GLM + MARS; GLM + MARS + random forest, combined by super learner) on RMSE for the outcome regression and the propensity score. Table 2 shows bias, SE and coverage of AIPW and TMLE built on the second and third libraries. Three DGPs, n in {250, 1000}, eventually 1000 reps. Write the R simulation code.",
+      "expected_output": "One pipeline whose stored learner fits feed both tables; a run function that takes subsets of every factor; seeds derived from each dataset's name; per-learner predictions, including the cross-validated ones the super learner needs, cached in a gitignored directory with keys that cover data and code; a small run and a pilot with the same code before the full run.",
+      "files": [],
+      "assertions": [
+        "Both tables are computed from one set of datasets and one set of learner fits; the estimator code reads stored predictions and does not refit learners in a separate script",
+        "The run entry point accepts subsets of DGPs, sample sizes, repetitions, libraries and estimators, so any one of them can be rerun alone",
+        "Each dataset's seed is derived from its DGP, sample size and repetition, not from loop position or a single per-repetition seed shared across DGPs",
+        "Base-learner predictions are cached to local disk, including the cross-validated predictions the super learner needs, so a library is assembled from stored predictions without refitting",
+        "The cache directory is gitignored, or the response says to add it to .gitignore before the first run",
+        "Cache keys cover the inputs and the code or specification that produced each entry, so a changed learner, DGP or seed cannot return a stale entry",
+        "Recommends a tiny run and then a pilot of roughly 100 to 200 repetitions, with the same code, before the full 1000-repetition run"
+      ]
+    }
+  ]
+}

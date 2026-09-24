@@ -1,0 +1,12 @@
+{
+  "name": "paper-pipeline",
+  "version": "0.1.0",
+  "description": "Keep a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it.",
+  "author": {
+    "name": "Alejandro Schuler"
+  },
+  "homepage": "https://github.com/alejandroschuler/schuler-skills",
+  "repository": "https://github.com/alejandroschuler/schuler-skills",
+  "license": "MIT",
+  "keywords": ["reproducibility", "overleaf", "latex", "snakemake", "research"]
+}
