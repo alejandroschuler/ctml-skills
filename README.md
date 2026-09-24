@@ -1,4 +1,4 @@
-# schuler-skills
+# ctml-skills
 
 Agent skills for statistical methods research, packaged as a Claude Code plugin marketplace. They cover designing and reporting simulation studies, setting up and tuning supervised learners, checking that mathematical writing is readable, and keeping a paper's figures and numbers in step with the code that made them.
 
@@ -17,13 +17,13 @@ The skills in `stats-research` refer to each other. The simulation skill sends l
 In a Claude Code session:
 
 ```
-/plugin marketplace add alejandroschuler/schuler-skills
-/plugin install stats-research@schuler-skills
+/plugin marketplace add alejandroschuler/ctml-skills
+/plugin install stats-research@ctml-skills
 ```
 
-Install `paper-pipeline@schuler-skills` or `claude-code-utils@schuler-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/schuler-skills` and `claude plugin install stats-research@schuler-skills`.
+Install `paper-pipeline@ctml-skills` or `claude-code-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
 
-To get a new version, run `claude plugin marketplace update schuler-skills`, then `claude plugin update stats-research@schuler-skills`, and restart Claude Code.
+To get a new version, run `claude plugin marketplace update ctml-skills`, then `claude plugin update stats-research@ctml-skills`, and restart Claude Code.
 
 Installed skills carry their plugin's name as a prefix, for example `stats-research:supervised-learning`.
 

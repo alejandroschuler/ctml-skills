@@ -5,8 +5,8 @@
   "author": {
     "name": "Alejandro Schuler"
   },
-  "homepage": "https://github.com/alejandroschuler/schuler-skills",
-  "repository": "https://github.com/alejandroschuler/schuler-skills",
+  "homepage": "https://github.com/alejandroschuler/ctml-skills",
+  "repository": "https://github.com/alejandroschuler/ctml-skills",
   "license": "MIT",
   "keywords": ["claude-code", "utilities", "projects"]
 }
