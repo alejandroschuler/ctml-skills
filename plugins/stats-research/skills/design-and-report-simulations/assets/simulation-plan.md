@@ -88,6 +88,7 @@ Diagnostics to compute on a large draw, and report:
 - **Estimand(s):** [primary, and what goes to the appendix]
 - **Methods / estimators:** [list, including the baseline and any oracle or semi-oracle, with the claim each oracle serves]
 - **Learners:** [which, and why these; set up with the `supervised-learning` skill]
+- **Data split:** [the default in the `supervised-learning` skill is three draws, each with the full sample size: fit the learners on the training draw, tune and choose them on the validation draw, and run the estimators on the estimation draw; or cross-fitting, and which claim needs it]
 - **Repetitions:** [2 → 100 to 200 → final count, and what determined the final count]
 
 Does every DGP trace to a claim? A DGP with no claim is either an unarticulated claim or a run you do not need.

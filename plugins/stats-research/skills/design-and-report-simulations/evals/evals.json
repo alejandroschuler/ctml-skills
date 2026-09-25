@@ -54,13 +54,14 @@
       "id": 3,
       "name": "code-shared-rerunnable-cached",
       "prompt": "Claims and mockups for my simulation are settled. Table 1 compares three learner libraries (main-terms GLM; GLM + MARS; GLM + MARS + random forest, combined by super learner) on RMSE for the outcome regression and the propensity score. Table 2 shows bias, SE and coverage of AIPW and TMLE built on the second and third libraries. Three DGPs, n in {250, 1000}, eventually 1000 reps. Write the R simulation code.",
-      "expected_output": "One pipeline whose stored learner fits feed both tables; a run function that takes subsets of every factor; seeds derived from each dataset's name; per-learner predictions, including the cross-validated ones the super learner needs, cached in a gitignored directory with keys that cover data and code; a small run and a pilot with the same code before the full run.",
+      "expected_output": "One pipeline whose stored learner fits feed both tables; a run function that takes subsets of every factor; seeds derived from each dataset's name; each dataset made of training, validation and estimation draws of the same size, with the super learner choosing on the validation draw; per-learner predictions on the validation and estimation draws cached in a gitignored directory with keys that cover data and code; a small run and a pilot with the same code before the full run.",
       "files": [],
       "assertions": [
         "Both tables are computed from one set of datasets and one set of learner fits; the estimator code reads stored predictions and does not refit learners in a separate script",
         "The run entry point accepts subsets of DGPs, sample sizes, repetitions, libraries and estimators, so any one of them can be rerun alone",
         "Each dataset's seed is derived from its DGP, sample size and repetition, not from loop position or a single per-repetition seed shared across DGPs",
-        "Base-learner predictions are cached to local disk, including the cross-validated predictions the super learner needs, so a library is assembled from stored predictions without refitting",
+        "Each dataset is three independent draws of the same size n (training, validation, estimation): learners are fit on the first, the super learner chooses or weights them on the second, and the estimators run on the third, with no cross-fitting or inner cross-validation",
+        "Base-learner predictions are cached to local disk, including the validation-draw predictions the super learner needs, so a library is assembled from stored predictions without refitting",
         "The cache directory is gitignored, or the response says to add it to .gitignore before the first run",
         "Cache keys cover the inputs and the code or specification that produced each entry, so a changed learner, DGP or seed cannot return a stale entry",
         "Recommends a tiny run and then a pilot of roughly 100 to 200 repetitions, with the same code, before the full 1000-repetition run"

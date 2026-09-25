@@ -49,7 +49,7 @@ If two methods target different estimands, they cannot be compared on bias. Say 
 
 Enough detail to reimplement without the code, plus software and version.
 
-Tuning is part of the method definition: hyperparameters, cross-validation scheme, number of folds, bootstrap draws, convergence tolerance. For learners, report the setup that the `supervised-learning` skill records, including whether the selected settings fell inside their grids. So is the rule applied when a method fails to converge, which is a design decision rather than an implementation detail because it changes what every downstream number means.
+Tuning is part of the method definition: hyperparameters, the data split or the cross-validation scheme and its number of folds, bootstrap draws, convergence tolerance. So is the rule applied when a method fails to converge, which is a design decision rather than an implementation detail because it changes what every downstream number means. For learners, report the setup that the `supervised-learning` skill records, including whether the selected settings fell inside their grids. With that skill's default split, say that each dataset was three independent draws, each with the full reported sample size, one to fit the learners, one to validate them and one to compute the estimators, in place of cross-validated cross-fitting.
 
 Say why each method is in the comparison. Including a known-flawed method is defensible when practitioners use it, and the reason belongs in the text. Note whether each is available in accessible software, since that governs whether readers can act on the findings.
 

@@ -12,8 +12,8 @@ three properties keep it cheap to iterate on:
     same rows a full run would.
   * Every display reads the same fits. The library table and the estimator
     table below are two summaries of one set of predictions.
-  * Expensive steps are cached. Each base learner's predictions are stored per
-    dataset and split, so a new library or estimator refits nothing.
+  * Expensive steps are cached. Each base learner is fit once per dataset and
+    its predictions are stored, so a new library or estimator refits nothing.
 
 Run:  uv run --with numpy,pandas,scikit-learn,joblib python simulation-scaffold.py
 """
@@ -176,18 +176,19 @@ def gbt(X: np.ndarray, y: np.ndarray, binary: bool) -> Callable:
     )
 
     Model = HistGradientBoostingClassifier if binary else HistGradientBoostingRegressor
-    fit = Model(max_iter=100, max_depth=3, learning_rate=0.1, random_state=0).fit(X, y)
+    fit = Model(max_iter=100, max_depth=3, learning_rate=0.1, early_stopping=False,
+                random_state=0).fit(X, y)
     return (lambda Xn: fit.predict_proba(Xn)[:, 1]) if binary else fit.predict
 
 
 LEARNERS = {"linear": linear, "gbt": gbt}
 
 # A library is a set of base learners. One learner is used as it is. Several
-# are combined per nuisance by picking the learner with the smallest
-# cross-validated risk, the discrete super learner. The convex weights of a
-# full super learner would slot into library_preds() and read the same folds.
+# are combined per nuisance by picking the learner with the smallest risk on
+# the validation draw, the discrete super learner. The convex weights of a
+# full super learner would slot into library_preds() and be fit to the same
+# validation-draw predictions.
 LIBRARIES = {"linear": ["linear"], "gbt": ["gbt"], "select": ["linear", "gbt"]}
-N_FOLDS = 5
 
 # =========================== 3. Seeds and cache ============================
 
@@ -217,7 +218,7 @@ def digest(*parts) -> str:
     return h.hexdigest()[:16]
 
 
-def cached(label: str, key: str, compute: Callable[[], pd.DataFrame]) -> pd.DataFrame:
+def cached(label: str, key: str, compute: Callable[[], object]):
     """One file per entry, named by a hash of everything that determines it,
     so a hit returns exactly what recomputing would. The readable prefix shows
     what is stored and makes selective deletion easy (rm -r cache/complex/gbt)."""
@@ -227,7 +228,7 @@ def cached(label: str, key: str, compute: Callable[[], pd.DataFrame]) -> pd.Data
     value = compute()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.tmp{os.getpid()}")
-    value.to_pickle(tmp)
+    pd.to_pickle(value, tmp)
     os.replace(tmp, path)   # atomic, so a killed run leaves no half-written entry
     return value
 
@@ -237,84 +238,89 @@ def cached(label: str, key: str, compute: Callable[[], pd.DataFrame]) -> pd.Data
 
 @dataclass(frozen=True)
 class CellData:
-    """Everything random about one dataset, from its own stream: the training
-    draw the learners see, the evaluation draw the estimators see (a single
-    sample split on a separate draw), and the fold labels for
-    cross-validation. Cheap to redraw, so never cached."""
+    """Everything random about one dataset, from its own stream: three draws
+    of the same size. Learners are fit on the training draw and scored on the
+    validation draw, and estimators run on the estimation draw. The three
+    draws stand in for cross-validated cross-fitting at n_obs; the
+    supervised-learning skill gives the reasons and the limits. Cheap to
+    redraw, so never cached."""
 
     dgp_name: str
     n_obs: int
     rep: int
-    train: pd.DataFrame
-    eval: pd.DataFrame
-    folds: np.ndarray
+    training: pd.DataFrame
+    validation: pd.DataFrame
+    estimation: pd.DataFrame
 
 
 def cell_data(dgp_name: str, n_obs: int, rep: int) -> CellData:
     rng = cell_rng(dgp_name, n_obs, rep)
     dgp = DGPS[dgp_name]
-    train, eval_ = dgp.draw(n_obs, rng), dgp.draw(n_obs, rng)
-    folds = rng.permutation(np.arange(n_obs) % N_FOLDS)
-    return CellData(dgp_name, n_obs, rep, train, eval_, folds)
+    training, validation, estimation = (dgp.draw(n_obs, rng) for _ in range(3))
+    return CellData(dgp_name, n_obs, rep, training, validation, estimation)
 
 
-def fit_predict(learner: Callable, train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
-    """One fit of one learner, returning every prediction any downstream step
-    reads: the propensity, and the outcome regression at the observed arm and
-    at both counterfactual arms. Predictions rather than models, because they
-    are smaller and they are all that estimators and accuracy summaries need."""
+def fit_predict(learner: Callable, train: pd.DataFrame,
+                draws: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    """One fit of one learner on the training draw, and on each of `draws`
+    every prediction any downstream step reads: the propensity, and the
+    outcome regression at the observed arm and at both counterfactual arms.
+    Predictions rather than models, because they are smaller and they are all
+    that estimators and accuracy summaries need."""
     pi_hat = learner(train[["W1", "W2"]].to_numpy(), train["A"].to_numpy(), binary=True)
     mu_hat = learner(train[["A", "W1", "W2"]].to_numpy(), train["Y"].to_numpy(), binary=False)
-    W = test[["W1", "W2"]].to_numpy()
 
-    def arm(a: float) -> np.ndarray:
-        return np.column_stack([np.full(len(test), a), W])
+    def predict(new: pd.DataFrame) -> pd.DataFrame:
+        W = new[["W1", "W2"]].to_numpy()
 
-    return pd.DataFrame({
-        "pi": pi_hat(W),
-        "mu": mu_hat(test[["A", "W1", "W2"]].to_numpy()),
-        "mu1": mu_hat(arm(1.0)),
-        "mu0": mu_hat(arm(0.0)),
-    })
+        def arm(a: float) -> np.ndarray:
+            return np.column_stack([np.full(len(new), a), W])
+
+        return pd.DataFrame({
+            "pi": pi_hat(W),
+            "mu": mu_hat(new[["A", "W1", "W2"]].to_numpy()),
+            "mu1": mu_hat(arm(1.0)),
+            "mu0": mu_hat(arm(0.0)),
+        })
+
+    return {name: predict(new) for name, new in draws.items()}
 
 
-def learner_preds(d: CellData, learner_name: str, split: str | int = "eval") -> pd.DataFrame:
-    """The expensive step, cached. split="eval" fits on the whole training draw
-    and predicts the evaluation draw; split=k holds out fold k, which is what
-    an ensemble needs. The key is the data itself plus the code, so a changed
-    DGP, seed or fold can never pair a stored fit with the wrong dataset, and
-    editing one learner invalidates only that learner's entries. A learner
-    that calls helpers of your own needs them in the digest too."""
-    if split == "eval":
-        train, test = d.train, d.eval
-    else:
-        train, test = d.train[d.folds != split], d.train[d.folds == split]
+def learner_preds(d: CellData, learner_name: str) -> dict[str, pd.DataFrame]:
+    """The expensive step, cached: one fit per learner and dataset, stored as
+    its predictions on the validation and estimation draws. The key is the
+    data itself plus the code, so a changed DGP or seed can never pair a
+    stored fit with the wrong dataset, and editing one learner invalidates
+    only that learner's entries. A learner that calls helpers of your own
+    needs them in the digest too."""
     learner = LEARNERS[learner_name]
+    draws = {"validation": d.validation, "estimation": d.estimation}
     return cached(
-        label=f"{d.dgp_name}/{learner_name}/n{d.n_obs}_rep{d.rep}_{split}",
-        key=digest(train, test, learner, fit_predict),
-        compute=lambda: fit_predict(learner, train, test),
+        label=f"{d.dgp_name}/{learner_name}/n{d.n_obs}_rep{d.rep}",
+        key=digest(d.training, d.validation, d.estimation, learner, fit_predict),
+        compute=lambda: fit_predict(learner, d.training, draws),
     )
 
 
 def library_preds(d: CellData, library: list[str]) -> pd.DataFrame:
-    """Predictions from one library on the evaluation draw. A single learner is
-    read straight from the cache. Several are compared on cross-validated risk
-    over the training draw, and each nuisance takes the learner that wins for
-    it. Every fit involved is cached, so a new library is a recombination of
-    stored predictions and costs no refitting."""
+    """Predictions from one library on the estimation draw. A single learner
+    is read straight from the cache. Several are compared on their risk over
+    the validation draw, and each nuisance takes the learner that wins for
+    it, so the estimation draw plays no part in the choice. Every fit involved
+    is cached, so a new library is a recombination of stored predictions and
+    costs no refitting."""
+    preds = {name: learner_preds(d, name) for name in library}
     if len(library) == 1:
-        return learner_preds(d, library[0])
-    held_out = pd.concat([d.train[d.folds == k] for k in range(N_FOLDS)])
-    risk = {}
-    for name in library:
-        cv = pd.concat([learner_preds(d, name, k) for k in range(N_FOLDS)])
-        risk[name] = {
-            "pi": np.mean((cv["pi"].to_numpy() - held_out["A"].to_numpy()) ** 2),
-            "mu": np.mean((cv["mu"].to_numpy() - held_out["Y"].to_numpy()) ** 2),
-        }
-    pi_from = learner_preds(d, min(library, key=lambda m: risk[m]["pi"]))
-    mu_from = learner_preds(d, min(library, key=lambda m: risk[m]["mu"]))
+        return preds[library[0]]["estimation"]
+    a, y = d.validation["A"].to_numpy(), d.validation["Y"].to_numpy()
+    risk = {name: {"pi": np.mean((p["validation"]["pi"].to_numpy() - a) ** 2),
+                   "mu": np.mean((p["validation"]["mu"].to_numpy() - y) ** 2)}
+            for name, p in preds.items()}
+
+    def best(nuisance: str) -> pd.DataFrame:
+        return preds[min(library, key=lambda m: risk[m][nuisance])]["estimation"]
+
+    pi_from, mu_from = best("pi"), best("mu")
     return pd.DataFrame({"pi": pi_from["pi"], "mu": mu_from["mu"],
                          "mu1": mu_from["mu1"], "mu0": mu_from["mu0"]})
 
@@ -389,7 +395,7 @@ def run_cell(dgp_name: str, n_obs: int, rep: int,
              libraries: list[str], estimators: list[str]) -> tuple[list[dict], list[dict]]:
     d = cell_data(dgp_name, n_obs, rep)
     dgp = DGPS[dgp_name]
-    w1, w2, a = (d.eval[c].to_numpy() for c in ("W1", "W2", "A"))
+    w1, w2, a = (d.estimation[c].to_numpy() for c in ("W1", "W2", "A"))
     truth = {"pi": _expit(dgp.rho(w1, w2)), "mu": dgp.mu(a, w1, w2)}
     ids = dict(DGP=dgp_name, n_obs=n_obs, rep=rep)
     estimates, accuracy = [], []
@@ -397,7 +403,7 @@ def run_cell(dgp_name: str, n_obs: int, rep: int,
         preds = library_preds(d, LIBRARIES[lib])
         for name in estimators:
             try:
-                est, se = ESTIMATORS[name](d.eval, preds)
+                est, se = ESTIMATORS[name](d.estimation, preds)
             except Exception:
                 est, se = np.nan, np.nan   # count failures, do not crash the run
             estimates.append(dict(ids, library=lib, estimator=name, est=est, se=se))

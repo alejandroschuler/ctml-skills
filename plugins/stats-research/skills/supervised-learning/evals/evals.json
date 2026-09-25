@@ -39,6 +39,21 @@
         "Includes a simple parametric learner such as a main-terms GLM",
         "Plans an explicit check that the cross-validated choice within each learner type is not on the edge of its grid, with a way to act on it if it is"
       ]
+    },
+    {
+      "id": 3,
+      "name": "simulation-split-default",
+      "prompt": "I'm running a simulation that compares AIPW and TMLE at n = 500 and n = 2000, with a super learner over tuned xgboost, MARS and a GLM for both nuisance functions. How should I set up the cross-fitting and the super learner's cross-validation?",
+      "expected_output": "Recommends replacing cross-fitting and the super learner's inner cross-validation with three independent draws of the same size n for each dataset: fit every setting on the training draw, choose or weight the settings on the validation draw (which is also where the edge check reads the risks), and run AIPW and TMLE on the estimation draw, with no refit. Justifies this as an emulation of cross-validated cross-fitting at n: the rotation gives each role nearly the whole sample, so each draw gets n, and it costs one fit per setting instead of K(V+1). Says the reported sample size is the size of one draw. Names the cases that need the nested scheme itself: a claim about the scheme, or a variance or coverage claim that rests on a nuisance fit converging to the wrong function, a non-orthogonal estimator, or a noisy learner.",
+      "files": [],
+      "assertions": [
+        "Recommends three independent draws of the same size per dataset, one to fit the learners, one to validate them and one for the estimators, in place of cross-fitting and inner cross-validation",
+        "Chooses or weights the super learner's settings on the validation draw, and keeps the estimation draw out of every fit and every choice",
+        "Predicts the estimation draw with the fits from the training draw, without refitting on the training and validation draws together",
+        "Justifies the split as an emulation of cross-validated cross-fitting at n, because the rotation in cross-fitting gives each role nearly the whole sample",
+        "Says the reported sample size (500 or 2000) is the size of one draw, not the total across the three",
+        "Says when the nested scheme itself is needed: a claim about the scheme, or a variance or coverage claim that rests on misspecified nuisance fits, a non-orthogonal estimator, or a noisy learner"
+      ]
     }
   ]
 }
