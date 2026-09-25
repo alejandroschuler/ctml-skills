@@ -1,0 +1,12 @@
+{
+  "name": "overleaf-tools",
+  "version": "0.1.0",
+  "description": "Read the review comments and tracked changes on an Overleaf project, which the Overleaf git bridge does not carry.",
+  "author": {
+    "name": "Alejandro Schuler"
+  },
+  "homepage": "https://github.com/alejandroschuler/ctml-skills",
+  "repository": "https://github.com/alejandroschuler/ctml-skills",
+  "license": "MIT",
+  "keywords": ["overleaf", "latex", "comments", "review", "tracked-changes", "research"]
+}

@@ -1,6 +1,6 @@
 # ctml-skills
 
-Agent skills for statistical methods research, packaged as a Claude Code plugin marketplace. They cover designing and reporting simulation studies, setting up and tuning supervised learners, checking that mathematical writing is readable, and keeping a paper's figures and numbers in step with the code that made them.
+Agent skills for statistical methods research, packaged as a Claude Code plugin marketplace. They cover designing and reporting simulation studies, setting up and tuning supervised learners, checking that mathematical writing is readable, keeping a paper's figures and numbers in step with the code that made them, and reading the comments that coauthors leave on Overleaf.
 
 ## What is here
 
@@ -8,6 +8,7 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 |---|---|---|
 | `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a document is defined before it is used. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
+| `overleaf-tools` | `overleaf-comments` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished prose to `readable-math`, so install that plugin whole.
@@ -21,7 +22,7 @@ In a Claude Code session:
 /plugin install stats-research@ctml-skills
 ```
 
-Install `paper-pipeline@ctml-skills` or `claude-code-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
+Install `paper-pipeline@ctml-skills`, `overleaf-tools@ctml-skills` or `claude-code-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
 
 To get a new version, run `claude plugin marketplace update ctml-skills`, then `claude plugin update stats-research@ctml-skills`, and restart Claude Code.
 
@@ -40,6 +41,12 @@ Any time simulation work is in play, invoke the `stats-research:design-and-repor
 
 Any time supervised machine learning, or similar loss-based learning such as Riesz regression, is in play, invoke the `stats-research:supervised-learning` skill first.
 ```
+
+## Reading Overleaf comments
+
+`overleaf-tools:overleaf-comments` runs a Python script with `uv run`, so it needs [uv](https://docs.astral.sh/uv/). It works on any Overleaf project, and it finds the `paper/` clone of a `paper-pipeline` project by itself. The first login opens a Chrome, Chromium, Edge or Brave window with a separate profile, and you log in to Overleaf there. The session is saved in `~/.config/overleaf-comments/` and lasts while it is used at least once every five days.
+
+The script reads through Overleaf's private web API with your own session, and it never writes. Overleaf's [Acceptable Use Policy](https://www.overleaf.com/legal) restricts scripted access to the service. Read it and decide for yourself before you use the script.
 
 ## Companion skill
 

@@ -133,6 +133,10 @@ it pushes anything. Run it only when asked.
 Overleaf. Run `make pdf` after it, so `make status` and `make check` see the
 new manuscript.
 
+A pull brings only the text. Review comments and tracked changes stay on
+Overleaf. The `overleaf-comments` skill in the `overleaf-tools` plugin reads
+them.
+
 ## Setting up
 
 `scripts/setup_project.py` creates a project, or migrates a code repo and a

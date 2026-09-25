@@ -1,6 +1,6 @@
 {
   "name": "ctml-skills",
-  "description": "Agent skills for statistical methods research: simulation studies, supervised learning, readable math, and reproducible papers.",
+  "description": "Agent skills for statistical methods research: simulation studies, supervised learning, readable math, reproducible papers, and Overleaf comments.",
   "owner": {
     "name": "Alejandro Schuler"
   },
@@ -14,6 +14,11 @@
       "name": "paper-pipeline",
       "source": "./plugins/paper-pipeline",
       "description": "Keep a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it."
+    },
+    {
+      "name": "overleaf-tools",
+      "source": "./plugins/overleaf-tools",
+      "description": "Read the review comments and tracked changes on an Overleaf project, which the Overleaf git bridge does not carry."
     },
     {
       "name": "claude-code-utils",
