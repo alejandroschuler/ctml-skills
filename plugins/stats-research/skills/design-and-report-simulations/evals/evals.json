@@ -26,12 +26,12 @@
       "expected_output": "Starts with the claims the paper makes, sharpens them into answerable goals, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
       "files": [],
       "assertions": [
-        "Establishes or asks about the paper's claims before proposing any data-generating mechanism",
-        "Sharpens vague goals by naming what is unpinned (at least two of: metric, sample size, which DGPs, learners/nuisances, baseline)",
+        "Establishes or asks about the paper's claims before proposing any data-generating process",
+        "Sharpens vague goals by naming what is unpinned (at least two of: performance measure, sample size, which DGPs, learners/nuisances, baseline)",
         "Mocks up at least one table or figure (empty cells, or described axes and facets) before specifying DGPs",
         "Does not deliver executable simulation code as the primary or first deliverable",
         "Proposed DGPs are each tied to a stated claim rather than offered as generically reasonable",
-        "Mentions DGP diagnostics (overlap/positivity, signal-to-noise, or degree of nonlinearity) as things to check",
+        "Mentions DGP diagnostics (overlap/positivity, variance explained or signal-to-noise, or degree of nonlinearity) as things to check",
         "Recommends ramping up repetitions (a tiny run first, then a moderate one) rather than committing to a fixed large number up front"
       ]
     },

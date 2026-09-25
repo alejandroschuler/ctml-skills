@@ -1,4 +1,4 @@
-# Designing DGPs and settings
+# Designing data-generating processes (DGPs) and settings
 
 The governing principle: **being able to reason about a simulation and iterate on it matters more than making it realistic.** If you cannot predict roughly what should happen, you cannot tell a bug from a finding, and that confusion will eat most of your time. Realism is worth buying only after the reasoning is in place, and often it is not worth buying at all.
 
@@ -10,7 +10,7 @@ For the common causal-inference setup, these choices keep everything interpretab
 
 - **Covariates:** $X \sim \mathsf{Unif}([-1,1]^d)$ unless something requires otherwise. A bounded domain makes it easy to reason about the range of any function you build on top.
 - **Treatment:** $A \sim \mathsf{Bern}(\mathrm{expit}(\rho(X)))$. Keep $\rho$ simple and sparse. Unless empirical positivity violations are the point of the study, aim for $\rho \in [-3, 3]$, which keeps propensities away from the boundary.
-- **Outcome:** $Y \sim \mu(A, X) + \mathsf{N}(0, \sigma)$. Keep $\mu$ simple and sparse.
+- **Outcome:** $Y \sim \mu(A, X) + \mathsf{N}(0, \sigma^2)$, with noise standard deviation $\sigma$. Keep $\mu$ simple and sparse.
 
 Simple and sparse is not a limitation here. A DGP with two covariates and a hand-written mean function is one you can reason about completely, which is what lets you diagnose a surprising result in minutes instead of days.
 
@@ -19,7 +19,7 @@ Simple and sparse is not a limitation here. A DGP with two covariates and a hand
 Compute these on a single very large draw. They are cheap and they catch most DGP mistakes:
 
 - **Overlap.** The distribution of $A \mid X$, and how close propensities get to 0 and 1. Accidental positivity violations are the most common way a DGP misbehaves without anyone noticing.
-- **Signal-to-noise.** The fraction of outcome variance explained by $\mu$, that is $\mathrm{Var}(\mu)/\mathrm{Var}(Y)$. This governs how hard the estimation problem is, and a DGP that is trivially easy or hopelessly noisy will not discriminate between methods.
+- **Variance explained.** The fraction of outcome variance explained by the conditional mean $\mu$, that is $\mathrm{Var}(\mu)/\mathrm{Var}(Y)$, or the population $R^2$. With the default additive noise of standard deviation $\sigma$ it equals $\mathrm{Var}(\mu)/(\mathrm{Var}(\mu)+\sigma^2)$, a monotone transform of the signal-to-noise ratio $\mathrm{Var}(\mu)/\sigma^2$ that always lies between 0 and 1. This governs how hard the estimation problem is, and a DGP that is trivially easy or hopelessly noisy will not discriminate between methods.
 - **Nonlinearity.** The fraction of $\mathrm{Var}(\mu)$ captured by the best linear approximation to $\mu$. This says how much a flexible learner can actually gain over a linear model, which is often the thing a comparison is really about.
 - **The true estimand value**, computed by brute force on a large draw if no closed form exists.
 

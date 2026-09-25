@@ -6,7 +6,7 @@ The reason it matters is that failure is silent. A design that cannot resolve it
 
 ## Reducing any contrast to a per-repetition difference
 
-Every comparison between two means over repetitions can be written as the mean of a per-repetition quantity `d_i`, because over the same repetitions the difference of two averages is the average of the differences. That covers bias, MSE, coverage and rejection rate, and once a comparison is in that form, one formula covers all of them. A measure that is not a mean over repetitions, such as the empirical SE or a variance ratio, needs a bootstrap instead, as in the last row of the table.
+Every comparison between two means over repetitions can be written as the mean of a per-repetition quantity `d_i`, because over the same repetitions the difference of two averages is the average of the differences. That covers bias, mean squared error (MSE), coverage and rejection rate, and once a comparison is in that form, one formula covers all of them. A measure that is not a mean over repetitions, such as the empirical standard error (SE) or a variance ratio, needs a bootstrap instead, as in the last row of the table.
 
 | What the mockup compares | `d_i` for repetition `i` |
 |---|---|
@@ -66,7 +66,7 @@ Read the requirement against the pilot's $|z|$ first. A huge `n_sim_safe` from a
 
 **10x to 1000x over.** The design needs changing, and there are three places to change it.
 
-- *Amplify the signal in the DGP.* Usually the best move. If the grid exists to show that misspecification hurts, make the misspecification bite harder: more nonlinearity, stronger confounding, worse overlap, a sharper interaction. Say in the paper that the DGP was chosen to make the mechanism visible, which is honest and is what archetyping extremes means.
+- *Amplify the signal in the data-generating process (DGP).* Usually the best move. If the grid exists to show that misspecification hurts, make the misspecification bite harder: more nonlinearity, stronger confounding, worse overlap, a sharper interaction. Say in the paper that the DGP was chosen to make the mechanism visible, which is honest and is what archetyping extremes means.
 - *Change what the table displays.* A contrast on one scale may be far more resolvable on another. Ratios often beat differences for variance-type quantities, and a single well-chosen sample size often beats a grid where every cell is underpowered.
 - *Change the sample size $n_{obs}$.* Many contrasts grow or shrink with the size of each simulated dataset. A comparison invisible at $n_{obs} = 5000$ can be obvious at 200, and vice versa for bias-driven undercoverage.
 
@@ -90,8 +90,8 @@ The same cancellation shows up whenever an estimand is a contrast or an average.
 
 The pilot earns a sentence or two in the paper, and they are load-bearing:
 
-- The DGP diagnostics (true estimand, overlap, signal-to-noise, nonlinearity) go in the DGP description regardless.
-- The $n_{sim}$ justification becomes concrete: "$n_{sim} = 2000$, chosen from a 150-repetition pilot so that the TMLE-AIPW MSE difference under the complex mechanism is resolved at 5 Monte Carlo SEs."
+- The DGP diagnostics (true estimand, overlap, variance explained, nonlinearity) go in the DGP description regardless.
+- The $n_{sim}$ justification becomes concrete. For a comparison of targeted maximum likelihood estimation (TMLE) with augmented inverse probability weighting (AIPW), it could read: "$n_{sim} = 2000$, chosen from a 150-repetition pilot so that the TMLE-AIPW MSE difference under the complex DGP is resolved at 5 Monte Carlo SEs."
 - If a DGP was tuned to make a mechanism visible, say so and say why. A reader who finds out later that the configuration was chosen to produce the result will not be charitable about it.
 
 A pilot used to tune the DGP until the result appears, with nothing reported, is a different activity with a worse name. The line is that you tune the DGP to make a mechanism *visible*, disclosed, before the full run; you do not tune it until a claim comes out true.

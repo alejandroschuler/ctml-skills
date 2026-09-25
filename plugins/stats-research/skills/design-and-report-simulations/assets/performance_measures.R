@@ -3,7 +3,7 @@
 #
 # Dependency-free base R. If the `rsimsum` package is available, prefer it.
 #
-# Input: a long data frame with one row per repetition x method x DGM x estimand.
+# Input: a long data frame with one row per repetition x method x DGP x estimand.
 #   est   numeric, the per-repetition point estimate theta_hat_i
 #   se    numeric, the per-repetition standard error (optional but strongly wanted)
 #   true  numeric, the true value of the estimand, constant within a `by` group

@@ -91,7 +91,7 @@ class DGP:
         return float(mu1 - mu0)
 
     def diagnose(self, n: int = 100_000, seed: int = 0) -> dict:
-        """Overlap, signal-to-noise, and how nonlinear the truth actually is.
+        """Overlap, variance explained, and how nonlinear the truth actually is.
 
         These say what the DGP spans far better than the generating equations,
         and they catch most DGP mistakes. Report them next to the DGP.
@@ -108,7 +108,7 @@ class DGP:
             "ate": self.ate(n, seed),
             "pi_min": float(pi_true.min()),          # overlap
             "pi_max": float(pi_true.max()),
-            "signal_noise": float(mu_true.var() / d["Y"].var()),
+            "var_explained": float(mu_true.var() / d["Y"].var()),
             "linear_share": float(mu_lin.var() / mu_true.var()),
         }
 

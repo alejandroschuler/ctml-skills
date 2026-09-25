@@ -14,13 +14,13 @@ Delete the bracketed prompts as real content replaces them.
 
 We evaluate [PROPERTY] of [METHOD(S)], relative to [BASELINE], under [CONDITION]. [One sentence per additional claim.]
 
-### Data-generating mechanisms
+### Data-generating processes
 
 [Generating equations with every parameter value. A reader should be able to regenerate the data from this section alone, without opening the code.]
 
-We consider [K] data-generating mechanisms, chosen to span [WHAT THE CLAIMS REQUIRE]:
+We consider [K] data-generating processes (DGPs), chosen to span [WHAT THE CLAIMS REQUIRE]:
 
-| DGP | Characterization | True estimand | Overlap | Signal-to-noise | Linearity of $\mu$ |
+| DGP | Characterization | True estimand | Overlap | Variance explained | Linearity of $\mu$ |
 |---|---|---|---|---|---|
 | | | | | | |
 
@@ -39,12 +39,13 @@ The estimand is [DEFINITION], a [marginal / conditional] quantity. Its true valu
 1. **[NAME]**: [enough to reimplement, including tuning, folds, tolerances]
 2. **[NAME]**: ...
 3. **[BASELINE]**: [why this is the right baseline]
+4. **[ORACLE or SEMI-ORACLE, if one serves a claim]**: [which nuisance functions take their true values from the DGP (all of them for an oracle, some for a semi-oracle), and which claim or subclaim this comparison helps test]
 
 Nuisance functions were estimated with [LEARNERS], chosen because [REASON]. All methods were implemented in [SOFTWARE, VERSION]. [Rule applied on non-convergence.]
 
 ### Performance measures
 
-We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a pointer.] Intervals are at [95]%; tests use alpha = [0.05]. We ran [N] repetitions [and how that was decided]. [Monte Carlo SEs are reported alongside each estimate.]
+We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a pointer.] Intervals are at [95]%; tests use alpha = [0.05]. We ran [N] repetitions [and how that was decided]. [Monte Carlo standard errors are reported alongside each estimate.]
 
 ---
 
