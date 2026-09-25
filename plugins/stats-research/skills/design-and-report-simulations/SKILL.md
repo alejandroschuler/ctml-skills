@@ -170,4 +170,4 @@ The question to answer is whether a reader can follow the argument, so read the 
 - Are the claims scoped to what the evidence shows, including the conditions where things failed?
 - Is anything in the results section that no claim needs?
 
-Then hand the prose to `readable-math` for notation and, if it is installed, to `avoid-ai-writing` (github.com/conorbronsdon/avoid-ai-writing) for voice.
+Then, if the write-up is a LaTeX (`.tex`) file, hand the prose to `readable-math` for notation and derivations. If `avoid-ai-writing` (github.com/conorbronsdon/avoid-ai-writing) is installed, hand the prose to it for voice.
