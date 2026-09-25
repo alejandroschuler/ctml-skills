@@ -31,12 +31,13 @@
       "id": 2,
       "name": "set-up-a-library",
       "prompt": "Set up a super learner library in R for the propensity score and the outcome regression in my real-data TMLE analysis (n = 3000, 15 covariates).",
-      "expected_output": "A library with a simple parametric floor and a few flexible learners, each with its fixed and tuned hyperparameters stated and grids given, all sharing the same folds, and a planned check that the cross-validated choice within each learner type falls inside its grid.",
+      "expected_output": "A library with one learner type from each family, such as an elastic net as the parametric floor, MARS, tuned gradient-boosted trees and a small neural net, each with its fixed and tuned hyperparameters stated and grids given, all sharing the same folds, and a planned check that the cross-validated choice within each learner type falls inside its grid.",
       "files": [],
       "assertions": [
         "States for each learner which hyperparameters are fixed and which are tuned, and gives the grid for each tuned one",
         "Uses the same cross-validation folds for every learner in the library",
-        "Includes a simple parametric learner such as a main-terms GLM",
+        "Includes one simple parametric learner, such as an elastic net or a main-terms GLM, as a floor",
+        "Takes at most one learner type from each family, for example boosting without a random forest and an elastic net without a separate GLM, unless it states a reason for a second",
         "Plans an explicit check that the cross-validated choice within each learner type is not on the edge of its grid, with a way to act on it if it is"
       ]
     },
@@ -53,6 +54,20 @@
         "Justifies the split as an emulation of cross-validated cross-fitting at n, because the rotation in cross-fitting gives each role nearly the whole sample",
         "Says the reported sample size (500 or 2000) is the size of one draw, not the total across the three",
         "Says when the nested scheme itself is needed: a claim about the scheme, or a variance or coverage claim that rests on misspecified nuisance fits, a non-orthogonal estimator, or a noisy learner"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "redundant-learner-types",
+      "prompt": "My super learner library for the outcome regression in a TMLE analysis (n = 2000, 12 covariates) is HAL, xgboost, a single regression tree, a random forest, the lasso and a main-terms GLM. Does this library make sense?",
+      "expected_output": "Says the library covers some families several times and misses one. xgboost, the single tree and the random forest all build their fits from step functions of single covariates, so one tuned boosting learner is enough, and the single tree is dominated. The lasso's penalty path runs down to almost no penalty, which is the main-terms GLM, so one linear learner is enough. Which family HAL duplicates depends on its smoothness order: with order 0 it fits step functions like the trees, and with order 1, the hal9001 default, it fits piecewise-linear functions like MARS. HAL can stay if the analysis relies on its convergence-rate guarantee. Nothing in the library fits smooth functions of all the covariates at once, so it recommends adding a small neural net or kernel ridge. Says the duplicates cost runtime and add little accuracy, without claiming that they make the super learner worse.",
+      "files": [],
+      "assertions": [
+        "Says xgboost, the single regression tree and the random forest belong to one family, so the library needs only one of them, preferably tuned boosting",
+        "Says the lasso covers the main-terms GLM, so the library needs only one linear learner",
+        "Says which family HAL duplicates depends on its smoothness order: with order 0 (piecewise constant) HAL fits step functions like the trees, and with order 1 (piecewise linear), the hal9001 default, it fits the same kind of function as MARS",
+        "Recommends adding a learner type from a family the library lacks, such as a small neural net or kernel ridge",
+        "Says the extra learners cost runtime and add little accuracy, without claiming that they make the super learner worse"
       ]
     }
   ]

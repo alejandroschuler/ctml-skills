@@ -1,27 +1,28 @@
 ---
 name: supervised-learning
-description: How to choose machine-learning learners, set their hyperparameters, and build and check cross-validated libraries, such as a super learner over tuned boosting, MARS, random forests and elastic nets. Use whenever any supervised machine learning is done, or similar loss-based learning such as Riesz regression, whatever the purpose: nuisance functions for TMLE, AIPW, double machine learning or other causal estimators, prediction models, learners inside a simulation, or checking a library someone else tuned. It sets how to split data for tuning and cross-fitting, with a simulation default of separate training, validation and estimation draws of the same size. It also holds the edge rule: the setting that cross-validation selects within each learner type must not sit on the edge of its tuning grid, and when it does, the grid is too narrow in that direction and has to move.
+description: How to choose machine-learning learners, set their hyperparameters, and build and check cross-validated libraries that take one learner type from each family, such as a super learner over an elastic net, MARS, tuned boosting and a small neural net, where a random forest would duplicate the boosting. Use whenever any supervised machine learning is done, or similar loss-based learning such as Riesz regression, whatever the purpose: nuisance functions for TMLE, AIPW, double machine learning or other causal estimators, prediction models, learners inside a simulation, or checking a library someone else tuned. It sets how to split data for tuning and cross-fitting, with a simulation default of separate training, validation and estimation draws of the same size. It also holds the edge rule: the setting that cross-validation selects within each learner type must not sit on the edge of its tuning grid, and when it does, the grid is too narrow in that direction and has to move.
 ---
 
 # Supervised learning: learners, hyperparameters, and cross-validated libraries
 
 A learner's performance depends on its hyperparameters as much as on its type. If a library holds a learner type only at poor settings, nothing in its output says so, and a comparison of estimators that use the library's predictions turns into a comparison of tuning.
 
-The rest of this skill uses two terms. A **learner type** is a family such as gradient-boosted trees or MARS. A **setting** is one full choice of a learner type's hyperparameters. The skill applies to any learner fit by minimizing a loss: regression and classification, and also Riesz regression, which learns a Riesz representer by minimizing the Riesz loss. It covers which learner types to use, which hyperparameters to fix and which to tune, how to split the data for fitting, tuning and estimation, how to check a tuning grid after the fits, and what keeps a library's runtime sane. Inside a simulation, `design-and-report-simulations` covers how to cache the fits across repetitions.
+The rest of this skill uses three terms. A **learner type** is a learning algorithm, such as gradient-boosted trees or MARS. A **setting** is one full choice of a learner type's hyperparameters. A **family** is a group of learner types whose fits are built from the same kind of pieces, such as all the learner types made of trees. The skill applies to any learner fit by minimizing a loss: regression and classification, and also Riesz regression, which learns a Riesz representer by minimizing the Riesz loss. It covers which learner types to use, which hyperparameters to fix and which to tune, how to split the data for fitting, tuning and estimation, how to check a tuning grid after the fits, and what keeps a library's runtime sane. Inside a simulation, `design-and-report-simulations` covers how to cache the fits across repetitions.
 
 ## Choosing learners
 
 | Learner type | Speed | Notes |
 |---|---|---|
 | **MARS** (multivariate adaptive regression splines, `earth`) | Very fast | Works well with one set of hyperparameters. Set the interaction degree high enough and keep pruning on. |
-| **Random forests** (ranger) | Fast | Fine on defaults. Worse for smooth functions. |
+| **Random forests** (ranger) | Fast | Fine on defaults. Worse for smooth functions. Same family as gradient-boosted trees, which usually do better once tuned. |
 | **Gradient-boosted trees** (lightgbm, xgboost) | Fast | Beats almost everything. Needs tuning over number of trees, depth, learning rate. Use early stopping. |
-| **Elastic net** | Fast (ridge) | Loses under moderate nonlinearity. Good as a baseline. Needs regularization tuning. |
+| **Elastic net** | Fast (ridge) | Loses under moderate nonlinearity. Good as a baseline. Needs regularization tuning. Covers lasso, ridge and the main-terms generalized linear model (GLM). |
 | **Kernel ridge** | Slow | Good for smooth functions and easy to analyze theoretically. Only for $n < 1000$. |
+| **Small neural net** (one or two hidden layers) | Moderate | Same family as kernel ridge, and takes its place from 1000 observations up. Needs tuning over width and weight decay. |
 
-In Python, `HistGradientBoosting{Regressor,Classifier}` from scikit-learn is the fast tabular default and needs no extra dependency. MARS has no maintained Python implementation, so gradient-boosted trees take its place there. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
+In Python, `HistGradientBoosting{Regressor,Classifier}` from scikit-learn is the fast tabular default and needs no extra dependency. MARS has no maintained Python implementation. A generalized additive model from `pygam` can stand in for it there, but it fits interactions only through tensor-product terms that you add by hand, while MARS searches for them. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
 
-Deep learning is worth avoiding unless you specifically need a differentiable model, a custom loss, or fine-tuning. It is hard to tune and gradient boosting wins on tabular data.
+Deeper networks are worth avoiding unless you specifically need a differentiable model, a custom loss, or fine-tuning. They are hard to tune and gradient boosting wins on tabular data.
 
 ## Fixed and tuned hyperparameters
 
@@ -74,8 +75,33 @@ The check costs almost nothing if each fit stores the cross-validated risk of ev
 
 ## Building a library
 
+**Take one learner type from each family.** A learner type's family depends on the pieces its fits are built from:
+
+| Family | Fits are built from | Learner types | Use |
+|---|---|---|---|
+| Linear | Linear terms in the covariates | Elastic net (lasso and ridge are two of its settings), main-terms GLM | Elastic net |
+| Splines | Hinge functions or smooth curves of single covariates, and their products | MARS, generalized additive models, the highly adaptive lasso (HAL) with smoothness order 1 | MARS |
+| Trees | Step functions of single covariates, and their products | Gradient-boosted trees, random forests, Bayesian additive regression trees, a single tree, HAL with smoothness order 0 | Gradient-boosted trees |
+| Kernels and nets | Smooth functions of all the covariates at once | Kernel ridge, Gaussian process regression, support vector machines, neural nets | Kernel ridge if $n < 1000$, else a small neural net |
+
+Cover every family the true function might need, which means all four when nothing is known about it. The linear family goes into every library, as a floor.
+
+Nearly every flexible learner can fit almost any function, given enough data. The families differ in what they fit well from the $n$ observations at hand, and that follows from their pieces. A sum of step functions needs many of them to follow a smooth curve, and a smooth fit needs many pieces to follow a jump. Tree and spline learners build their fits from functions of single covariates, so they need many pieces to follow a smooth function of a weighted sum of covariates, which kernels and nets fit easily.
+
+A super learner gains from learners whose errors differ. Two learner types from one family make similar predictions, so the second adds little accuracy. It hardly harms the super learner either: by the super learner's oracle inequality, its risk stays close to that of the best learner in its library, and the gap widens only slowly as the library grows. What a duplicate costs is runtime, since it brings its own grid of fits and its own edge check.
+
+Within each family, the learner type in the last column usually does best.
+
+- An elastic net covers the other linear learners. Its mixing weight runs from ridge to lasso, and its penalty path runs down to almost no penalty, which is the main-terms GLM. If cross-validation keeps picking the smallest penalty, extend the path down toward zero, as the edge rule says. When the covariates are few for the sample size, a main-terms GLM fits nearly the same and can be the floor instead.
+- Among spline learners, MARS is very fast and works with one setting. HAL's family depends on its smoothness order. With order 1, the `hal9001` default, it fits piecewise-linear functions like MARS, far more slowly.
+- Among tree learners, tuned boosting usually matches or beats a random forest, and both beat a single tree. A forest does well on its defaults, so it can stand in for boosting when there is no budget to tune boosting. With smoothness order 0, HAL fits sums of the same step functions that boosted trees add up.
+- Kernel ridge and Gaussian process regression give the same predictions: the posterior mean of Gaussian process regression is the kernel ridge fit, with the process's covariance as the kernel and its noise variance as the penalty. A small neural net fits the same kind of smooth function and scales to larger $n$.
+
+Keep a second learner type from a family only for a reason you can state. The usual reason is a property the analysis needs and the first lacks. HAL's root-mean-squared error, for example, shrinks faster than $n^{-1/4}$ for every true function in a large nonparametric class. That is the rate that the standard conditions for orthogonal estimators such as TMLE and AIPW ask of nuisance fits, and a super learner with HAL in its library keeps the guarantee. When it is unclear whether two learner types duplicate each other, compare the super learner's risk on held-out data with and without the second one, across fits as for the edge rule. If the risk barely moves, drop it.
+
+An elastic net, MARS, tuned boosting and a small neural net cover all four families. HAL with smoothness order 0, boosting, a single tree and a random forest cover the tree family four times and nothing else. Two implementations of one learner type, such as xgboost and lightgbm, count as one. More settings of a learner type widen its grid, which the edge rule checks, and cover no new family.
+
 - Give every setting in the library the same cross-validation folds. Their cross-validated predictions are then comparable, and the rule that combines them can use them together.
-- Include a simple parametric learner, such as a main-terms GLM, as a floor.
 - Enter each setting of a tuned learner type into the library separately. That is what makes each setting's cross-validated risk available to the edge check.
 
 ## Compute
