@@ -36,12 +36,12 @@ The estimand is [DEFINITION], a [marginal / conditional] quantity. Its true valu
 
 ### Methods
 
-1. **[NAME]**: [enough to reimplement, including tuning, folds, tolerances]
+1. **[NAME]**: [enough to reimplement, including tuning, the data split or folds, tolerances]
 2. **[NAME]**: ...
 3. **[BASELINE]**: [why this is the right baseline]
 4. **[ORACLE or SEMI-ORACLE, if one serves a claim]**: [which nuisance functions take their true values from the DGP (all of them for an oracle, some for a semi-oracle), and which claim or subclaim this comparison helps test]
 
-Nuisance functions were estimated with [LEARNERS], chosen because [REASON]. All methods were implemented in [SOFTWARE, VERSION]. [Rule applied on non-convergence.]
+Nuisance functions were estimated with [LEARNERS], chosen because [REASON]. Each dataset consisted of three independent draws of size [n]: the learners were fit on the first and validated on the second, and the estimators were computed on the third. This stands in for cross-validated cross-fitting at [n]. [Or describe the cross-fitting scheme and its folds, if a claim needed it.] All methods were implemented in [SOFTWARE, VERSION]. [Rule applied on non-convergence.]
 
 ### Performance measures
 

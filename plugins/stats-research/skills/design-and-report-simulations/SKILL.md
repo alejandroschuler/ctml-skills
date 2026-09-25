@@ -81,7 +81,7 @@ Being able to *reason* about a DGP and *iterate* on it matters more than making 
 
 Sensible defaults, and the diagnostics worth computing on any DGP before trusting it, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, variance explained, and how nonlinear the truth actually is.
 
-Learners and their tuning are settings too. Set them up with the `supervised-learning` skill.
+Learners and their tuning are settings too, and so is the way each dataset is split between fitting the learners, validating them and computing the estimators. Set all of these up with the `supervised-learning` skill. By default each dataset is three independent draws, each with the dataset's full sample size: a training draw to fit the learners, a validation draw to tune and choose them, and an estimation draw for the estimators. The three draws are a cheap stand-in for cross-validated cross-fitting at that sample size, and the skill also lists the cases where the stand-in fails.
 
 Design DGPs to archetype the extremes. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
@@ -97,7 +97,7 @@ Three properties decide how cheap the rest of the project will be:
 
 - **Share whatever can be shared.** When two claims need overlapping computation, they get it from the same code and the same stored outputs. If one table compares learner libraries by the root mean squared error (RMSE) of their nuisance predictions and another reports TMLE built on some of those libraries, the TMLE code reads the predictions the RMSE table came from, and nothing gets refit in a second script. A fix then reaches every display at once, and the displays stay paired on the same datasets.
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
-- **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's cross-validated predictions too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it, so that a hit always equals what recomputing would give and deleting the cache changes nothing but runtime.
+- **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it, so that a hit always equals what recomputing would give and deleting the cache changes nothing but runtime.
 
 Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape. The learners in that code come from the `supervised-learning` skill.
 

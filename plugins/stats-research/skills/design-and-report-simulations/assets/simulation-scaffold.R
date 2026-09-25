@@ -12,8 +12,9 @@
 #     rows a full run would.
 #   * Every display reads the same fits. The library table and the estimator
 #     table below are two summaries of one set of predictions.
-#   * Expensive steps are cached. Each base learner's predictions are stored
-#     per dataset and split, so a new library or estimator refits nothing.
+#   * Expensive steps are cached. Each base learner is fit once per dataset
+#     and its predictions are stored, so a new library or estimator refits
+#     nothing.
 #
 # Run as a script (Rscript simulation-scaffold.R) for a demo, or source() it.
 # ---------------------------------------------------------------------------
@@ -114,11 +115,11 @@ LEARNERS <- list(
 )
 
 # A library is a set of base learners. One learner is used as it is. Several
-# are combined per nuisance by picking the learner with the smallest
-# cross-validated risk, the discrete super learner. The convex weights of a
-# full super learner would slot into library_preds() and read the same folds.
+# are combined per nuisance by picking the learner with the smallest risk on
+# the validation draw, the discrete super learner. The convex weights of a
+# full super learner would slot into library_preds() and be fit to the same
+# validation-draw predictions.
 LIBRARIES <- list(glm = "glm", mars = "mars", select = c("glm", "mars"))
-N_FOLDS   <- 5
 
 # =========================== 4. Seeds and cache ============================
 
@@ -160,68 +161,67 @@ code_of <- \(...) map(list(...), deparse)
 
 # =========================== 5. Datasets and predictions ===================
 
-# Everything random about one dataset, from its own seed: the training draw
-# the learners see, the evaluation draw the estimators see (a single sample
-# split on a separate draw), and the fold labels for cross-validation. Cheap
-# to redraw, so never cached.
+# Everything random about one dataset, from its own seed: three draws of the
+# same size. Learners are fit on the training draw and scored on the
+# validation draw, and estimators run on the estimation draw. The three draws
+# stand in for cross-validated cross-fitting at n_obs; the supervised-learning
+# skill gives the reasons and the limits. Cheap to redraw, so never cached.
 cell_data <- function(dgp_name, n_obs, rep) {
     set_cell_seed(dgp_name, n_obs, rep)
     dgp <- DGPS[[dgp_name]]
     list(dgp_name = dgp_name, n_obs = n_obs, rep = rep,
-         train = draw(dgp, n_obs),
-         eval  = draw(dgp, n_obs),
-         folds = sample(rep_len(seq_len(N_FOLDS), n_obs)))
+         training   = draw(dgp, n_obs),
+         validation = draw(dgp, n_obs),
+         estimation = draw(dgp, n_obs))
 }
 
-# One fit of one learner, returning every prediction any downstream step
-# reads: the propensity, and the outcome regression at the observed arm and
-# at both counterfactual arms. Predictions rather than models, because they
-# are smaller and they are all that estimators and accuracy summaries need.
-fit_predict <- function(learner, train, test) {
+# One fit of one learner on the training draw, and on each draw in `draws`
+# every prediction any downstream step reads: the propensity, and the outcome
+# regression at the observed arm and at both counterfactual arms. Predictions
+# rather than models, because they are smaller and they are all that
+# estimators and accuracy summaries need.
+fit_predict <- function(learner, train, draws) {
     pi_hat <- learner(select(train, W1, W2), train$A, binary = TRUE)
     mu_hat <- learner(select(train, A, W1, W2), train$Y, binary = FALSE)
-    arm <- \(a) test |> mutate(A = a) |> select(A, W1, W2)
-    tibble(pi  = pi_hat(select(test, W1, W2)),
-           mu  = mu_hat(select(test, A, W1, W2)),
-           mu1 = mu_hat(arm(1)),
-           mu0 = mu_hat(arm(0)))
+    map(draws, \(new) {
+        arm <- \(a) new |> mutate(A = a) |> select(A, W1, W2)
+        tibble(pi  = pi_hat(select(new, W1, W2)),
+               mu  = mu_hat(select(new, A, W1, W2)),
+               mu1 = mu_hat(arm(1)),
+               mu0 = mu_hat(arm(0)))
+    })
 }
 
-# The expensive step, cached. split = "eval" fits on the whole training draw
-# and predicts the evaluation draw; split = k holds out fold k, which is what
-# an ensemble needs. The key is the data itself plus the code, so a changed
-# DGP, seed or fold can never pair a stored fit with the wrong dataset, and
-# editing one learner invalidates only that learner's entries. A learner that
-# calls helpers of your own needs them in code_of() too.
-learner_preds <- function(d, learner_name, split = "eval") {
-    holdout <- split != "eval"
-    train <- if (holdout) d$train[d$folds != split, ] else d$train
-    test  <- if (holdout) d$train[d$folds == split, ] else d$eval
+# The expensive step, cached: one fit per learner and dataset, stored as its
+# predictions on the validation and estimation draws. The key is the data
+# itself plus the code, so a changed DGP or seed can never pair a stored fit
+# with the wrong dataset, and editing one learner invalidates only that
+# learner's entries. A learner that calls helpers of your own needs them in
+# code_of() too.
+learner_preds <- function(d, learner_name) {
     learner <- LEARNERS[[learner_name]]
+    draws <- list(validation = d$validation, estimation = d$estimation)
     cached(
-        label   = sprintf("%s/%s/n%d_rep%d_%s", d$dgp_name, learner_name,
-                          d$n_obs, d$rep, split),
-        key     = list(train, test, code_of(learner, fit_predict)),
-        compute = \() fit_predict(learner, train, test)
+        label   = sprintf("%s/%s/n%d_rep%d", d$dgp_name, learner_name, d$n_obs, d$rep),
+        key     = list(d$training, draws, code_of(learner, fit_predict)),
+        compute = \() fit_predict(learner, d$training, draws)
     )
 }
 
-# Predictions from one library on the evaluation draw. A single learner is
-# read straight from the cache. Several are compared on cross-validated risk
-# over the training draw, and each nuisance takes the learner that wins for
-# it. Every fit involved is cached, so a new library is a recombination of
-# stored predictions and costs no refitting.
+# Predictions from one library on the estimation draw. A single learner is
+# read straight from the cache. Several are compared on their risk over the
+# validation draw, and each nuisance takes the learner that wins for it, so
+# the estimation draw plays no part in the choice. Every fit involved is
+# cached, so a new library is a recombination of stored predictions and
+# costs no refitting.
 library_preds <- function(d, library) {
-    if (length(library) == 1) return(learner_preds(d, library))
-    folds <- seq_len(N_FOLDS)
-    held_out <- map(folds, \(k) d$train[d$folds == k, ]) |> bind_rows()
-    cv_risk <- map(setNames(nm = library), \(l) {
-        cv <- map(folds, \(k) learner_preds(d, l, k)) |> bind_rows()
-        c(pi = mean((cv$pi - held_out$A)^2), mu = mean((cv$mu - held_out$Y)^2))
-    })
-    best <- \(nuisance) library[which.min(map_dbl(cv_risk, nuisance))]
-    pi_from <- learner_preds(d, best("pi"))
-    mu_from <- learner_preds(d, best("mu"))
+    preds <- map(setNames(nm = library), \(l) learner_preds(d, l))
+    if (length(library) == 1) return(preds[[1]]$estimation)
+    risk <- map(preds, \(p) c(pi = mean((p$validation$pi - d$validation$A)^2),
+                              mu = mean((p$validation$mu - d$validation$Y)^2)))
+    best <- \(nuisance) preds[[which.min(map_dbl(risk, nuisance))]]$estimation
+    pi_from <- best("pi")
+    mu_from <- best("mu")
     tibble(pi = pi_from$pi, mu = mu_from$mu, mu1 = mu_from$mu1, mu0 = mu_from$mu0)
 }
 
@@ -278,12 +278,12 @@ N_OBS <- 500
 run_cell <- function(dgp_name, n_obs, rep, libraries, estimators) {
     d <- cell_data(dgp_name, n_obs, rep)
     dgp <- DGPS[[dgp_name]]
-    truth <- with(d$eval, tibble(pi = plogis(dgp$rho(W1, W2)), mu = dgp$mu(A, W1, W2)))
+    truth <- with(d$estimation, tibble(pi = plogis(dgp$rho(W1, W2)), mu = dgp$mu(A, W1, W2)))
     per_library <- map(libraries, \(lib) {
         preds <- library_preds(d, LIBRARIES[[lib]])
         estimates <- map(estimators, \(e) {
             # a failure records NA and gets counted; it does not end the run
-            res <- try(ESTIMATORS[[e]](d$eval, preds), silent = TRUE)
+            res <- try(ESTIMATORS[[e]](d$estimation, preds), silent = TRUE)
             if (inherits(res, "try-error")) res <- list(est = NA_real_, est_se = NA_real_)
             tibble(estimator = e, est = res$est, se = res$est_se)
         }) |> bind_rows()
