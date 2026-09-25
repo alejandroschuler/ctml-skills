@@ -24,9 +24,40 @@ In a Claude Code session:
 
 Install `paper-pipeline@ctml-skills`, `overleaf-tools@ctml-skills` or `claude-code-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
 
-To get a new version, run `claude plugin marketplace update ctml-skills`, then `claude plugin update stats-research@ctml-skills`, and restart Claude Code.
-
 Installed skills carry their plugin's name as a prefix, for example `stats-research:supervised-learning`.
+
+## Keep the plugins up to date
+
+Claude Code does not update plugins from this marketplace by itself, because auto-update is off by default for third-party marketplaces like this one. You turn it on in `~/.claude/settings.json`. The `marketplace add` command already wrote a `ctml-skills` entry there. Add `"autoUpdate": true` next to its `source`.
+
+If you use the Claude desktop app, also add `FORCE_AUTOUPDATE_PLUGINS` to the `env` block. The desktop app starts Claude Code with `DISABLE_AUTOUPDATER=1`, and that variable stops automatic plugin updates unless `FORCE_AUTOUPDATE_PLUGINS` is also set. Merge both keys into the settings that you have, and keep the rest of the file:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "ctml-skills": {
+      "source": { "source": "github", "repo": "alejandroschuler/ctml-skills" },
+      "autoUpdate": true
+    }
+  },
+  "env": {
+    "FORCE_AUTOUPDATE_PLUGINS": "1"
+  }
+}
+```
+
+In a terminal session without that variable, the `/plugin` menu can add `autoUpdate` for you. Open its **Marketplaces** tab, select `ctml-skills`, then select **Enable auto-update**.
+
+With auto-update on, Claude Code checks the marketplace within ten minutes after your first message in a session. It puts new versions on disk, and your next session loads them. A plugin updates only when the `version` in its `.claude-plugin/plugin.json` goes up. If you change a plugin in this repo, raise that version.
+
+To update by hand, run these in a terminal and then restart Claude Code:
+
+```bash
+claude plugin marketplace update ctml-skills
+claude plugin update stats-research@ctml-skills
+```
+
+Update each other plugin that you use with the same command.
 
 ## Use without the plugin system
 
