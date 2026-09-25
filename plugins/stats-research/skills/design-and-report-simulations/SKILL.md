@@ -52,7 +52,11 @@ Sort the claims by what kind of evidence can carry them. Theory carries asymptot
 
 Turn each claim into something a simulation can actually answer, by interrogating every word that could mean more than one thing. `references/sharpening-goals.md` has a full worked example of this interrogation, and it is worth reading the first time you do it, because the move is easy to describe and easy to skip.
 
-The pattern: state the goal, list what is unpinned, rewrite. "TMLE is better than plugins" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. The rewrite names all four.
+The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. The rewrite names all four.
+
+Pin down the comparators here too, and always consider an oracle or semi-oracle among them. An oracle is given something only the simulation knows, so no analyst could run it on real data. Usually that is the true value of each nuisance function, such as the propensity score or the outcome regression. A semi-oracle gets the true values of some nuisance functions and estimates the rest.
+
+Both help test two kinds of claim. An ablation claim says how much one part of a method contributes to its performance, and a mechanism-of-action claim says why a method works. If one method's advantage disappears once every method gets the true propensity score, the advantage comes from how the methods cope with estimating it. An oracle also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-goals.md` works through a case and gives a reason an oracle is not always a ceiling.
 
 Stop when a skeptical reader could look at the planned output and agree the goal was met or not met. If two people could read the goal and disagree about whether a given table supports it, keep going.
 
@@ -75,7 +79,7 @@ Mockups are also the cheapest possible feedback. Show them to a coauthor before 
 
 Being able to *reason* about a DGP and *iterate* on it matters more than making it realistic. If you cannot predict roughly what should happen, you cannot tell a bug from a finding, and most of your time will go to that confusion.
 
-Sensible defaults, and the diagnostics worth computing on any DGP before trusting it, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, signal-to-noise, and how nonlinear the truth actually is.
+Sensible defaults, and the diagnostics worth computing on any DGP before trusting it, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, variance explained, and how nonlinear the truth actually is.
 
 Learners and their tuning are settings too. Set them up with the `supervised-learning` skill.
 
@@ -91,7 +95,7 @@ Write the code once, in the shape every later step reuses. The pilot runs it at 
 
 Three properties decide how cheap the rest of the project will be:
 
-- **Share whatever can be shared.** When two claims need overlapping computation, they get it from the same code and the same stored outputs. If one table compares learner libraries by the RMSE of their nuisance predictions and another reports TMLE built on some of those libraries, the TMLE code reads the predictions the RMSE table came from, and nothing gets refit in a second script. A fix then reaches every display at once, and the displays stay paired on the same datasets.
+- **Share whatever can be shared.** When two claims need overlapping computation, they get it from the same code and the same stored outputs. If one table compares learner libraries by the root mean squared error (RMSE) of their nuisance predictions and another reports TMLE built on some of those libraries, the TMLE code reads the predictions the RMSE table came from, and nothing gets refit in a second script. A fix then reaches every display at once, and the displays stay paired on the same datasets.
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
 - **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's cross-validated predictions too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it, so that a hit always equals what recomputing would give and deleting the cache changes nothing but runtime.
 
@@ -101,15 +105,15 @@ Beyond those three, simulation code is written to be run and rewritten, not main
 
 A mockup is a hypothesis. It says that once this table is filled in, particular cells will differ, in a particular direction, by enough to see. A pilot tests that hypothesis for a few minutes of compute, before the full run spends hours either confirming it or quietly failing to.
 
-The failure this catches is specific and expensive. When the contrast a table was built to display is smaller than the Monte Carlo SE of the difference between its cells at the planned number of repetitions, the cells come back indistinguishable, and **an unresolvable design produces a null result that looks exactly like a true null.** You cannot tell "these methods really do perform the same" from "this simulation could never have told them apart", and neither can a reader. The discovery also arrives after the compute is spent and the deadline is near, when every remaining fix is a bad one.
+The failure this catches is specific and expensive. When the contrast a table was built to display is less than about three Monte Carlo standard errors (SEs) of the difference between its cells at the planned number of repetitions, the cells cannot be reliably told apart, and **an unresolvable design produces a null result that looks exactly like a true null.** You cannot tell "these methods really do perform the same" from "this simulation could never have told them apart", and neither can a reader. The discovery also arrives after the compute is spent and the deadline is near, when every remaining fix is a bad one.
 
 Three checks, in increasing cost:
 
 1. **Does it run?** Two repetitions. Catches the errors that are embarrassing rather than interesting.
-2. **Are the DGPs what you think they are?** One large draw, computing the diagnostics in `references/designing-dgps.md`: true estimand value, overlap, signal-to-noise, and how nonlinear the truth is. These belong in the paper, so the work is not wasted.
+2. **Are the DGPs what you think they are?** One large draw, computing the diagnostics in `references/designing-dgps.md`: true estimand value, overlap, variance explained, and how nonlinear the truth is. These belong in the paper, so the work is not wasted.
 3. **Is the designed contrast resolvable?** Roughly 100 to 200 repetitions. This is the check that gets skipped, and the one that saves whole runs.
 
-The third check, briefly. A contrast between two means over repetitions (bias, MSE, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
+The third check, briefly. A contrast between two means over repetitions (bias, mean squared error, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
 
 ```
 n_sim  >=  ( k * sd(d) / mean(d) )^2        k = 3 to see it, 5 to be comfortable
@@ -141,15 +145,15 @@ Read `references/writing-the-writeup.md` before drafting. It carries the detail;
 
 > In the first part I tell 'em what I am going to tell 'em; in the second part, well, I tell 'em; in the third part I tell 'em what I've told 'em.
 
-**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating mechanisms, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
+**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
 
 **Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose cannot be stated in one sentence is a display to cut.
 
-**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. "Why" is the part that gets dropped, and it is the part that separates a report from a list of numbers.
+**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. Each oracle or semi-oracle gets one too, and its reason is the claim or subclaim it helps test. "Why" is the part that gets dropped, and it is the part that separates a report from a list of numbers.
 
 ## Performance measures
 
-Which measures to compute depends entirely on the claim. Bias, empirical SE, MSE, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions.
+Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions.
 
 That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behaviour need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
 

@@ -2,7 +2,7 @@
 
 From Morris, White & Crowther (2019), "Using simulation studies to evaluate statistical methods", *Statistics in Medicine* 38(11):2074-2102.
 
-ADEMP is a structure for the part of the write-up that comes before any numbers: Aims, Data-generating mechanisms, Estimands, Methods, Performance measures. It is the "tell 'em what you're going to tell 'em" slice of the sandwich.
+ADEMP is a structure for the part of the write-up that comes before any numbers: Aims, Data-generating processes, Estimands, Methods, Performance measures. It is the "tell 'em what you're going to tell 'em" slice of the sandwich.
 
 Aims is the important element. The other four exist to serve it, and a reader judges them by whether they make the aims answerable. It is fine to run through ADEMP once for the whole study, or once per claim when the claims need different setups.
 
@@ -21,9 +21,9 @@ Properties a simulation can target include consistency, finite-sample unbiasedne
 
 Every performance measure below should trace back to an aim here. A measure with no aim is padding; an aim with no measure is unanswered.
 
-## D: Data-generating mechanisms
+## D: Data-generating processes
 
-Enough detail that a reader could regenerate the data from the text alone, without opening the code.
+Enough detail that a reader could regenerate the data from the text alone, without opening the code. Morris et al. call these data-generating mechanisms; this skill calls each one a data-generating process (DGP).
 
 State the generating equations and every parameter value. Say which factors vary and at what levels: sample size, effect size, censoring rate, degree of misspecification, correlation structure. Say whether the design is fully factorial, partially factorial, or one-at-a-time from a reference configuration, since that determines which interactions the study can speak to. A one-at-a-time design cannot detect interactions, and saying so in the discussion is better than letting a reader assume otherwise.
 
@@ -31,7 +31,7 @@ If parameters came from a real analysis, say which. If the data are resampled ra
 
 Pitfalls worth checking for in the code:
 
-- **Giving the analyst knowledge only the simulator has.** If the DGP is used to construct the analysis in a way no applied analyst could replicate, the results are optimistic and do not transfer.
+- **Giving the analyst knowledge only the simulator has.** If the DGP is used to construct the analysis in a way no applied analyst could replicate, the results are optimistic and do not transfer. Oracles and semi-oracles are the exception, because they use true values from the DGP on purpose and are reported as such (see Methods).
 - **Mixing Bayesian and frequentist logic.** Drawing parameters from a prior each repetition targets a different quantity from fixing them and drawing data repeatedly. Both are legitimate; conflating them is not.
 - **Side effects of generation shortcuts.** Tricks for inducing correlation, censoring, or missingness often change more than intended. Check the realized DGP against the intended one on one very large dataset.
 
@@ -51,7 +51,9 @@ Enough detail to reimplement without the code, plus software and version.
 
 Tuning is part of the method definition: hyperparameters, cross-validation scheme, number of folds, bootstrap draws, convergence tolerance. For learners, report the setup that the `supervised-learning` skill records, including whether the selected settings fell inside their grids. So is the rule applied when a method fails to converge, which is a design decision rather than an implementation detail because it changes what every downstream number means.
 
-Say why each method is in the comparison. Methods should be plausible candidates or in genuine practical use; including a known-flawed method is defensible when practitioners use it, and the reason belongs in the text. Note whether each is available in accessible software, since that governs whether readers can act on the findings.
+Say why each method is in the comparison. Including a known-flawed method is defensible when practitioners use it, and the reason belongs in the text. Note whether each is available in accessible software, since that governs whether readers can act on the findings.
+
+Always consider oracle and semi-oracle versions of the methods. An oracle version gets every nuisance function at its true value from the DGP, and a semi-oracle version gets only some of them. The nuisance functions are whatever the method estimates on the way to the estimand, such as the propensity score or the outcome regression. Include one when a claim or subclaim needs it. It can test an ablation claim, about how much one part of a method contributes to its performance, or a mechanism-of-action claim, about why a method works. It can also show how close the feasible (non-oracle) methods come to the best case. Say which nuisance functions take their true values, and justify each oracle or semi-oracle by the claim it serves. Label each one as such in every table and figure, so that no reader takes it for a method they could run.
 
 ## P: Performance measures
 

@@ -7,9 +7,9 @@ The measures below answer specific questions, so pick by question:
 | The claim is about... | Measure |
 |---|---|
 | Finite-sample unbiasedness | Bias |
-| Precision, absolute or relative to a competitor | Empirical SE, relative % increase in precision |
-| Overall accuracy, trading bias against variance | MSE, relative efficiency |
-| Whether the method's own variance estimate is honest | Average model SE vs empirical SE, relative % error in model SE |
+| Precision, absolute or relative to a competitor | Empirical standard error, relative % increase in precision |
+| Overall accuracy, trading bias against variance | Mean squared error (MSE), relative efficiency |
+| Whether the method's own variance estimate is honest | Average model standard error (SE) vs empirical SE, relative % error in model SE |
 | Frequentist interval validity | Coverage, with bias-eliminated coverage as a diagnostic |
 | Type I error or power | Rejection rate |
 
@@ -28,7 +28,8 @@ Formulas follow Morris, White & Crowther (2019), Table 6, cross-checked against 
 | $\hat\theta_{i,\text{low}}, \hat\theta_{i,\text{upp}}$ | confidence interval limits from repetition $i$ |
 | $p_i$ | the p-value from repetition $i$ |
 | $n_{sim}$ | number of repetitions **used**, after failures are excluded |
-| $n_{obs}$ | sample size of each simulated dataset, a DGM parameter, not $n_{sim}$ |
+| $n_{obs}$ | sample size of each simulated dataset, a parameter of the data-generating process (DGP), not $n_{sim}$ |
+| $\mathrm{MCSE}(\cdot)$ | the Monte Carlo standard error of an estimated performance measure, its standard deviation over reruns of the whole simulation at $n_{sim}$ repetitions |
 
 Keep $n_{sim}$ and $n_{obs}$ typographically distinct in the write-up. Confusing them is a common reader trap.
 
@@ -94,7 +95,7 @@ Two standards exist and they are not the same bar. Neyman's *randomisation valid
 
 Causes of undercoverage, in the order worth checking: nonzero bias; $\widehat{\text{ModSE}} < \widehat{\text{EmpSE}}$; a non-normal sampling distribution of $\hat\theta$ when the interval is Wald-type; a variance estimator that is itself too variable. Overcoverage usually means $\widehat{\text{ModSE}} > \widehat{\text{EmpSE}}$.
 
-Undercoverage from bias gets worse as $n_{obs}$ grows, unless the bias shrinks at least as fast as $1/n_{obs}$. Intervals narrow around the wrong value. A study run at a single sample size can therefore look much better than the method is.
+Undercoverage from bias gets worse as $n_{obs}$ grows, unless the bias shrinks at least as fast as the standard error, which is usually proportional to $1/\sqrt{n_{obs}}$. Intervals narrow around the wrong value. A study run at a single sample size can therefore look much better than the method is.
 
 ### Bias-eliminated coverage
 
@@ -106,7 +107,7 @@ Coverage of $\bar\theta$ rather than $\theta$, which removes bias from the calcu
 
 $$\Pr(p_i \le \alpha) \qquad \widehat{\text{Rej}} = \frac{1}{n_{sim}}\sum_{i=1}^{n_{sim}} \mathbf{1}(p_i \le \alpha) \qquad \mathrm{MCSE} = \sqrt{\frac{\widehat{\text{Rej}}\,(1-\widehat{\text{Rej}})}{n_{sim}}}$$
 
-Under a null DGM this estimates type I error; under a non-null DGM it estimates power. Label which, state $\alpha$, and never compare power across methods whose type I error differs.
+Under a null DGP this estimates type I error; under a non-null DGP it estimates power. Label which, state $\alpha$, and never compare power across methods whose type I error differs.
 
 When p-values are not stored, the Wald equivalent is $\mathbf{1}\left(|\hat\theta_i| \ge z_{\alpha/2}\sqrt{\widehat{\mathrm{Var}}(\hat\theta_i)}\right)$. Say which one was used.
 

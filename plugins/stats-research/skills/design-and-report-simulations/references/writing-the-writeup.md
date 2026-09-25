@@ -22,7 +22,7 @@ For each unit of evidence, in order:
 
 Be prosaic and direct. This is one of the few places in academic writing where stating the obvious is correct, because it is only obvious to the person who designed the study.
 
-The same sandwich works for non-simulation evidence. For a real-data application:
+The same sandwich works for non-simulation evidence. For a real-data application of targeted maximum likelihood estimation (TMLE):
 
 > The point of this application is to show how fast TMLE is on a real-world dataset of size *n*, to demonstrate that it works with mixed data types, to show it can be prespecified, and to confirm it produces plausible results.
 
@@ -30,9 +30,9 @@ That sentence tells the reader exactly what to look for before they see anything
 
 ## ADEMP is the "tell 'em what you're going to tell 'em"
 
-Before any results, describe Aims, Data-generating mechanisms, Estimands, Methods, and Performance measures. See `ademp.md` for what each element needs. Aims is the most important one; everything else exists to serve it.
+Before any results, describe Aims, Data-generating processes (DGPs), Estimands, Methods, and Performance measures. See `ademp.md` for what each element needs. Aims is the most important one; everything else exists to serve it.
 
-DGPs must be fully described. Methods must be described with enough detail to reimplement without code, including hyperparameter tuning, grids, etc. Similarly, performance metrics must be clearly described so someone with the raw results file could recompute them without code.
+DGPs must be fully described. Methods must be described with enough detail to reimplement without code, including hyperparameter tuning, grids, etc. Similarly, performance measures must be clearly described so someone with the raw results file could recompute them without code.
 
 Do this once for the whole study when the claims share a setup, or separately per claim when they do not.
 
@@ -41,7 +41,7 @@ Do this once for the whole study when the claims share a setup, or separately pe
 Every table and figure caption names the claim it serves. Not just what the table contains, which the reader can see, but what it is *for*.
 
 Weak: "Table 2: Performance of three estimators across three DGPs."
-Better: "Table 2: TMLE and AIPW achieve comparable MSE and near-nominal coverage at n = 300, while the plug-in estimator's intervals undercover badly. Supports the claim that debiasing is necessary for valid inference at moderate n."
+Better: "Table 2: TMLE and augmented inverse probability weighting achieve comparable mean squared error and near-nominal coverage at n = 300, while the plug-in estimator's intervals undercover badly. Supports the claim that debiasing is necessary for valid inference at moderate n."
 
 If the purpose cannot be stated in one sentence, that is a signal the display should be cut or split.
 
@@ -62,6 +62,7 @@ The "why" is the part that gets dropped, and it is what separates a report from 
 - Why these DGPs, and what do they span?
 - Why this range of sample sizes?
 - Why these learners or tuning parameters?
+- Why each oracle or semi-oracle (a method given the true nuisance functions, in whole or in part), and which claim or subclaim does it help test?
 - Why this estimand?
 - Why these performance measures, for this claim?
 - Why this many repetitions?
@@ -95,7 +96,7 @@ Pick by the question the display answers, not by habit.
 
 **Lollipop plot.** Performance estimates as points with their Monte Carlo intervals, methods stacked within each DGP. Puts many methods on one readable axis with uncertainty visible.
 
-**Zip plot** (Morris et al. 2019), for explaining why coverage is off. Compute $z_i = (\hat\theta_i - \theta)/\widehat{\mathrm{SE}}(\hat\theta_i)$, rank repetitions by $|z_i|$ into fractional centiles for the vertical axis, and draw each interval as a horizontal segment coloured by whether it covers $\theta$. Under correct coverage the colour switches cleanly at 95. A ragged switch, or misses on one side only, distinguishes a width problem from a bias problem. Centile binning keeps it legible at any number of repetitions.
+**Zip plot** (Morris et al. 2019), for explaining why coverage is off. Compute $z_i = (\hat\theta_i - \theta)/\widehat{\mathrm{SE}}(\hat\theta_i)$, the distance from repetition $i$'s estimate $\hat\theta_i$ to the true value $\theta$, in units of the standard error (SE) that the method reports for that repetition. Rank repetitions by $|z_i|$ into fractional centiles for the vertical axis, and draw each interval as a horizontal segment coloured by whether it covers $\theta$. For 95% intervals with correct coverage, the colour switches at 95. With Wald intervals the switch is always clean, because such an interval misses the true value $\theta$ if and only if the standardized distance $|z_i|$ exceeds 1.96, so the diagnosis comes from two other features. The height of the switch is the coverage. Misses mostly on one side of the true value $\theta$ point to bias, while misses on both sides with the switch below 95 point to intervals that are too narrow, and a switch above 95 to intervals that are too wide. The centile scale keeps it legible at any number of repetitions.
 
 **Nested loop plot**, for factorial designs too large to tabulate. Nested factors run along the horizontal axis with methods overplotted as lines. Carries a four- or five-factor design that no table could hold.
 

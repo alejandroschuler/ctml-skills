@@ -85,11 +85,11 @@ diagnose.dgp <- \(dgp, n = 1e5, seed = 1) {
                pi_true = plogis(dgp$rho(W1, W2)))
     mu_lin <- lm(mu_true ~ A + W1 + W2, data = pop)
     tibble(
-        ate          = ATE(dgp, n),
-        pi_min       = min(pop$pi_true),        # overlap
-        pi_max       = max(pop$pi_true),
-        signal_noise = var(pop$mu_true) / var(pop$Y),
-        linear_share = var(predict(mu_lin, pop)) / var(pop$mu_true)
+        ate           = ATE(dgp, n),
+        pi_min        = min(pop$pi_true),       # overlap
+        pi_max        = max(pop$pi_true),
+        var_explained = var(pop$mu_true) / var(pop$Y),
+        linear_share  = var(predict(mu_lin, pop)) / var(pop$mu_true)
     )
 }
 
