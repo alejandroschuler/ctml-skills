@@ -1,17 +1,17 @@
 ---
 name: readable-math
-description: Verify the mathematical content of a human-facing document is readable — every symbol, abbreviation, or domain-specific term is defined at or before its first use, parsimonious, and unambiguous; every derivation step follows clearly from the previous. Invoke after editing any qmd, LaTeX, or human-facing markdown document, before declaring the task done.
+description: Verify the mathematical content of a LaTeX document is readable. This means every symbol, abbreviation, or domain-specific term is defined at or before its first use, parsimonious, and unambiguous, and every derivation step follows clearly from the previous one. Invoke after editing any LaTeX (.tex) document, before declaring the task done. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks.
 ---
 
 # Readable math
 
-Before declaring any human-facing doc (`.qmd`, `.tex`, `.md`, `.rmd`, `.markdown` — anything a human reads top-to-bottom) finished, run this check.
+Before declaring a LaTeX document (`.tex`) finished, run this check. It does not apply to `.qmd`, `.md`, `.rmd` or `.markdown` files unless the user asks for it.
 
 ## Procedure
 
 ### Notation Check
 
-1. Identify the file(s) edited in this turn that are human-facing docs.
+1. Identify the `.tex` file(s) edited in this turn.
 2. For each, dispatch an Explore subagent with this prompt. **Do not enumerate the Notation table, list expected symbols, or otherwise pre-tell the subagent what should be defined** — the subagent must discover all definitions by reading the file itself.
 
    > Read this document top-to-bottom: `<absolute path>`. List every mathematical symbol, abbreviation, or domain-specific term and the line where it is *first used*. For each, say whether it has been defined at or before that line, classify *how* it is defined, and judge whether the chosen notation is useful, parsimonious, and unambiguous. Be terse — output one line per symbol, in the form `LINE: SYMBOL — first used on line X, defined on line Y (kind: formal | contextual | not defined), parsimony: minimal | over-decorated (e.g. could drop subscript Z — no other Z in doc), ambiguous: conflicts with previous symbol XXX`. *Formal* = a `let X := ...` line, an explicit "X denotes ..." clause, or a Notation-table row. *Contextual* = meaning only inferable from surrounding prose. Do not trust any priming in this dispatch about what *should* be defined — rely only on what *is* defined in the file; if a definition is asserted but you cannot locate it, treat the symbol as undefined.
@@ -57,6 +57,7 @@ Before declaring any human-facing doc (`.qmd`, `.tex`, `.md`, `.rmd`, `.markdown
 
 ## When to skip
 
+- Files that are not `.tex`, such as `.qmd`, `.md` and `.rmd` documents, unless the user asks for the check.
 - Pure code edits (no narrative changes).
 - Trivial typo or whitespace fixes.
-- Files that are not human-facing (READMEs in non-research projects, internal config, etc.) — judgment call.
+- `.tex` files with no mathematical prose, such as a preamble of macro definitions. This is a judgment call.

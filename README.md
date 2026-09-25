@@ -6,12 +6,12 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 
 | Plugin | Skills | Use it for |
 |---|---|---|
-| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a document is defined before it is used. |
+| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a LaTeX document is defined before it is used. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
 | `overleaf-tools` | `overleaf-comments` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
-The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished prose to `readable-math`, so install that plugin whole.
+The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.
 
 ## Install in Claude Code
 
