@@ -1,6 +1,6 @@
 {
   "name": "stats-research",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and check that mathematical writing is readable.",
   "author": {
     "name": "Alejandro Schuler"
