@@ -6,7 +6,7 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 
 | Plugin | Skills | Use it for |
 |---|---|---|
-| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a LaTeX document is defined before it is used. |
+| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a LaTeX document is defined before it is used and every derivation step can be followed. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
 | `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
@@ -72,6 +72,12 @@ Any time simulation work is in play, invoke the `stats-research:design-and-repor
 
 Any time supervised machine learning, or similar loss-based learning such as Riesz regression, is in play, invoke the `stats-research:supervised-learning` skill first.
 ```
+
+## Checking readable math
+
+`stats-research:readable-math` checks the notation and the derivations of a LaTeX document with two agents of the type `stats-research:readable-math-checker`, which run at the same time and do not edit files. The checkers always read the whole document, but by default they audit only the text that changed since the last check. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, and compares them with a copy saved at the last check. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
+
+To audit the whole document, run `/stats-research:readable-math full`, or ask Claude for a full readable-math check.
 
 ## Reading Overleaf comments
 
