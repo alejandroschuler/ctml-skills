@@ -13,14 +13,14 @@ The rest of this skill uses three terms. A **learner type** is a learning algori
 
 | Learner type | Speed | Notes |
 |---|---|---|
-| **MARS** (multivariate adaptive regression splines, `earth`) | Very fast | Works well with one set of hyperparameters. Set the interaction degree high enough and keep pruning on. |
+| **MARS** (multivariate adaptive regression splines; `earth` in R, `pymars` in Python) | Very fast | Works well with one set of hyperparameters. Set the interaction degree high enough and keep pruning on. |
 | **Random forests** (ranger) | Fast | Fine on defaults. Worse for smooth functions. Same family as gradient-boosted trees, which usually do better once tuned. |
 | **Gradient-boosted trees** (lightgbm, xgboost) | Fast | Beats almost everything. Needs tuning over number of trees, depth, learning rate. Use early stopping. |
 | **Elastic net** | Fast (ridge) | Loses under moderate nonlinearity. Good as a baseline. Needs regularization tuning. Covers lasso, ridge and the main-terms generalized linear model (GLM). |
 | **Kernel ridge** | Slow | Good for smooth functions and easy to analyze theoretically. Only for $n < 1000$. |
 | **Small neural net** (one or two hidden layers) | Moderate | Same family as kernel ridge, and takes its place from 1000 observations up. Needs tuning over width and weight decay. |
 
-In Python, `HistGradientBoosting{Regressor,Classifier}` from scikit-learn is the fast tabular default and needs no extra dependency. MARS has no maintained Python implementation. A generalized additive model from `pygam` can stand in for it there, but it fits interactions only through tensor-product terms that you add by hand, while MARS searches for them. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
+In Python, `HistGradientBoosting{Regressor,Classifier}` from scikit-learn is the fast tabular default and needs no extra dependency. For MARS, use `pymars.EarthRegressor` or `pymars.EarthClassifier`, both scikit-learn estimators, installed with `pip install git+https://github.com/alejandroschuler/mars`. Install it from that repository and not from PyPI, where the `mars-earth` package is older upstream code with the same import name. Set `max_degree`, the interaction degree, since its default is 1, as in earth. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
 
 Deeper networks are worth avoiding unless you specifically need a differentiable model, a custom loss, or fine-tuning. They are hard to tune and gradient boosting wins on tabular data.
 
