@@ -75,7 +75,7 @@ Any time supervised machine learning, or similar loss-based learning such as Rie
 
 ## Checking readable math
 
-`stats-research:readable-math` checks the notation and the derivations of a LaTeX document with two read-only agents of the type `stats-research:readable-math-checker`, which run at the same time. The checkers always read the whole document, but by default they audit only the text that changed since the last check. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, and compares them with a copy saved at the last check. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
+`stats-research:readable-math` checks the notation and the derivations of a LaTeX document with two agents of the type `stats-research:readable-math-checker`, which run at the same time and do not edit files. The checkers always read the whole document, but by default they audit only the text that changed since the last check. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, and compares them with a copy saved at the last check. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
 
 To audit the whole document, run `/stats-research:readable-math full`, or ask Claude for a full readable-math check.
 

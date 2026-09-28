@@ -27,7 +27,7 @@ Arguments: $ARGUMENTS
 
 2. **Dispatch the two checkers in one message**, so that they run at the same time. For each document in the report, start one notation checker and one derivation checker with the Agent tool:
 
-   - `subagent_type`: `stats-research:readable-math-checker`, which can only read. If that type is not available, use `general-purpose` and add "Do not edit any file." to each prompt.
+   - `subagent_type`: `stats-research:readable-math-checker`, which has no tool for editing files. If that type is not available, use `general-purpose` and add "Do not edit any file." to each prompt.
    - Notation prompt: `Follow ${CLAUDE_SKILL_DIR}/references/notation-check.md. The change report is <report path>.`
    - Derivation prompt: `Follow ${CLAUDE_SKILL_DIR}/references/derivation-check.md. The change report is <report path>.`
 
