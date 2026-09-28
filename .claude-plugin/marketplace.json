@@ -1,6 +1,6 @@
 {
   "name": "ctml-skills",
-  "description": "Agent skills for statistical methods research: simulation studies, supervised learning, readable math, reproducible papers, and Overleaf comments.",
+  "description": "Agent skills for statistical methods research: simulation studies, supervised learning, readable math, reproducible papers, Overleaf comments, and a tidy LaTeX source layout.",
   "owner": {
     "name": "Alejandro Schuler"
   },
@@ -18,7 +18,7 @@
     {
       "name": "overleaf-tools",
       "source": "./plugins/overleaf-tools",
-      "description": "Read the review comments and tracked changes on an Overleaf project, which the Overleaf git bridge does not carry."
+      "description": "Work on LaTeX manuscripts that live on Overleaf: read the review comments and tracked changes that the git bridge does not carry, and keep each theorem with its proof, and each TikZ figure, in a file of its own."
     },
     {
       "name": "claude-code-utils",

@@ -1,6 +1,6 @@
 # ctml-skills
 
-Agent skills for statistical methods research, packaged as a Claude Code plugin marketplace. They cover designing and reporting simulation studies, setting up and tuning supervised learners, checking that mathematical writing is readable, keeping a paper's figures and numbers in step with the code that made them, and reading the comments that coauthors leave on Overleaf.
+Agent skills for statistical methods research, packaged as a Claude Code plugin marketplace. They cover designing and reporting simulation studies, setting up and tuning supervised learners, checking that mathematical writing is readable, keeping a paper's figures and numbers in step with the code that made them, reading the comments that coauthors leave on Overleaf, and keeping each theorem and each TikZ figure of a paper in a file of its own.
 
 ## What is here
 
@@ -8,7 +8,7 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 |---|---|---|
 | `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a LaTeX document is defined before it is used. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
-| `overleaf-tools` | `overleaf-comments` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. |
+| `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.

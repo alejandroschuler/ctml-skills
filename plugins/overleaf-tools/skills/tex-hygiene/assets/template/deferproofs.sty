@@ -1,0 +1,94 @@
+%% deferproofs.sty
+%%
+%% Keeps each result and its proof together in one file, theory/<slug>.tex,
+%% and prints the proof in the appendix. Part of the tex-hygiene skill in the
+%% overleaf-tools plugin of ctml-skills.
+%%
+%% Copy this file next to main.tex. Load it after the theorem declarations,
+%% and after hyperref and cleveref:
+%%
+%%   \usepackage{deferproofs}
+%%
+%% It sets up:
+%%   - proof-at-the-end, with each deferred statement restated above its proof
+%%     in the appendix;
+%%   - the environments theoremE, propositionE, lemmaE, corollaryE and proofE;
+%%   - a plain "Proof." header on each deferred proof;
+%%   - the pointer from the statement to its proof, set in front of the first
+%%     word of the next paragraph;
+%%   - a \printProofs that prints nothing, instead of stopping the build, when
+%%     no deferred result has been stated yet.
+%%
+%% A paper that defines other result environments adds its own aliases after
+%% this package, for example \newEndThm{claimE}{claim}.
+\NeedsTeXFormat{LaTeX2e}[2021/06/01]
+\ProvidesPackage{deferproofs}[2026/09/28 v1.0 proof-at-the-end setup for theory/ files]
+
+\RequirePackage[conf={end, restate}]{proof-at-the-end}
+
+\newEndThm{theoremE}{theorem}
+\newEndThm{propositionE}{proposition}
+\newEndThm{lemmaE}{lemma}
+\newEndThm{corollaryE}{corollary}
+\newEndProof{proofE}
+
+%% Each deferred proof gets a numbered appendix subsection from the textAtEnd
+%% block in its theory file, so the proof header does not repeat the
+%% subsection title. An empty proof name prints the default "Proof.", because
+%% thmtools, which proof-at-the-end loads, treats it that way.
+\pratendSetGlobal{text proof=}
+
+%% The pointer to a deferred proof ("The proof is in subsection A.3.") goes in
+%% front of the first word of the next paragraph, not on a line of its own.
+%% \everypar fires once when that paragraph starts. It removes the paragraph
+%% indent and sets the pointer.
+\newif\ifdeferproofs@pending
+\newcommand\deferproofs@arm[1]{%
+  \gdef\deferproofs@pointer{#1}%
+  \global\deferproofs@pendingtrue
+  \global\everypar{\deferproofs@runin}%
+}
+\newcommand\deferproofs@runin{%
+  \global\everypar{}%
+  \global\deferproofs@pendingfalse
+  {\setbox\z@\lastbox}%
+  \deferproofs@pointer\space
+}
+%% A heading, a list, a theorem or a proof starts a paragraph of its own.
+%% Without this step the pointer would go into a heading, or a list would
+%% delete it. So the pointer is set as a paragraph of its own first. Material
+%% in a box, such as a float, is skipped, and the pointer waits for the next
+%% paragraph of body text.
+\newcommand\deferproofs@flush{%
+  \ifdeferproofs@pending
+    \ifinner\else
+      \global\everypar{}%
+      \global\deferproofs@pendingfalse
+      \par\noindent\deferproofs@pointer\par
+    \fi
+  \fi
+}
+\AddToHook{cmd/part/before}{\deferproofs@flush}
+\AddToHook{cmd/chapter/before}{\deferproofs@flush}
+\AddToHook{cmd/section/before}{\deferproofs@flush}
+\AddToHook{cmd/subsection/before}{\deferproofs@flush}
+\AddToHook{cmd/subsubsection/before}{\deferproofs@flush}
+\AddToHook{cmd/paragraph/before}{\deferproofs@flush}
+\AddToHook{cmd/subparagraph/before}{\deferproofs@flush}
+\pretocmd{\trivlist}{\deferproofs@flush}{}{%
+  \PackageWarning{deferproofs}{Could not patch \string\trivlist}}
+\pretocmd{\list}{\deferproofs@flush}{}{%
+  \PackageWarning{deferproofs}{Could not patch \string\list}}
+\pgfkeys{/prAtEnd/text link/.code={\def\pratendtextlink{\deferproofs@arm{#1}}}}
+
+%% \printProofs reads the file of proofs that proof-at-the-end writes during
+%% the build. Before the first deferred result, that file does not exist and
+%% the stock command stops the build. A file left by an earlier build would
+%% print stale proofs. So the file is read only when this build wrote to it.
+\RenewDocumentCommand\printProofs{O{defaultcategory}}{%
+  \ifcsdef{pratendmacrocat#1}%
+    {\input{\prefixPrAtEndFiles#1.tex}}%
+    {\PackageWarning{deferproofs}{No deferred proofs in category `#1' to print}}%
+}
+
+\endinput

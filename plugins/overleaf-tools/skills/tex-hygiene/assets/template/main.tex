@@ -1,0 +1,55 @@
+% A small paper laid out the tex-hygiene way. Each result lives with its proof
+% in theory/<slug>.tex, and each TikZ figure lives in tikz/<slug>.tex. This
+% file only says where they go. Build it with `latexmk -pdf main.tex`, or with
+% three pdflatex passes.
+\documentclass{article}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{thmtools}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue]{hyperref}
+\usepackage{cleveref}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}  % every library that a tikz/ figure needs
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+
+% After the theorem declarations, and after hyperref and cleveref.
+\usepackage{deferproofs}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+
+\section{Setup}
+
+Let $X_1, \dots, X_n$ be independent draws from a distribution with mean $\mu$
+and finite variance $\sigma^2$, and let $\bar X_n = n^{-1} \sum_{i=1}^n X_i$ be
+their sample mean.
+
+\input{theory/mean-consistency}
+The pointer to the proof runs into this paragraph. \Cref{fig:mean-tails} shows
+the probability that the proposition bounds.
+
+\input{tikz/mean-tails}
+
+\appendix
+\section{Proofs}
+
+\subsection{A supporting lemma}
+
+% A result that is stated and proved in the appendix uses the plain
+% environments, and its file is input where it belongs.
+\input{theory/chebyshev}
+
+% Every deferred proof, in the order its statement appears in the body. Each
+% one brings its own subsection heading from the textAtEnd block in its file.
+\printProofs
+
+\end{document}

@@ -1,12 +1,12 @@
 {
   "name": "overleaf-tools",
-  "version": "0.1.0",
-  "description": "Read the review comments and tracked changes on an Overleaf project, which the Overleaf git bridge does not carry.",
+  "version": "0.2.0",
+  "description": "Work on LaTeX manuscripts that live on Overleaf: read the review comments and tracked changes that the git bridge does not carry, and keep each theorem with its proof, and each TikZ figure, in a file of its own.",
   "author": {
     "name": "Alejandro Schuler"
   },
   "homepage": "https://github.com/alejandroschuler/ctml-skills",
   "repository": "https://github.com/alejandroschuler/ctml-skills",
   "license": "MIT",
-  "keywords": ["overleaf", "latex", "comments", "review", "tracked-changes", "research"]
+  "keywords": ["overleaf", "latex", "comments", "review", "tracked-changes", "theorems", "proofs", "tikz", "research"]
 }

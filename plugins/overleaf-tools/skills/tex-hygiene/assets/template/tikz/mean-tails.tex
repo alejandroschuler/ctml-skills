@@ -1,0 +1,54 @@
+% fig:mean-tails -----------------------------------------------------------
+% Hand-drawn; no generator. The density of the sample mean \bar X_n, centred
+% at the mean \mu, with the two tails outside the band \mu +- \epsilon shaded.
+% The shaded mass is the probability that \autoref{thm:mean-consistency}
+% sends to zero, and its proof bounds it with \autoref{lem:chebyshev}.
+%
+% Free parameters: \sd (the standard deviation of \bar X_n, in cm on the
+% page), \eps (the half-width of the band, in cm) and \peak (the height of
+% the curve at \mu, in cm). The curve, the tails and the label positions are
+% derived from these three, so change them and the rest follows. Do not
+% hardcode a coordinate. Keep \eps between 1 and 2 times \sd, so that the
+% tails stay visible and the labels do not collide.
+%
+% Libraries: arrows.meta, loaded in the preamble.
+% ---------------------------------------------------------------------------
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[>=Latex, line cap=round, line join=round]
+    \definecolor{tailblue}{HTML}{0072B2}
+
+    % --- free parameters
+    \pgfmathsetmacro{\sd}{0.8}    % standard deviation of \bar X_n, cm
+    \pgfmathsetmacro{\eps}{1.3}   % half-width of the band, cm
+    \pgfmathsetmacro{\peak}{2.2}  % height of the curve at \mu, cm
+
+    % --- derived
+    \pgfmathsetmacro{\reach}{3.4*\sd}  % the curve is drawn out to +- \reach
+
+    % --- the two tails, under the curve
+    \foreach \side in {-1, 1} {
+      \fill[tailblue!25, domain={\side*\eps}:{\side*\reach}, samples=60]
+        ({\side*\eps}, 0)
+        -- plot (\x, {\peak*exp(-(\x*\x)/(2*\sd*\sd))})
+        -- ({\side*\reach}, 0) -- cycle;
+    }
+
+    % --- the axis and the density
+    \draw[->] ({-\reach-0.3}, 0) -- ({\reach+0.5}, 0);
+    \draw[thick, domain={-\reach}:{\reach}, samples=120]
+      plot (\x, {\peak*exp(-(\x*\x)/(2*\sd*\sd))});
+
+    % --- the mean and the edges of the band, each with a tick on the axis
+    \draw[dashed] (0, 0) -- (0, \peak);
+    \foreach \at in {-1, 0, 1} {
+      \draw ({\at*\eps}, 0) -- ({\at*\eps}, -0.08);
+    }
+    \node[below] at (0, -0.08) {$\mu$};
+    \node[below] at ({-\eps}, -0.08) {$\mu - \epsilon$};
+    \node[below] at ({\eps}, -0.08) {$\mu + \epsilon$};
+  \end{tikzpicture}
+  \caption{The density of the sample mean $\bar X_n$. The shaded tails are the
+  probability that $\bar X_n$ differs from $\mu$ by at least $\epsilon$.}
+  \label{fig:mean-tails}
+\end{figure}
