@@ -1,0 +1,14 @@
+\begin{lemma}[Chebyshev's inequality]
+\label{lem:chebyshev}
+Let $Y$ be a random variable with finite variance. For every $t > 0$,
+\[
+  \Prob\{|Y - \E Y| \ge t\} \le \frac{\Var(Y)}{t^2}.
+\]
+\end{lemma}
+
+\begin{proof}
+The event $|Y - \E Y| \ge t$ is the event $(Y - \E Y)^2 \ge t^2$. Markov's
+inequality, applied to the nonnegative random variable $(Y - \E Y)^2$ at the
+level $t^2$, bounds its probability by $\E[(Y - \E Y)^2] / t^2$, which is
+$\Var(Y) / t^2$.
+\end{proof}
