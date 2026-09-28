@@ -1,6 +1,6 @@
 ---
 name: design-and-report-simulations
-description: How to design a simulation study and how to organize its write-up so a reader can see what was done and why. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing a simulation section, or answering "how did the methods compare". The core move is backwards design: a simulation exists to support a claim, so the claim comes first, the mockup of the tables and figures comes before any code, and the write-up is organized claim by claim with the purpose of every table stated out loud. Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.
+description: 'How to design a simulation study and how to organize its write-up so a reader can see what was done and why. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing a simulation section, or answering "how did the methods compare". The core move is backwards design: a simulation exists to support a claim, so the claim comes first, the mockup of the tables and figures comes before any code, and the write-up is organized claim by claim with the purpose of every table stated out loud. Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.'
 ---
 
 # Designing and reporting simulation studies
@@ -170,4 +170,4 @@ The question to answer is whether a reader can follow the argument, so read the 
 - Are the claims scoped to what the evidence shows, including the conditions where things failed?
 - Is anything in the results section that no claim needs?
 
-Then hand the prose to `readable-math` for notation and, if it is installed, to `avoid-ai-writing` (github.com/conorbronsdon/avoid-ai-writing) for voice.
+Then, if the write-up is a LaTeX (`.tex`) file, hand the prose to `readable-math` for notation and derivations. If `avoid-ai-writing` (github.com/conorbronsdon/avoid-ai-writing) is installed, hand the prose to it for voice.

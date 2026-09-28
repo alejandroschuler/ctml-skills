@@ -1,0 +1,62 @@
+{
+  "skill_name": "tex-hygiene",
+  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "add-deferred-lemma",
+      "prompt": "add a lemma to section 2 saying the cross-fit empirical process term is O_P(n^{-1/2}) times the L2 norm, with the proof in the appendix",
+      "fixture": "paper that follows the layout: deferproofs.sty loaded, theory/ with two results, \\printProofs in the appendix",
+      "expected_output": "Creates theory/<slug>.tex with a textAtEnd block labelled pf:<slug>, lemmaE with text link and \\label{thm:<slug>} or lem:<slug>, and proofE. Inputs it in the section 2 file. Does not edit the appendix. The checker reports no errors and the paper builds with the pointer and the appendix proof in place."
+    },
+    {
+      "id": 1,
+      "name": "new-tikz-figure",
+      "prompt": "draw a tikz diagram of the three-way sample split (training, validation, estimation) for the setup section",
+      "fixture": "paper that follows the layout, with tikz/ holding one figure",
+      "expected_output": "Creates tikz/<slug>.tex holding the whole figure environment with \\label{fig:<slug>}, a header comment that starts with the label and names the free parameters, and coordinates derived from \\pgfmathsetmacro parameters. Inputs it in the setup section. Loads any new TikZ library in the preamble. The checker reports no errors."
+    },
+    {
+      "id": 2,
+      "name": "convert-legacy-paper",
+      "prompt": "clean up the tex in paper/: every theorem should be in its own file with its proof, proofs in the appendix, and the tikz figures in their own files",
+      "fixture": "Overleaf clone with three inline propositions whose proofs sit in hand-written appendix subsections labelled pf:*, one inline lemma proved in place, and two inline tikz figures; no theory/ or tikz/",
+      "expected_output": "Follows references/migration.md: pulls, builds a baseline and saves the label numbers outside the repo, runs the checker for the worklist, adds deferproofs.sty and *-pratend*.tex to .gitignore, moves each result and figure into its own file, keeps the old pf: labels working, then builds again and compares. Reports that no result, equation or figure changed its number, and that the checker is clean. Does not push without the user's go-ahead unless the paper repo's rules say to push."
+    },
+    {
+      "id": 3,
+      "name": "fix-typo-in-theorem",
+      "prompt": "proposition 3 has a typo, the rate should be n^{-1/4} not n^{1/4}",
+      "fixture": "paper that follows the layout; proposition 3 is theory/nu-clt.tex",
+      "expected_output": "Finds the result from its label, edits theory/nu-clt.tex only, and does not touch main-pratenddefaultcategory.tex or restructure anything."
+    },
+    {
+      "id": 4,
+      "name": "coauthor-inline-theorem",
+      "prompt": "I pulled Bo's changes from overleaf, can you make sure the tex is still in shape before I push",
+      "fixture": "paper that follows the layout, except that Bo added an inline corollary with its proof and an inline tikzpicture to results.tex",
+      "expected_output": "Runs the checker, which reports inline-result, stray-proof and inline-tikz for results.tex. Moves the corollary with its proof into theory/<slug>.tex and the figure into tikz/<slug>.tex, reruns the checker to a clean report and builds the paper. Leaves the push to the user."
+    },
+    {
+      "id": 5,
+      "name": "existing-theorems-folder",
+      "prompt": "add a proposition with the CLT for nu_n to section 4.2, proof in the appendix",
+      "fixture": "dml-tmle-style paper whose result files live in theorems/ and whose preamble has its own proof-at-the-end block",
+      "expected_output": "Keeps theorems/ as the folder and puts the new file there, runs the checker with --theory-dir theorems, and mentions the old-pointer warning with the option to switch to deferproofs.sty, without switching unasked."
+    },
+    {
+      "id": 6,
+      "name": "near-miss-quarto",
+      "prompt": "add a theorem environment for the main result to my quarto notes (notes.qmd)",
+      "fixture": "a Quarto project with notes.qmd and no .tex source",
+      "expected_output": "Judges the layout rules not to apply, since this is not a LaTeX manuscript. Uses Quarto's own theorem syntax and creates no theory/ folder."
+    },
+    {
+      "id": 7,
+      "name": "near-miss-pipeline-figure",
+      "prompt": "regenerate figure 3 with the new simulation results",
+      "fixture": "reproducible-paper-artefacts project where figure 3 is a PNG made by the pipeline",
+      "expected_output": "Judges tikz/ not to apply: the figure is a pipeline artefact, so the work goes through reproducible-paper-artefacts. Creates no tikz/ file."
+    }
+  ]
+}
