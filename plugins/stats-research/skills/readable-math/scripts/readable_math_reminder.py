@@ -13,9 +13,8 @@ import sys
 REMINDER = (
     "REMINDER: You just edited a LaTeX document. Before declaring this task "
     "done, invoke the `stats-research:readable-math` skill via the Skill tool "
-    "to verify introduced notation is defined at or before first use, "
-    "parsimonious, and unambiguous, and that any derivation steps are "
-    "traceable."
+    "to review the new mathematics: its notation, scope and glosses, and the "
+    "correctness of its proofs and derivations."
 )
 
 

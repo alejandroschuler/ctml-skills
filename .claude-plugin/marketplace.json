@@ -8,7 +8,7 @@
     {
       "name": "stats-research",
       "source": "./plugins/stats-research",
-      "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and check that mathematical writing is readable."
+      "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and write and review the mathematics of LaTeX papers."
     },
     {
       "name": "paper-pipeline",
