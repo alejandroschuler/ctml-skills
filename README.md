@@ -13,6 +13,8 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.
 
+`stats-research` also installs a hook. After each edit to a `.tex` file, it reminds Claude to run `readable-math` before the task is done. The hook needs `python3` on your `PATH`. If you had a readable-math reminder hook of your own in `~/.claude/settings.json`, remove it, or you will get each reminder two times.
+
 ## Install in Claude Code
 
 In a Claude Code session:
