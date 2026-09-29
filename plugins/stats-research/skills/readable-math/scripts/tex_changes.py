@@ -19,6 +19,11 @@ comparison is with the last git commit, and outside git every line is new.
 With --full, every line is a region, for a whole-document review. report also
 saves the text that it compared, and the report itself, in the state folder.
 
+report also lists each changed statement and labeled equation with the places
+that cite it, so that a reviewer of proofs sees which other arguments depend
+on it. A full check leaves this list out, and so does a report on a document
+that is new in full, since every argument in it needs review anyway.
+
 mark records the text of the last report as checked, so that the next report
 starts from it. Run it as soon as the checkers have reported and before any
 fix, so that the fixes show up in the next report. A report that finds no
@@ -32,6 +37,7 @@ nothing in it is ever committed or pushed. Outside git it is
 from __future__ import annotations
 
 import argparse
+import bisect
 import difflib
 import hashlib
 import json
@@ -57,9 +63,21 @@ INCLUDE = re.compile(
 DOCUMENTCLASS = re.compile(r"^\s*\\documentclass\s*(?:\[(?P<opt>[^\]]*)\])?\s*\{(?P<cls>[^}]*)\}", re.M)
 MAGIC_ROOT = re.compile(r"^\s*%\s*!\s*TEX\s+root\s*=\s*(?P<path>\S.*?)\s*$", re.M | re.I)
 TEX_IF = re.compile(r"\\(if[a-zA-Z@]*|fi)(?![a-zA-Z@])")
+NEWTHEOREM = re.compile(
+    r"\\newtheorem\*?\s*\{(?P<env>[^{}]+)\}\s*(?:\[[^\]]*\])?\s*\{(?P<title>(?:[^{}]|\{[^{}]*\})*)\}"
+)
+DECLARETHEOREM = re.compile(r"\\declaretheorem\s*(?:\[(?P<opts>[^\]]*)\])?\s*\{(?P<envs>[^{}]+)\}")
+THEOREM_TITLE = re.compile(r"(?<![A-Za-z])(?:name|title|heading)\s*=\s*(?P<title>[^,]*)")  # not refname=
+NEWENDTHM = re.compile(r"\\newEndThm\s*(?:\[[^\]]*\])?\s*\{(?P<alias>[^{}]+)\}\s*\{(?P<env>[^{}]+)\}")
+ENV_OR_LABEL = re.compile(r"\\(?P<kind>begin|end)\s*\{(?P<env>[^{}]+)\}|\\label\s*\{(?P<label>[^{}]*)\}")
+CITATION = re.compile(r"\\(?:ref|eqref|autoref|cref|Cref|nameref|labelcref|vref|Vref)\*?\s*\{(?P<labels>[^{}]*)\}")
 MERGE_GAP = 2  # regions this many unchanged lines apart or closer are merged
 MAX_DELETED = 150  # deleted lines shown in one report
+MAX_STATEMENTS = 60  # changed statements shown in one report
 ANCESTORS = 3  # folders above a file searched for its root outside git
+STATEMENT_WORDS = ("theorem", "lemma", "proposition", "corollary", "claim", "conjecture", "fact",
+                   "observation", "property", "definition", "assumption", "condition", "hypothesis")
+DISPLAY_ENVS = ("equation", "align", "gather", "multline", "flalign", "alignat", "eqnarray")
 
 
 class ToolError(Exception):
@@ -429,6 +447,127 @@ def compare(file: str, old: str | None, new: str) -> tuple[list[Region], list[De
 
 
 # --------------------------------------------------------------------------
+# Statements and labeled equations, and the places that cite them. This reads
+# the cleaned text, so a comment never counts.
+
+
+@dataclass
+class Item:
+    file: str
+    begin: int  # first line, counting from 1
+    end: int  # last line
+    labels: dict[str, int] = field(default_factory=dict)  # label: offset of its \label in the text
+
+
+def line_starts(text: str) -> list[int]:
+    """The offset at which each line of text starts."""
+    return [0] + [m.end() for m in re.finditer(r"\n", text)]
+
+
+def names_statement(*texts: str) -> bool:
+    """True when one of the texts holds a statement word, in any case."""
+    return any(w in t.lower() for t in texts for w in STATEMENT_WORDS)
+
+
+def tracked_envs(texts: list[str]) -> set[str]:
+    """The environment names to track: the statement words, their E forms for
+    proof at the end, and the display environments, plus the environments that
+    the document declares as statements and the aliases that it makes for them.
+    Declarations are read from every file, because a paper often keeps them in
+    a file that the root inputs. A starred name counts as its plain name."""
+    preamble = "\n".join(clean(t) for t in texts)
+    names = set(STATEMENT_WORDS) | {w + "E" for w in STATEMENT_WORDS} | set(DISPLAY_ENVS)
+    for m in NEWTHEOREM.finditer(preamble):
+        if names_statement(m.group("env"), m.group("title")):
+            names.add(m.group("env").strip())
+    for m in DECLARETHEOREM.finditer(preamble):
+        given = THEOREM_TITLE.search(m.group("opts") or "")
+        title = given.group("title") if given else ""
+        for env in m.group("envs").split(","):
+            if names_statement(env, title):
+                names.add(env.strip())
+    for m in NEWENDTHM.finditer(preamble):
+        if m.group("env").strip() in names:
+            names.add(m.group("alias").strip())
+    return names
+
+
+def env_items(file: str, text: str, tracked: set[str]) -> list[Item]:
+    """The tracked environments of text, with the labels that belong to each. A
+    label belongs to the innermost tracked environment around it, so an
+    equation inside a theorem is an item of its own."""
+    starts = line_starts(text)
+    items: list[Item] = []
+    stack: list[tuple[str, int, dict[str, int]]] = []  # name, offset of \begin, labels so far
+    for m in ENV_OR_LABEL.finditer(text):
+        if m.group("label") is not None:
+            label = m.group("label").strip()
+            if label and stack:
+                stack[-1][2].setdefault(label, m.start())
+            continue
+        name = m.group("env").strip().rstrip("*")
+        if name not in tracked:
+            continue
+        if m.group("kind") == "begin":
+            stack.append((name, m.start(), {}))
+            continue
+        for k in range(len(stack) - 1, -1, -1):
+            if stack[k][0] == name:
+                _, begin, labels = stack[k]
+                del stack[k:]
+                items.append(Item(file, bisect.bisect_right(starts, begin),
+                                  bisect.bisect_right(starts, m.start()), labels))
+                break
+    return items
+
+
+def citations(text: str) -> list[tuple[str, int]]:
+    """The label and the line of each citation in text. A citation of a list
+    of labels gives one entry for each label."""
+    starts = line_starts(text)
+    found: list[tuple[str, int]] = []
+    for m in CITATION.finditer(text):
+        line = bisect.bisect_right(starts, m.start())
+        found += [(label.strip(), line) for label in m.group("labels").split(",")]
+    return found
+
+
+def touched(item: Item, regions: list[Region], deletions: list[Deletion]) -> bool:
+    """True when a region overlaps the lines of item, or a deletion sits inside
+    them or right next to them."""
+    return (any(r.file == item.file and r.start <= item.end and r.end >= item.begin for r in regions)
+            or any(d.file == item.file and item.begin - 1 <= d.after <= item.end for d in deletions))
+
+
+def statement_lines(disk: DiskSource, root: str, order: list[str], regions: list[Region],
+                    deletions: list[Deletion]) -> list[str]:
+    """One line for each label of each changed statement or labeled equation,
+    with the places outside it that cite the label, in the reading order of the
+    labels. An item inside a changed item counts as changed too, whether or not
+    the outer item has a label."""
+    texts = {rel: clean(disk.read(rel) or "") for rel in order}
+    tracked = tracked_envs([disk.read(rel) or "" for rel in order])
+    cites: dict[str, list[tuple[str, int]]] = {}
+    for rel in order:
+        for label, line in citations(texts[rel]):
+            cites.setdefault(label, []).append((rel, line))
+    out: list[str] = []
+    for rel in order:
+        items = env_items(rel, texts[rel], tracked)
+        changed = [it for it in items if touched(it, regions, deletions)]
+        entries = [(pos, label, it) for it in items if it.labels
+                   if any(o.begin <= it.begin and it.end <= o.end for o in changed)
+                   for label, pos in it.labels.items()]
+        for _, label, it in sorted(entries, key=lambda e: e[0]):
+            where = [f"{f}:{n}" for f, n in cites.get(label, []) if not (f == rel and it.begin <= n <= it.end)]
+            where = list(dict.fromkeys(where))
+            span = f"{it.begin}-{it.end}" if it.end > it.begin else f"{it.begin}"
+            found = "cited at " + ", ".join(where) if where else "not cited elsewhere"
+            out.append(f"  {label} ({rel}:{span}): {found}")
+    return out
+
+
+# --------------------------------------------------------------------------
 # The report.
 
 
@@ -516,6 +655,16 @@ def report(doc: Document, state_override: str | None, full: bool) -> str:
     else:
         out.append("  none, only deletions")
     out.append("")
+
+    if not full and old_order:
+        statements = statement_lines(disk, root.name, order, regions, deletions)
+        if statements:
+            out.append("Changed statements and equations, and the places that cite them (for the correctness review):")
+            out += statements[:MAX_STATEMENTS]
+            if len(statements) > MAX_STATEMENTS:
+                out.append(f"  ... and {len(statements) - MAX_STATEMENTS} more. Most of the document changed;"
+                           " consider a full review.")
+            out.append("")
 
     shown = 0
     blocks: list[tuple[str, list[str]]] = []
