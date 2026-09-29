@@ -1,6 +1,6 @@
 ---
 name: readable-math
-description: "Review the mathematics of a LaTeX document after editing it: a readability review of notation, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The rules that it checks are in the writing-math skill. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
+description: "Review the mathematics of a LaTeX document after editing it: a notation review of definitions, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The symbol rules that it checks are in the writing-math skill, which also sets how densely to write derivations; the review does not check density. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
 argument-hint: "[full]"
 ---
 
@@ -8,10 +8,12 @@ argument-hint: "[full]"
 
 Before declaring a LaTeX document (`.tex`) finished, run this review. It does not apply to `.qmd`, `.md`, `.rmd` or `.markdown` files unless the user asks for it.
 
-The review checks text against the rules of the `writing-math` skill, which you loaded before your first edit. It has two parts, and they run at the same time:
+The review has two parts, and they run at the same time:
 
-- The **readability review** covers notation, scope and glosses. One `stats-research:math-readability-reviewer` agent (Sonnet, high effort) reviews each document.
-- The **correctness review** covers proofs and derivations: whether each step is true, and whether a reader can follow it. One `stats-research:math-correctness-reviewer` agent (Opus, high effort) reviews each group of arguments that you choose.
+- The **notation review** checks the symbol rules of the `writing-math` skill, which you loaded before your first edit: definitions, scope, parsimony and glosses. One `stats-research:math-notation-reviewer` agent (Sonnet, high effort) reviews each document.
+- The **correctness review** checks that each step of the proofs and derivations is true. One `stats-research:math-correctness-reviewer` agent (Opus, high effort) reviews each group of arguments that you choose.
+
+Neither part checks how densely a derivation is written. The mode rules of `writing-math` set that, and you follow them as you write.
 
 The reviewers read the whole document every time, so they can find a definition, a clash or a cited result anywhere. What they review depends on the scope:
 
@@ -41,10 +43,10 @@ Arguments: $ARGUMENTS
 
 3. **Dispatch every reviewer in one message**, so that they run at the same time. The report path is on the report's "Saved report" line.
 
-   - Readability, one for each document in the report: `subagent_type` `stats-research:math-readability-reviewer`, with the prompt `Follow ${CLAUDE_SKILL_DIR}/references/readability-review.md. The rules are in ${CLAUDE_PLUGIN_ROOT}/skills/writing-math/SKILL.md. The change report is <report path>.`
-   - Correctness, one for each group: `subagent_type` `stats-research:math-correctness-reviewer`, with the prompt `Follow ${CLAUDE_SKILL_DIR}/references/correctness-review.md. The rules are in ${CLAUDE_PLUGIN_ROOT}/skills/writing-math/SKILL.md. The change report is <report path>. Your arguments:` and then the group's assignment.
+   - Notation, one for each document in the report: `subagent_type` `stats-research:math-notation-reviewer`, with the prompt `Follow ${CLAUDE_SKILL_DIR}/references/notation-review.md. The rules are in ${CLAUDE_PLUGIN_ROOT}/skills/writing-math/SKILL.md. The change report is <report path>.`
+   - Correctness, one for each group: `subagent_type` `stats-research:math-correctness-reviewer`, with the prompt `Follow ${CLAUDE_SKILL_DIR}/references/correctness-review.md. The change report is <report path>. Your arguments:` and then the group's assignment.
 
-   If these agent types are not available, use `general-purpose` with the same prompts, pass `model: sonnet` for readability and `model: opus` for correctness, and add "Do not edit any file." to each prompt. Add nothing else to the prompts. **Do not list the symbols that should be defined, or tell the reviewers what to find in any other way.** They must find every definition in the files themselves.
+   If these agent types are not available, use `general-purpose` with the same prompts, pass `model: sonnet` for notation and `model: opus` for correctness, and add "Do not edit any file." to each prompt. Add nothing else to the prompts. **Do not list the symbols that should be defined, or tell the reviewers what to find in any other way.** They must find every definition in the files themselves.
 
 4. **Mark the review** as soon as every reviewer has reported, before you fix anything:
 
@@ -54,12 +56,12 @@ Arguments: $ARGUMENTS
 
    This records the text that the reviewers read. Your fixes then count as new text, so the next report holds only the passages that you fixed.
 
-5. **Fix the correctness findings first**, then the readability findings, so that the text follows the writing-math rules. A proof that you rewrite for correctness can make its readability findings moot. When a finding shows that a claim is false as stated, do not change the claim on your own: tell the user what the reviewer found, and propose a correction. Change only the regions and the text that the findings name, unless this is a full review.
+5. **Fix the correctness findings first**, then the notation findings. A proof that you rewrite for correctness can make its notation findings moot. When a finding shows that a claim is false as stated, do not change the claim on your own: tell the user what the reviewer found, and propose a correction. For a step that the reviewer could not confirm, write out the argument that settles it, at the density of the mode, or tell the user when you cannot. Change only the regions and the text that the findings name, unless this is a full review.
 
 6. **Check the fixes.** Run the review again. The report now holds only your fixes, so this round is short.
 
    - Send an argument back to the correctness review only when its mathematics changed.
-   - When every readability fix only adds words around existing notation, such as a gloss, a definition sentence or a scope phrase, skip the readability review.
+   - When every notation fix only adds words around existing notation, such as a gloss, a definition sentence or a scope phrase, skip the notation review.
    - When no reviewer is needed, run `report` and then `mark` without dispatching.
 
    Re-render when a round finds nothing to fix, or after you skip one this way.

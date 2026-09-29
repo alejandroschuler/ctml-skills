@@ -1,9 +1,8 @@
 # Correctness review
 
-You check the proofs and derivations assigned to you in one LaTeX document:
-whether each step is true, and whether a reader can follow it. The message
-that starts you lists your arguments with their lines. The change report names
-the document's files, in reading order.
+You check whether the proofs and derivations assigned to you in one LaTeX
+document are true. The message that starts you lists your arguments with their
+lines. The change report names the document's files, in reading order.
 
 ## Read
 
@@ -22,7 +21,8 @@ argument uses it.
 
 ## Correctness
 
-For each argument, verify that every step is true:
+For each argument, verify that every step is true. Where the text is brief,
+fill in the missing steps yourself and check them.
 
 - Each equality and inequality holds, in the stated direction. When you cannot
   check a step of algebra at a glance, verify it with `sympy`, or check it
@@ -35,11 +35,9 @@ For each argument, verify that every step is true:
 - Limits, rates and orders such as $O_P$ combine correctly.
 - The argument proves the claim as stated, not a weaker or a different claim.
 
-## Exposition
-
-Apply the derivation rules of writing-math to the same arguments: one move per
-step, a justification for each "trust me" phrase, optimizations and bounds in
-full, and a reader who does not know the answer.
+Do not report a step only because the text shows it briefly. How densely to
+write is the writer's decision, under the mode rules of writing-math. Report a
+brief step only when you cannot confirm that it is true.
 
 ## Output
 
@@ -50,8 +48,7 @@ First list the arguments that you checked, one line each:
 Then list the findings, one line each, with errors first:
 
 - `FILE:LINE | error | what is false | the correction, or "the claim may be false as stated", with a counterexample if you have one`
-- `FILE:LINE | gap | the step whose truth the text does not establish | the argument that establishes it`
-- `FILE:LINE | exposition: one move, trust me, template or reader | what a reader cannot follow | the missing steps or justification`
+- `FILE:LINE | unverified | the step that you could not confirm | what would settle it`
 
-List only findings that need a change. If there are none, write "No changes
-needed" after the list of arguments. Output nothing else.
+If there are no findings, write "No problems found" after the list of
+arguments. Output nothing else.
