@@ -6,14 +6,14 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 
 | Plugin | Skills | Use it for |
 |---|---|---|
-| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and making sure every symbol in a LaTeX document is defined before it is used and every derivation step can be followed. |
+| `stats-research` | `design-and-report-simulations`, `supervised-learning`, `writing-math`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and writing and reviewing the mathematics of a LaTeX document, so that every symbol is defined and scoped and every proof is correct and can be followed. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
 | `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.
 
-`stats-research` also installs a hook. After each edit to a `.tex` file, it reminds Claude to run `readable-math` before the task is done. The hook needs `python3` on your `PATH`. If you had a readable-math reminder hook of your own in `~/.claude/settings.json`, remove it, or you will get each reminder two times.
+`stats-research` also installs two hooks. Before the first edit to a `.tex` file in a conversation or a subagent, one hook makes Claude load `writing-math`. After each edit to a `.tex` file, the other reminds Claude to run `readable-math` before the task is done. The hooks need `python3` on your `PATH`. If you had a readable-math reminder hook of your own in `~/.claude/settings.json`, remove it, or you will get each reminder two times.
 
 ## Install in Claude Code
 
@@ -75,11 +75,13 @@ Any time simulation work is in play, invoke the `stats-research:design-and-repor
 Any time supervised machine learning, or similar loss-based learning such as Riesz regression, is in play, invoke the `stats-research:supervised-learning` skill first.
 ```
 
-## Checking readable math
+## Writing and reviewing math
 
-`stats-research:readable-math` checks the notation and the derivations of a LaTeX document with two agents of the type `stats-research:readable-math-checker`, which run at the same time and do not edit files. The checkers always read the whole document, but by default they audit only the text that changed since the last check. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, and compares them with a copy saved at the last check. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
+`stats-research:writing-math` holds the rules for mathematics in a LaTeX document: define each symbol before its first use, scope local symbols, never give a global symbol a second meaning, gloss content-bearing symbols in prose, and show each step of a derivation. A hook makes Claude load it before its first `.tex` edit.
 
-To audit the whole document, run `/stats-research:readable-math full`, or ask Claude for a full readable-math check.
+`stats-research:readable-math` then reviews the new text against those rules in two parts that run at the same time. A readability reviewer (Sonnet, high effort) checks notation, scope and glosses. Correctness reviewers (Opus, high effort) check that each step of each proof is true and can be followed, one agent for each group of arguments that Claude chooses. The reviewers always read the whole document, but by default they review only the text that changed since the last review. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, compares them with a copy saved at the last review, and lists the statements that changed and the places that cite them. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
+
+To review the whole document, run `/stats-research:readable-math full`, or ask Claude for a full readable-math check.
 
 ## Reading Overleaf comments
 
