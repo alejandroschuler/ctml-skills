@@ -1,13 +1,13 @@
 ---
 name: supervised-learning
-description: 'How to choose machine-learning learners, set their hyperparameters, and build and check cross-validated libraries that take one learner type from each family, such as a super learner over an elastic net, MARS, tuned boosting and a small neural net, where a random forest would duplicate the boosting. Use whenever any supervised machine learning is done, or similar loss-based learning such as Riesz regression, whatever the purpose: nuisance functions for TMLE, AIPW, double machine learning or other causal estimators, prediction models, learners inside a simulation, or checking a library someone else tuned. It sets how to split data for tuning and cross-fitting, with a simulation default of separate training, validation and estimation draws of the same size. It also holds the edge rule: the setting that cross-validation selects within each learner type must not sit on the edge of its tuning grid, and when it does, the grid is too narrow in that direction and has to move.'
+description: 'How to choose machine-learning learners, set their hyperparameters, and build and check cross-validated libraries that take one learner type from each family, such as a super learner over an elastic net, MARS, tuned boosting and a small neural net, where a random forest would duplicate the boosting. Use whenever any supervised machine learning is done, or similar loss-based learning such as Riesz regression, whatever the purpose: nuisance functions for TMLE, AIPW, double machine learning or other causal estimators, prediction models, learners inside a simulation, or checking a library someone else tuned. It sets how to split data for tuning and cross-fitting, with a simulation default of separate training, validation and estimation draws of the same size. It sets up gradient boosting as xgboost through scikit-learn at the xgboost defaults, with no minimum number of observations per leaf, and tunes its depth, number of trees and learning rate. It also holds the edge rule: the setting that cross-validation selects within each learner type must not sit on the edge of its tuning grid, and when it does, the grid is too narrow in that direction and has to move.'
 ---
 
 # Supervised learning: learners, hyperparameters, and cross-validated libraries
 
 A learner's performance depends on its hyperparameters as much as on its type. If a library holds a learner type only at poor settings, nothing in its output says so, and a comparison of estimators that use the library's predictions turns into a comparison of tuning.
 
-The rest of this skill uses three terms. A **learner type** is a learning algorithm, such as gradient-boosted trees or MARS. A **setting** is one full choice of a learner type's hyperparameters. A **family** is a group of learner types whose fits are built from the same kind of pieces, such as all the learner types made of trees. The skill applies to any learner fit by minimizing a loss: regression and classification, and also Riesz regression, which learns a Riesz representer by minimizing the Riesz loss. It covers which learner types to use, which hyperparameters to fix and which to tune, how to split the data for fitting, tuning and estimation, how to check a tuning grid after the fits, and what keeps a library's runtime sane. Inside a simulation, `design-and-report-simulations` covers how to cache the fits across repetitions.
+The rest of this skill uses three terms. A **learner type** is a learning algorithm, such as gradient-boosted trees or MARS. A **setting** is one full choice of a learner type's hyperparameters. A **family** is a group of learner types whose fits are built from the same kind of pieces, such as all the learner types made of trees. The skill applies to any learner fit by minimizing a loss: regression and classification, and also Riesz regression, which learns a Riesz representer by minimizing the Riesz loss. It covers which learner types to use, which hyperparameters to fix and which to tune, how to split the data for fitting, tuning and estimation, how to check a tuning grid after the fits, how to set up and tune gradient-boosted trees, and what keeps a library's runtime sane. Inside a simulation, `design-and-report-simulations` covers how to cache the fits across repetitions.
 
 ## Choosing learners
 
@@ -15,12 +15,12 @@ The rest of this skill uses three terms. A **learner type** is a learning algori
 |---|---|---|
 | **MARS** (multivariate adaptive regression splines; `earth` in R, `pymars` in Python) | Very fast | Works well with one set of hyperparameters. Set the interaction degree high enough and keep pruning on. |
 | **Random forests** (ranger) | Fast | Fine on defaults. Worse for smooth functions. Same family as gradient-boosted trees, which usually do better once tuned. |
-| **Gradient-boosted trees** (lightgbm, xgboost) | Fast | Beats almost everything. Needs tuning over number of trees, depth, learning rate. Use early stopping. |
+| **Gradient-boosted trees** (xgboost; lightgbm if xgboost cannot be used) | Fast | Beats almost everything. Needs tuning over depth, number of trees and learning rate, as the section on boosting below says. |
 | **Elastic net** | Fast (ridge) | Loses under moderate nonlinearity. Good as a baseline. Needs regularization tuning. Covers lasso, ridge and the main-terms generalized linear model (GLM). |
 | **Kernel ridge** | Slow | Good for smooth functions and easy to analyze theoretically. Only for $n < 1000$. |
 | **Small neural net** (one or two hidden layers) | Moderate | Same family as kernel ridge, and takes its place from 1000 observations up. Needs tuning over width and weight decay. |
 
-In Python, `HistGradientBoosting{Regressor,Classifier}` from scikit-learn is the fast tabular default and needs no extra dependency. For MARS, use `pymars.EarthRegressor` or `pymars.EarthClassifier`, both scikit-learn estimators, installed with `pip install git+https://github.com/alejandroschuler/mars`. Install it from that repository and not from PyPI, where the `mars-earth` package is older upstream code with the same import name. Set `max_degree`, the interaction degree, since its default is 1, as in earth. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
+In Python, fit gradient-boosted trees with xgboost's scikit-learn classes, `XGBRegressor` and `XGBClassifier`. For MARS, use `pymars.EarthRegressor` or `pymars.EarthClassifier`, both scikit-learn estimators, installed with `pip install git+https://github.com/alejandroschuler/mars`. Install it from that repository and not from PyPI, where the `mars-earth` package is older upstream code with the same import name. Set `max_degree`, the interaction degree, since its default is 1, as in earth. For Riesz regression, a learner type qualifies only if its implementation can minimize the Riesz loss.
 
 Deeper networks are worth avoiding unless you specifically need a differentiable model, a custom loss, or fine-tuning. They are hard to tune and gradient boosting wins on tabular data.
 
@@ -68,10 +68,44 @@ When cross-validation chooses among settings of one learner type, the setting it
 - **Check within each learner type.** Among that type's settings, take the one with the smallest cross-validated risk, meaning its average loss on held-out folds, whatever loss the learner minimizes. Then see whether any of its tuned hyperparameters sits at the smallest or the largest value in its grid. The check is the same whether the library then picks one setting or weights several, as a super learner does.
 - **Read it across fits.** In a simulation that means across repetitions, and in a real-data analysis across cross-fitting folds, outcomes or nuisance functions. An occasional edge choice is noise. A consistent one means the grid is too narrow in that direction and has to extend there.
 - **Extend the grid without raising the runtime much.** Shift the grid rather than only widening it: drop settings at the end that cross-validation never chooses, and add the same number past the edge it keeps choosing. When two hyperparameters trade compute against each other, move along the trade instead. In boosting, a larger learning rate reaches a given training loss in fewer trees, so raising it covers more of the boosting path at the same cost.
-- **Treat early stopping as a grid.** If the number of trees keeps hitting its cap, the learner wants more trees than it was given. Raise the learning rate rather than the cap, so the runtime stays flat.
+- **Treat early stopping as a grid.** If the number of trees keeps hitting its cap, the learner wants more trees than it was given. Raise the learning rate rather than the cap, so the runtime stays flat. The section on gradient-boosted trees below has the rest of the boosting grid.
 - **Two kinds of edge are exempt.** Fixed hyperparameters are exempt by definition. So is an edge that is a hard limit of the hyperparameter, such as a tree depth of 1, an elastic-net mixing weight of 0 (ridge) or 1 (lasso), or the largest penalty on an elastic-net path, which sets every coefficient to zero. The grid cannot extend past such a limit, and a choice there is a finding about the data.
 
 The check costs almost nothing if each fit stores the cross-validated risk of every setting next to its predictions. Then no refitting is needed to run it, or to run it again after the grid moves.
+
+## Gradient-boosted trees
+
+Use xgboost through its scikit-learn interface, `xgboost.XGBRegressor` and `xgboost.XGBClassifier`, whenever it can minimize the loss. The rules below set it up. The values are those of xgboost 3.4.
+
+**Keep the xgboost defaults for every hyperparameter that is not tuned.** These are no row or column subsampling (`subsample=1` and `colsample_bytree=1`), an L2 penalty of 1 on the leaf values (`reg_lambda=1`), no minimum loss reduction to split (`gamma=0`), and histogram split finding with 256 bins.
+
+**Set no minimum number of observations per leaf.** The xgboost default sets none for squared-error loss, but it does set one for logistic loss. Its `min_child_weight=1` is a lower bound on the sum, over the observations in a child, of the second derivative of the loss. Under squared-error loss each observation adds 1, so the bound asks for one observation. Under logistic loss an observation with fitted probability $p$ adds only $p(1-p)$, at most $1/4$. The same default then asks for at least 4 observations in each leaf, and for about 100 where $p$ is near 0.01, so it holds back splits where a propensity score is near 0 or 1. Those are the regions where an error in the propensity score moves AIPW and TMLE the most. Set `min_child_weight=0` in `XGBClassifier`, so that no leaf minimum remains. The L2 penalty keeps the leaf values finite.
+
+**Other libraries do not share these defaults.** lightgbm and scikit-learn's `HistGradientBoosting` learners ask for at least 20 observations in each leaf (`min_child_samples` and `min_samples_leaf`), grow each tree to at most 31 leaves with no limit on its depth, and put no L2 penalty on the leaf values. `HistGradientBoosting` also turns on early stopping by itself above 10,000 rows, on a random part of the training data. If one of them has to stand in for xgboost, set its leaf minimum to 1, its depth limit to the tuned depth $d$ (with `num_leaves` $= 2^d$ in lightgbm and `max_leaf_nodes=None` in scikit-learn), and its L2 penalty to 1. In R, the SuperLearner wrapper `SL.xgboost` asks for 10 observations in each leaf (`minobspernode`, which it passes to xgboost as `min_child_weight`), and the sl3 learner `Lrnr_xgboost` stops at 20 trees. Set these values explicitly.
+
+**Tune three hyperparameters: depth, number of trees and learning rate.** Together they set how complex the fit is and how long it takes.
+
+- **Depth.** Cap it low, at about 5, with a grid such as 1 to 5. Each leaf of a tree of depth $d$ depends on at most $d$ covariates, so the tree fits interactions of at most $d$ covariates. Boosting adds many trees together, and shallow trees already fit most functions. xgboost's default depth of 6 does not apply, since depth is tuned. Raise the cap only when the edge rule calls for it, which is when cross-validation keeps choosing depth 5. Then shift the grid up, and drop the depths that it never chooses.
+- **Number of trees.** Each depth and learning rate needs only one fit to each training set, with a cap on the number of trees (`n_estimators`). Pass the held-out data to `fit` as `eval_set`: the validation draw in a simulation, or the held-out fold in cross-validation. `evals_result()` then holds the held-out loss after every round, and `predict(X, iteration_range=(0, m))` predicts from the first $m$ trees. The round with the smallest held-out risk sets the number of trees. In the nested scheme, average the loss of each round across the inner folds, take the round with the smallest average, and refit on the whole training set with that many trees. Early stopping (`early_stopping_rounds`, an argument of the constructor) only ends a fit before the cap, and `predict` then uses the best round by itself. In the library, enter each depth and learning rate once, at its best round, and keep the loss of every round with the fit for the edge check.
+- **Learning rate.** It trades against the number of trees. A smaller learning rate needs about proportionally more trees to reach the same fit, and the runtime grows with the number of trees. Set the cap from the compute budget, and then choose learning rates whose best round falls inside the cap. If the best round keeps hitting the cap, raise the learning rate rather than the cap, so the runtime stays flat. If the best round comes within the first few tens of trees, the steps are too coarse for the path to stop near its best point. Lower the learning rate then. A smaller rate often fits a little better, and the cap still bounds its cost.
+
+In a simulation, one setting of the propensity score fits like this:
+
+```python
+import numpy as np
+from xgboost import XGBClassifier
+
+fit = XGBClassifier(max_depth=d, learning_rate=lr, n_estimators=500,
+                    min_child_weight=0, n_jobs=1, random_state=0)
+fit.fit(X_train, a_train, eval_set=[(X_val, a_val)], verbose=False)
+risk = fit.evals_result()["validation_0"]["logloss"]  # one value per round
+m = int(np.argmin(risk)) + 1                          # best number of trees
+pi_hat = fit.predict_proba(X_est, iteration_range=(0, m))[:, 1]
+```
+
+The default held-out metrics, `rmse` for `XGBRegressor` and `logloss` for `XGBClassifier`, rank the rounds on one held-out set in the same order as the loss does. Set `eval_metric` when the library minimizes another loss.
+
+A first grid is depths 1 to 5, learning rates 0.1 and 0.3 (the xgboost default), and a cap of 500 trees. That is 10 fits for each nuisance function. The edge rule then reads all three hyperparameters: the depth against its grid, the best round against the cap, and the learning rate against its grid. Depth 1 is a hard limit, a fit with no interactions.
 
 ## Building a library
 
@@ -106,5 +140,5 @@ An elastic net, MARS, tuned boosting and a small neural net cover all four famil
 
 ## Compute
 
-- When an outer loop already runs fits in parallel (cross-fitting folds, simulation repetitions, bootstrap draws), give each fit one thread. xgboost, lightgbm and scikit-learn's gradient boosting use all cores by default, and ranger uses two. On small datasets the threads spend their time contending for cores. In the Python scaffold of `design-and-report-simulations`, the default thread count ran about 16 times slower.
-- Give each learner with internal randomness a fixed seed, so a fit depends on its data and nothing else. scikit-learn's `HistGradientBoosting` learners in particular need a fixed `random_state`, since above 10,000 rows they turn on early stopping, which holds out a random part of the training data. In a simulation, set `early_stopping=False` and score the boosting rounds on the validation draw instead, with `staged_predict`.
+- When an outer loop already runs fits in parallel (cross-fitting folds, simulation repetitions, bootstrap draws), give each fit one thread. xgboost, lightgbm and scikit-learn's gradient boosting use all cores by default, and ranger uses two. In xgboost, set `n_jobs=1`. On small datasets the threads spend their time contending for cores. In the Python scaffold of `design-and-report-simulations`, the default thread count ran about 16 times slower.
+- Give each learner with internal randomness a fixed seed, so a fit depends on its data and nothing else. In xgboost that is `random_state`, which matters once rows or columns are subsampled. If scikit-learn's `HistGradientBoosting` learners are used, give them a fixed `random_state`, set `early_stopping=False`, and score the boosting rounds on the validation draw with `staged_predict`.
