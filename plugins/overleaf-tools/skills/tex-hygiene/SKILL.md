@@ -147,8 +147,8 @@ shape.
 3. Put `\section{Proofs}` with `\printProofs` in the appendix.
 4. Add `*-pratend*.tex` to the paper's `.gitignore`. The package writes
    `main-pratenddefaultcategory.tex` on every build.
-5. Add the section in `assets/paper-CLAUDE.md` to the paper repo's
-   `CLAUDE.md`, so that later sessions keep the layout.
+5. Add the sections in `assets/paper-CLAUDE.md` to the paper repo's
+   `CLAUDE.md`, so that later sessions keep the layout and pull first.
 
 ## Day-to-day edits
 

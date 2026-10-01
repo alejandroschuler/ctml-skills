@@ -15,3 +15,9 @@ This paper follows the `tex-hygiene` skill of the overleaf-tools plugin.
   `latexmk -pdf main.tex`. The build writes `main-pratenddefaultcategory.tex`;
   never edit or commit it.
 - Run the skill's checker on this folder before each push.
+
+## Overleaf
+
+Coauthors edit this paper on Overleaf. Pull before you read or edit it, with
+`git pull --rebase --autostash`, or with `make pull-paper` from the code repo
+when this is the `paper/` clone of a reproducible-paper-artefacts project.

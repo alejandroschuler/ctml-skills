@@ -34,6 +34,8 @@ tier later is cheap. Pulling a wrong number back out of a manuscript is not.
 
 ## Commits and pushes
 
+- Coauthors edit the manuscript on Overleaf. Run `make pull-paper` before you
+  read or edit anything under `paper/`.
 - On a wip branch, `make notes` commits for you before it builds.
 - A request to change the manuscript allows the commits on `main` that the
   change needs: the squash-merge that promotes a result to the paper tier, or

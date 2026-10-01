@@ -8,7 +8,7 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 |---|---|---|
 | `stats-research` | `design-and-report-simulations`, `supervised-learning`, `writing-math`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and writing and reviewing the mathematics of a LaTeX document, so that every symbol is defined and scoped and every proof is correct and can be followed. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
-| `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. |
+| `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. Stopping Claude from reading or editing a clone that is behind Overleaf. |
 | `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.
@@ -88,6 +88,12 @@ To review the whole document, run `/stats-research:readable-math full`, or ask C
 `overleaf-tools:overleaf-comments` runs a Python script with `uv run`, so it needs [uv](https://docs.astral.sh/uv/). It works on any Overleaf project, and it finds the `paper/` clone of a `paper-pipeline` project by itself. The first login opens a Chrome, Chromium, Edge or Brave window with a separate profile, and you log in to Overleaf there. The session is saved in `~/.config/overleaf-comments/` and lasts while it is used at least once every five days.
 
 The script reads through Overleaf's private web API with your own session, and it never writes. Overleaf's [Acceptable Use Policy](https://www.overleaf.com/legal) restricts scripted access to the service. Read it and decide for yourself before you use the script.
+
+## Keeping Overleaf clones current
+
+`overleaf-tools` also installs a hook that keeps Claude off an old copy of a paper. It runs before each Read, Edit, Write, Grep, Glob and Bash call, also in subagents. It looks for a git repo with a remote on `git.overleaf.com` among the files that the call touches. For Bash, that is the working directory and each word of the command that names a path. For each such repo, the hook compares the local commit with the latest commit on Overleaf. If Overleaf has commits that the local copy does not have, the hook blocks the call and tells Claude to pull first, with `make pull-paper` in a `paper-pipeline` project or `git pull --rebase --autostash` in a plain clone. Claude pulls and tries again.
+
+A check of Overleaf takes about a second, so the hook makes one at most every five minutes for each repo and uses the last answer between checks. A coauthor's edit can therefore go unseen for up to five minutes. A Bash command that runs git or `make pull-paper` is never blocked, so the pull itself always goes through. A copy with local commits that are not pushed yet also goes through. If the check fails, for example with no network, the hook lets the call through. The hook needs `python3` and `git` on your `PATH`, and it uses the same Overleaf credentials as `git pull`.
 
 ## Companion skill
 
