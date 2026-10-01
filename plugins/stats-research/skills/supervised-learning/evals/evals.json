@@ -69,6 +69,21 @@
         "Recommends adding a learner type from a family the library lacks, such as a small neural net or kernel ridge",
         "Says the extra learners cost runtime and add little accuracy, without claiming that they make the super learner worse"
       ]
+    },
+    {
+      "id": 5,
+      "name": "boosting-cap-and-leaf-minimum",
+      "prompt": "In my simulation I fit the propensity score with scikit-learn's HistGradientBoostingClassifier, at its defaults except max_depth=8, learning_rate=0.01 and max_iter=3000. The log loss on my validation draw is still falling at round 3000. Should I raise max_iter to 10000?",
+      "expected_output": "Says not to raise the cap, since the runtime grows with the number of trees, and to raise the learning rate instead so that the best round falls inside the cap. Recommends xgboost's XGBClassifier through the scikit-learn interface at the xgboost defaults. Points out that HistGradientBoosting asks for at least 20 observations per leaf by default and that the skill sets no leaf minimum, and that in XGBClassifier this means min_child_weight=0, because under logistic loss the default of 1 bounds a sum of p(1-p) terms and so asks for at least 4 observations per leaf, more where the propensity score is near 0 or 1. Recommends tuning the depth over a low grid capped at about 5 instead of fixing it at 8, and raising the cap only if the best depth keeps landing at it. Recommends scoring every boosting round on the validation draw through eval_set and evals_result.",
+      "files": [],
+      "assertions": [
+        "Advises against raising the cap on the number of trees and recommends a larger learning rate instead, to keep the runtime flat",
+        "Recommends xgboost's XGBClassifier through its scikit-learn interface, at the xgboost defaults for the hyperparameters that are not tuned",
+        "Notes that HistGradientBoosting asks for at least 20 observations per leaf by default and recommends no leaf minimum",
+        "Recommends min_child_weight=0 for the classifier, because under logistic loss the default of 1 still asks for several observations per leaf",
+        "Recommends tuning the depth over a low grid capped at about 5, raising the cap only if the best depth keeps landing on it",
+        "Recommends scoring every boosting round on the validation draw, for example with eval_set and evals_result, to choose the number of trees"
+      ]
     }
   ]
 }
