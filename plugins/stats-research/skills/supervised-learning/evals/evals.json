@@ -5,12 +5,13 @@
       "id": 0,
       "name": "selected-setting-on-the-edge",
       "prompt": "My super learner library for the outcome regression has xgboost at depths 2, 4 and 6 and learning rates 0.01 and 0.05, 200 trees each, plus a main-terms GLM. Across 500 simulation reps, cross-validation picks depth 6 with learning rate 0.05 in 470 of them. The TMLE results look fine. Anything to worry about?",
-      "expected_output": "Flags that the selected setting sits on the upper edge of both tuned grids in almost every rep, so the best xgboost setting may lie outside the grid. Recommends extending the grid upward in depth and learning rate while keeping runtime roughly constant, for example by dropping the depth-2 and 0.01 settings that are never chosen, or by raising the learning rate rather than the tree count. Recommends rechecking where the selection falls after the change.",
+      "expected_output": "Flags that the selected setting sits on the upper edge of both tuned grids in almost every rep, so the best xgboost setting may lie outside the grid. Recommends the plateau test first: average over reps the drop in validation risk from the next setting inside each edge (depth 4, learning rate 0.01) to the edge setting, and compare it with the standard error of one rep's validation risk. Unless the drop is under one standard error, recommends extending the grid upward in depth and learning rate while keeping runtime roughly constant, for example by dropping the depth-2 and 0.01 settings that are never chosen, or by raising the learning rate rather than the tree count. Recommends rechecking where the selection falls after the change.",
       "files": [],
       "assertions": [
         "Identifies that the chosen setting is at the upper edge of both the depth grid and the learning-rate grid",
         "Explains that an edge choice means the best setting may lie outside the grid, whatever the downstream TMLE results look like",
-        "Recommends extending the grid upward in both tuned hyperparameters",
+        "Says to check whether the risk is still falling toward each edge, by comparing the average drop in risk from the next setting inside with one standard error of a single rep's risk, before extending",
+        "Recommends extending the grid upward in both tuned hyperparameters unless the risk has flattened at the edge",
         "Proposes a way to keep the library's runtime roughly constant, such as dropping settings that are never chosen or raising the learning rate instead of adding trees",
         "Recommends checking the selected setting against the new grid after the change"
       ]
@@ -83,6 +84,20 @@
         "Recommends min_child_weight=0 for the classifier, because under logistic loss the default of 1 still asks for several observations per leaf",
         "Recommends tuning the depth over a low grid capped at about 5, raising the cap only if the best depth keeps landing on it",
         "Recommends scoring every boosting round on the validation draw, for example with eval_set and evals_result, to choose the number of trees"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "plateau-at-the-edge",
+      "prompt": "In my simulation (n = 1000, 400 reps) I score the elastic net's penalty path on the validation draw, and the smallest penalty on the path wins in about half the reps. I already extended the path down two decades, and it still picks the new smallest penalty about half the time. Averaged over reps, the validation risk at ten times the smallest penalty is higher by 0.001, and the standard error of one rep's validation risk is about 0.05. A paired test of that difference over all 400 reps gives z = 2.5. Should I extend the path again?",
+      "expected_output": "Says no. The average drop over the last decade, 0.001, is far below one standard error of one rep's validation risk, 0.05, so the risk has a plateau at the edge, and a further extension would gain less still. Explains that on a plateau noise decides among settings whose risks barely differ, so the smallest penalty keeps winning about half the time however far the path extends, and the share of edge choices will never fall. Says the z = 2.5 does not matter: the standard error of the average over reps shrinks as reps are added, so the test detects a fall far too small to matter. Says the plateau means the data want almost no penalty, which is a finding to report.",
+      "files": [],
+      "assertions": [
+        "Advises against extending the path again",
+        "Bases the advice on the average drop over the last decade being far below one standard error of a single rep's validation risk",
+        "Explains that on a plateau the smallest penalty keeps winning however far the path extends, because noise decides among settings whose risks barely differ",
+        "Says the significant z does not call for an extension, because the standard error of the average over reps shrinks with the number of reps, and the drop is far too small to matter",
+        "Says the plateau means the data want almost no penalty, and that this is worth reporting"
       ]
     }
   ]
