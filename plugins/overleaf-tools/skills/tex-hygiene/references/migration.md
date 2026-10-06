@@ -13,7 +13,7 @@ paper repo, and change one kind of thing at a time.
 5. Move the results, one at a time
 6. Move the figures, one at a time
 7. Move the sections, and number a sections/ folder that has no numbers
-8. Re-break the lines, if the user agrees
+8. Re-break the lines and fix the typed names, if the user agrees
 9. Build and compare
 10. Check and commit
 
@@ -141,7 +141,7 @@ first. Step 5 below compares with that baseline.
 6. After the push, tell the user to delete any empty old folder in the
    Overleaf file tree.
 
-## 8. Re-break the lines, if the user agrees
+## 8. Re-break the lines and fix the typed names, if the user agrees
 
 Coauthors are paused for the conversion, so this is the best time to put each
 sentence on its own line in the whole paper. Ask the user first, because the
@@ -149,6 +149,12 @@ change touches almost every line of text. Replace only the space between two
 sentences with a line break, and leave all other text as it is. Build before
 and after the change, and compare the two with `pdftotext`. The text of the
 PDF must not change at all. Make the change a commit of its own.
+
+The checker's `typed-ref` warnings can be fixed in the same way, if the user
+agrees: replace each typed name and its `\ref` with `\cref`, `\Cref` or
+`\eqref`, and change nothing else. The text of the PDF may change only where
+a typed name was wrong, or where `\eqref` adds the parentheses around an
+equation number. Make this a commit of its own too.
 
 ## 9. Build and compare
 
@@ -172,5 +178,6 @@ defined labels.
 
 Run the checker again. No errors may remain, and each remaining warning needs
 a reason. Commit in the paper repo, with one commit each for the results, the
-figures, the sections and the line breaks, and messages that say what moved.
+figures, the sections, the line breaks and the typed names, and messages that
+say what moved.
 Push by the paper repo's rules, and ask first if it has none.

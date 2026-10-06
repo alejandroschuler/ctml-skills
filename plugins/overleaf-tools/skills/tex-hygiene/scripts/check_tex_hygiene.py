@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check that a LaTeX paper keeps each result in theory/ and each TikZ figure in tikz/,
-keeps its text in short numbered files in sections/, and puts each sentence on its own line.
+keeps its text in short numbered files in sections/, puts each sentence on its own line,
+and lets cleveref name its cross-references.
 
 Read-only: it never changes a file. Usage:
 
@@ -46,6 +47,11 @@ and \\iffalse blocks. Its rules:
                   root file counts from \\begin{document}. Files in theory/,
                   tikz/ and artefacts/ are exempt.
   sentence-lines  a line of prose holds more than one sentence
+  typed-ref       a name typed in front of \\ref, as in Lemma~\\ref{lem:x}, where
+                  \\cref, \\Cref or \\eqref would print the name. When the .aux
+                  file of a build has cleveref's data, the labels of list items
+                  are skipped, and a typed name that does not match the kind of
+                  its label gets a warning of its own.
   section-name    a file or folder in sections/ does not start with a number
                   such as 10- or A1-, or shares its number with another one
                   in the same folder. When no file there has a number, the
@@ -150,6 +156,38 @@ SECTION_NAME = re.compile(r"^(\d{2}|A\d)-(.+)$")
 SENTENCE_END = re.compile(r"[.?!]+['\")}]*[ \t]+(?=[A-Z]|\\([A-Za-z]+))")
 HEADING = re.compile(r"\\(section|subsection|subsubsection|paragraph)\*?\s*[\[{]")
 NOTE_MODE = re.compile(r"^\s*%\s*writing-math:\s*note\b", re.M | re.I)
+# Words typed in front of \ref that \cref or \eqref would print, each with the
+# kind of label that it names. Appendix, condition, step and item are left
+# out: \cref calls an appendix section "Section", and the others often mark
+# list items, where \cref prints "Item".
+TYPED_NAMES = {
+    "theorem": "theorem", "thm": "theorem",
+    "proposition": "proposition", "prop": "proposition",
+    "lemma": "lemma", "lemmata": "lemma", "lem": "lemma",
+    "corollary": "corollary", "corollaries": "corollary", "cor": "corollary",
+    "claim": "claim", "conjecture": "conjecture", "conj": "conjecture",
+    "definition": "definition", "def": "definition", "defn": "definition",
+    "assumption": "assumption", "assump": "assumption",
+    "remark": "remark", "rem": "remark", "example": "example", "ex": "example",
+    "section": "section", "sec": "section", "subsection": "subsection",
+    "chapter": "chapter", "figure": "figure", "fig": "figure",
+    "table": "table", "tab": "table", "algorithm": "algorithm", "alg": "algorithm",
+    "equation": "equation", "eq": "equation", "eqn": "equation",
+}
+# Kinds that a typed name must match exactly. A section and a subsection are
+# both called sections, so they are not compared.
+MATCHED_KINDS = {
+    "theorem", "proposition", "lemma", "corollary", "claim", "conjecture",
+    "definition", "assumption", "remark", "example", "figure", "table",
+    "algorithm", "equation",
+}
+TYPED_REF = re.compile(
+    r"(?<![A-Za-z@\\])(?P<name>" + "|".join(sorted(TYPED_NAMES, key=len, reverse=True))
+    + r")(?:s|es)?\.?(?:~|\\ |\s+)(?P<paren>\()?\\ref\*?\s*\{(?P<label>[^{}]+)\}",
+    re.I,
+)
+CREF_TYPE = re.compile(r"\\newlabel\{(?P<label>.+?)@cref\}\{\{\[(?P<kind>[^\]]*)\]")
+CLEVEREF = re.compile(r"\\(?:usepackage|RequirePackage)\s*(?:\[[^\]]*\])?\s*\{[^}]*\bcleveref\b")
 
 
 @dataclass
@@ -741,6 +779,7 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, sections: Path,
     check_generated(w, paper, root)
     check_sections(w, root)
     check_text(w, root, max_lines)
+    check_refs(w, root)
 
     summary = {
         "results": len(w.results),
@@ -938,6 +977,71 @@ def check_text(w: Walker, root: Path, max_lines: int) -> None:
                   f"has {counted}. No heading splits it, so split it between paragraphs "
                   f"where the topic turns: replace this file with the folder {folder}/, "
                   f"with the first part in {head} and the rest in {folder}/10-<slug>.tex.")
+
+
+def label_kinds(root: Path) -> dict[str, str]:
+    """The kind of each label, from the cleveref data in the .aux file of the
+    last build. Empty when there is no build or the paper has no cleveref."""
+    aux = root.with_suffix(".aux")
+    if not aux.is_file():
+        return {}
+    text = aux.read_text(encoding="utf-8", errors="replace")
+    return {m.group("label"): m.group("kind") for m in CREF_TYPE.finditer(text)}
+
+
+def check_refs(w: Walker, root: Path) -> None:
+    """The typed-ref rule, for each file that the body reads."""
+    kinds = label_kinds(root)
+    texts = list(w.preamble_parts)
+    for sty in sorted(w.paper.glob("*.sty")):
+        texts.append(strip_comments(sty.read_text(encoding="utf-8", errors="replace")))
+    load = "" if CLEVEREF.search("\n".join(texts)) else (
+        " The preamble does not load cleveref, so load "
+        "\\usepackage[capitalise,noabbrev]{cleveref} after hyperref.")
+    root = root.resolve()
+    for fi in w.files.values():
+        path = fi.path
+        if not (fi.body or path == root) or path.suffix == ".bbl":
+            continue
+        if any(part in GENERATED_DIRS for part in Path(w.rel(path)).parts[:-1]):
+            continue
+        text = clean(path.read_text(encoding="utf-8", errors="replace"))
+        if path == root:
+            doc = re.search(r"\\begin\s*\{document\}", text)
+            if not doc:
+                continue
+            text = blank(text, 0, doc.start())
+        lines: list[int] = []
+        example = ""
+        for m in TYPED_REF.finditer(text):
+            label = m.group("label").strip()
+            kind = kinds.get(label, "")
+            if kind.startswith("enum"):
+                continue  # a list item, where \cref prints "Item"
+            line = line_of(text, m.start())
+            named = TYPED_NAMES[m.group("name").lower()]
+            if named == "equation":
+                fix = f"\\eqref{{{label}}}"
+            else:
+                start = text[text.rfind("\n", 0, m.start()) + 1 : m.start()].strip() == ""
+                fix = f"\\{'C' if start else 'c'}ref{{{label}}}"
+            now = TYPED_NAMES.get(kind.lower(), kind.lower())
+            if named in MATCHED_KINDS and now in MATCHED_KINDS and named != now:
+                w.add("typed-ref", "warning", path, line,
+                      f"\"{m.group(0)}\" names a {named}, but {label} is a {kind} in the "
+                      f"last build, so the PDF prints the wrong name. Write {fix}.")
+                continue
+            lines.append(line)
+            example = example or f"{fix} for \"{m.group(0)}\""
+        if not lines:
+            continue
+        lines = sorted(set(lines))
+        shown = ", ".join(map(str, lines[:8])) + (", ..." if len(lines) > 8 else "")
+        many = len(lines) > 1
+        w.add("typed-ref", "warning", path, lines[0],
+              f"{len(lines)} line{'s' if many else ''} type{'' if many else 's'} a name in front "
+              f"of \\ref (line{'s' if many else ''} {shown}). Write {example}, so that the "
+              "name follows the label. Fix them in the paragraphs that you edit." + load)
 
 
 def section_parts(w: Walker, path: Path) -> tuple[str, ...]:

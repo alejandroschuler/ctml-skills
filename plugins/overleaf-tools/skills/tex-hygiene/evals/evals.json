@@ -1,6 +1,6 @@
 {
   "skill_name": "tex-hygiene",
-  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split. Evals 12 and 13 test the section numbers: a new section between two others, and a paper from before the numbering rule.",
+  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split. Evals 12 and 13 test the section numbers: a new section between two others, and a paper from before the numbering rule. Evals 14 and 15 test the cross-reference rule: a new sentence that cites results, and a coauthor's typed names after a pull.",
   "evals": [
     {
       "id": 0,
@@ -99,6 +99,20 @@
       "prompt": "add a short discussion section at the end of the body",
       "fixture": "paper set up under overleaf-tools 0.4.0: sections/introduction.tex, setup.tex, methods.tex (which inputs sections/methods-estimator.tex) and proofs.tex, none numbered",
       "expected_output": "Adds sections/discussion.tex without a number, to match the paper, and inputs it in main.tex before \\appendix. Does not rename the other files unasked. Mentions the checker's section-name warning and offers to number the files with the steps in references/migration.md, noting that renamed files can lose their Overleaf comments."
+    },
+    {
+      "id": 14,
+      "name": "cite-with-cref",
+      "prompt": "add a sentence at the start of the discussion saying that the lemma on the empirical process term and the main CLT together give root-n inference, and point to the simulation figure",
+      "fixture": "paper that follows the layout, with cleveref loaded, lem:ep-term and thm:nu-clt in theory/, and fig:coverage in tikz/",
+      "expected_output": "Writes the sentence with \\Cref or \\cref, for example \\Cref{lem:ep-term,thm:nu-clt} and \\cref{fig:coverage}, and types no name in front of \\ref. The checker reports no typed-ref warning for the new line."
+    },
+    {
+      "id": 15,
+      "name": "typed-ref-after-pull",
+      "prompt": "I pulled from overleaf, Bo rewrote the intro. can you check the tex",
+      "fixture": "paper that follows the layout and has been built; Bo's intro has Lemma~\\ref{thm:nu-clt}, where thm:nu-clt is a proposition, Section~\\ref{sec:setup}, Appendix~\\ref{sec:proofs}, and Assumption~\\ref{it:positivity} on an enumerate item; the other sections use \\cref",
+      "expected_output": "Runs the checker. Fixes Lemma~\\ref{thm:nu-clt} to \\cref{thm:nu-clt} and reports that the PDF printed the wrong name. Changes Section~\\ref{sec:setup} to \\cref{sec:setup} in the intro, which was edited. Leaves Appendix~\\ref{sec:proofs} and Assumption~\\ref{it:positivity} as they are."
     }
   ]
 }

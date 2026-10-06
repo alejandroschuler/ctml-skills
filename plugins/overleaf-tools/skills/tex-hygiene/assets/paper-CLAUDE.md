@@ -26,6 +26,10 @@ This paper follows the `tex-hygiene` skill of the overleaf-tools plugin.
   folder. Notes are not split.
 - Put each sentence of prose on its own line. When you edit a paragraph in
   another style, re-break that paragraph and no other.
+- Cite results, sections, figures and tables with `\cref`, or `\Cref` at the
+  start of a sentence, and equations with `\eqref`. Do not type the name in
+  front of `\ref`, as in `Lemma~\ref{...}`. The proof headings and pointers
+  that the templates write keep `\autoref`.
 - `deferproofs.sty` holds the proof-at-the-end setup. Build with
   `latexmk -pdf main.tex`. The build writes `main-pratenddefaultcategory.tex`;
   never edit or commit it.

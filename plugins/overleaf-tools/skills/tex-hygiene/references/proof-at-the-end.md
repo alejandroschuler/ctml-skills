@@ -79,8 +79,11 @@ alone.
 ## Pointer wording
 
 - `\autoref{pf:<slug>}` prints "subsection A.3". `\cref{pf:<slug>}` prints
-  "section A.3" for a subsection unless the paper renames it, so keep
-  `\autoref` in `text link`.
+  "Section A.3" for a subsection unless the paper renames it, so keep
+  `\autoref` in `text link`, although the text cites with `\cref`.
+- Keep `\autoref` in the heading `Proof of \autoref{thm:<slug>}` too. hyperref
+  turns it into "Proof of Proposition 2" in the PDF bookmark, but with `\cref`
+  the bookmark reads "Proof of thm:<slug>".
 - To say "Appendix A.3" instead, write
   `text link={The proof is in Appendix~\ref{pf:<slug>}.}`.
 - A class can number the appendix differently. With `elsarticle`, `\autoref`
