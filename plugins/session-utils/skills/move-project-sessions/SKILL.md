@@ -30,7 +30,8 @@ applied, by the script or by hand. The app holds the session list in memory
 and rewrites its store as it works, so it overwrites edits made while it
 runs. Even an edit that survives does not show until the app restarts. The
 script refuses to apply while it detects the app running, unless `--force` is
-passed. Do not pass `--force` to get past that refusal while the app runs.
+passed: it prints `REFUSING` and exits with code 4. Do not pass `--force` to
+get past that refusal while the app runs.
 
 If Claude runs inside the desktop app, quitting the app ends Claude's own
 session. The user then applies the changes in a plain terminal
@@ -70,9 +71,16 @@ session. The user then applies the changes in a plain terminal
    new location with its history intact. For the CLI, `cd` into the new path
    and run `claude --resume`.
 
-Backups land in `~/.claude/projects/_move-backups/<old>-to-<new>-<timestamp>/`:
-a copy of the transcript folder, of `.claude.json`, and of each sidebar file
-that the apply run changes. To revert, restore those copies.
+Backups land in `~/.claude/projects/_move-backups/<old>-to-<new>-<timestamp>/`.
+The backup holds a copy of the transcript folder, or of both folders when
+they merge. It also holds a copy of `.claude.json` and of each sidebar file
+that the apply run changes. The sidebar copies keep their subfolders under
+`claude-code-sessions/`. The apply run writes the full backup before its
+first change, and it makes no backup folder when it changes nothing. To
+revert, restore those copies. If a write fails during the apply run, the
+script stops, names the backup folder, and exits with code 1. It does the
+same if its check after the apply run finds a transcript that is not as
+planned. Restore from that folder before you run the script again.
 
 ## How the script stays safe
 
@@ -81,13 +89,55 @@ that the apply run changes. To revert, restore those copies.
   or `originCwd` equals the old path. It never replaces the path string across
   all of `~/.claude`, because the same string can appear in other projects'
   transcripts and in `.claude.json` backups. Those mentions stay as they are.
+- **Projects inside the moved folder.** A project inside the moved folder,
+  such as a worktree under `.claude/worktrees/`, has its own path in each
+  store. The dry run lists these paths in a `NOTE`. Give each of them its own
+  dry run and apply run, with `--to` set to the same path under the new
+  folder. Git also records where each worktree is. After the move, run
+  `git worktree repair .claude/worktrees/*` in the moved repository.
 - **Boundary guard.** If the old path appears in the transcripts as the prefix
   of a longer name, for example `/a/b/proj-backup` when `/a/b/proj` moves, a
   string replace would corrupt that other path. The script then prints
   `ABORT` and exits with code 3, in a dry run as well as with `--apply`, and
-  changes none of the stores. Inspect those matches by hand.
-- **JSON validation.** The script parses each rewritten transcript line as
-  JSON before it saves the file.
+  changes none of the stores. Inspect those matches by hand. The guard looks
+  only for a letter, a digit, `-` or `_` right after the path, or after a
+  `.` there, as in `/a/b/proj.bak`. Other punctuation, such as a full stop
+  or a question mark at the end of a sentence, does not count. If the new
+  path contains the old one, as in a move from `thesis` to `thesis-final`,
+  the mentions of the new path do not count, and they stay as they are.
+- **Merge into an existing new folder.** If a session already ran at the new
+  path, its transcript folder exists already. The old folder then merges into
+  it, and the dry run gives the number of files for each step:
+  - A file that only the old folder has moves over.
+  - If the new folder already holds the same file, the old copy is deleted.
+    A Finder `.DS_Store` file counts as the same.
+  - If the new folder holds a copy of the same transcript that still has the
+    old path, or that has fewer lines, the rewritten old copy replaces it. If
+    it holds a longer copy, the longer copy stays.
+  - The lines of the old `memory/MEMORY.md` that the new copy does not have
+    go to the end of the new copy.
+
+  The script does not replace the old path in the files that were already
+  in the new folder.
+- **Merge conflicts.** If any other file is in both folders with different
+  contents, the script prints `ABORT` and exits with code 3. It does the
+  same if the new folder reaches a file through a symlink, because a merge
+  through a symlink can delete the only copy. This happens in a dry run as
+  well as with `--apply`, and none of the stores changes. Merge each such
+  pair by hand into the new folder's copy, or keep the better copy there.
+  Then move the old folder's copy out of `~/.claude/projects`. Do not rename
+  a transcript (`*.jsonl`), because its name is its session ID. Replace a
+  symlinked folder in the new folder with a real folder. Then run the dry
+  run again.
+- **Config merge.** If `.claude.json` has a key for the new path too, the old
+  entry merges into it. A setting that only the old entry has is added, an
+  empty new value takes the old value, and two lists are joined. If both
+  entries have a different value for a setting, the new value stays. The dry
+  run names those settings, and the backup keeps the old values.
+- **JSON validation.** Before any change, in a dry run as well as with
+  `--apply`, the script tries the rewrite on each transcript line. If a valid
+  JSON line would become invalid, the script prints `ABORT` and exits with
+  code 3, and changes none of the stores.
 
 ## The three stores
 
@@ -97,11 +147,16 @@ others.
 1. **CLI transcripts:** `~/.claude/projects/<encoded-path>/`.
    - The folder name is the project path encoded as a name. Claude Code 2.1
      replaces every character other than an ASCII letter or digit with `-`.
-     It cuts a name longer than 200 characters to its first 200 and adds a
-     hash of the path. The rule varies by version, so the script infers it
-     from the existing pairs of `.claude.json` keys and folder names on the
-     machine, rather than guessing. The name must match the new path, or the
-     CLI looks in the wrong place.
+     It cuts a name longer than 200 characters to its first 200 and adds `-`
+     and a hash of the path. The script gives the new folder this name,
+     because the CLI looks for the new path there. Older versions replaced
+     fewer characters, so the old folder can have an older name. To find it,
+     the script also tests each rule on the existing pairs of `.claude.json`
+     keys and folder names on the machine. If no folder has a name that
+     fits, the script looks for the folder whose transcripts belong to the
+     old path. If more than one folder does, the dry run says so in a
+     `NOTE`. Run the apply again after the first one, to merge the next
+     folder.
    - Each `*.jsonl` record, including those in `subagents/`, stores an
      internal `cwd` and refers to files by absolute path. These still point at
      the old location.
