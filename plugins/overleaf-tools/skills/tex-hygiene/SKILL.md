@@ -1,6 +1,6 @@
 ---
 name: tex-hygiene
-description: "Keeps the LaTeX source of a paper in fixed places. Every theorem, proposition, lemma and corollary lives with its proof in its own file, theory/<slug>.tex, which the body inputs where the statement belongs, and proof-at-the-end prints the proof in the appendix by itself. Every TikZ figure lives in its own file, tikz/<slug>.tex. The text is split into section files of at most about 200 lines, with each sentence on its own line, so that agents can work on the paper in parallel and merge cleanly. Use it whenever you add, move, split, restate or delete a result, a proof, a TikZ figure or a section in a .tex paper, write or re-break paragraphs of a paper, start a new paper, move proofs to the appendix, or tidy or check the layout of an existing paper, even when the user does not name the convention. It covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
+description: "Keeps the LaTeX source of a paper in fixed places. Every theorem, proposition, lemma and corollary lives with its proof in its own file, theory/<slug>.tex, which the body inputs where the statement belongs, and proof-at-the-end prints the proof in the appendix by itself. Every TikZ figure lives in its own file, tikz/<slug>.tex. The text lives in numbered section files of at most about 200 lines, so that the sections/ folder reads as the table of contents, and each sentence is on its own line, which lets agents work on the paper in parallel and merge cleanly. Use it whenever you add, move, split, restate or delete a result, a proof, a TikZ figure or a section in a .tex paper, write or re-break paragraphs of a paper, start a new paper, move proofs to the appendix, or tidy or check the layout of an existing paper, even when the user does not name the convention. It covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
 ---
 
 # TeX hygiene
@@ -15,8 +15,10 @@ figure and every section has exactly one home:
 - **Figures.** Each TikZ figure lives in `tikz/<slug>.tex`, which holds the
   whole `figure` environment. The body inputs the file where the figure
   belongs.
-- **Text.** Each section lives in `sections/<slug>.tex`, and a file that
-  grows past about 200 lines splits again. Each sentence is on its own line.
+- **Text.** Each section lives in a numbered file such as
+  `sections/20-setup.tex`, so that the folder lists the sections in the order
+  of the paper. A file that grows past about 200 lines becomes a folder of
+  numbered parts. Each sentence is on its own line.
 
 This pays off in four ways. A result moves as one unit: move its `\input` line
 and the statement, proof, labels and appendix heading all go with it. Section
@@ -154,26 +156,64 @@ file gives the history of one part of the paper.
 
 ### Section files
 
-Each section lives in `sections/<slug>.tex`, which starts with its `\section`
-heading and label, and the root file inputs it. The root file then holds the
-preamble, the title, the abstract and one `\input` line for each section, and
-a section moves with its `\input` line. The slug comes from the section's
-`sec:` label, or from its heading when it has no label. A new paper starts
-this way. Convert an existing paper when the body of its root file grows past
-the target below, or when the user asks. A paper that already keeps its
-sections in another folder keeps that folder.
+Each section lives in its own file in `sections/`, which starts with its
+`\section` heading and label. The root file holds the preamble, the title, the
+abstract and the `\input` lines. A new paper starts this way. Convert an
+existing paper when the body of its root file grows past the target below, or
+when the user asks. A paper that already keeps its sections in another folder
+keeps that folder.
+
+Each name in `sections/` is a number, a hyphen and a slug. The numbers sort in
+the order of the paper, so the folder reads as the table of contents:
+
+```text
+sections/
+  10-introduction.tex
+  20-setup.tex
+  30-methods/
+    00-methods.tex      \section{Methods}, its label and the lead-in
+    10-estimator.tex    \subsection{The estimator}
+    20-inference.tex
+  40-simulation.tex
+  50-discussion.tex
+  A1-proofs.tex         after \appendix in the root file
+```
+
+- The slug comes from the `sec:` label of the file's first heading, or from
+  the heading when it has no label. A part that starts with no heading gets
+  a slug for its topic.
+- Number the body sections 10, 20, 30, in steps of 10. Number the appendix
+  sections A1, A2, A3. They sort after the body.
+- A new section takes a free number between its neighbours, such as 25
+  between 20 and 30, so that no other file gets a new name. Only when no
+  number is free, renumber the files after it, in a commit with no other
+  change.
+- The root file inputs every file in `sections/`, in the order of their
+  names. A file in `sections/` never inputs another file in `sections/`. It
+  still inputs its `theory/`, `tikz/` and artefact files. The root file then
+  lists the whole paper in the same order as the folder, and the checker
+  reports an error when the two orders differ.
 
 Keep each file under about 200 lines, counted with one sentence on each line.
-That is about five pages. When a file grows past the target, split it:
+That is about five pages. When a file grows past the target, it becomes a
+folder with the same name, such as `30-methods/` for `30-methods.tex`. Split
+it:
 
-- **At a heading.** Move a `\subsection` or a lower heading, with its text, to
-  `sections/<section-slug>-<slug>.tex`, and input that file where the text
-  was. Each piece should hold at least a few paragraphs.
+- **At a heading.** The section heading, its label and the text before the
+  first part that you move go in `00-<slug>.tex` in the folder, with the slug
+  of the old file. Each `\subsection` or lower heading that you split at, with
+  its text, goes in `10-<slug>.tex`, `20-<slug>.tex` and so on. Each piece
+  should hold at least a few paragraphs.
 - **Between paragraphs**, when no heading splits the file. Split where the
-  topic turns. Do not add a heading to make a split, because a new heading
-  changes the paper.
+  topic turns. The first part goes in `00-<slug>.tex` and the rest in
+  `10-<slug>.tex`. Do not add a heading to make a split, because a new
+  heading changes the paper.
 - **Not at all**, when the file is only a few paragraphs over, up to about 250
   lines, and no heading splits it into two good pieces.
+
+Then replace the old `\input` line in the root file with one line for each
+new file. A file in the folder that grows past the target splits in the same
+way, into a folder of its own.
 
 The target is for files of text. A `theory/` file keeps its whole proof, and a
 `tikz/` file its whole figure, however long they are. Never split a generated
@@ -182,15 +222,18 @@ file, such as a table that a reproducible-paper-artefacts pipeline writes.
 - Use `\input`. `\include` starts a new page and cannot be nested, so it is
   only for the chapters of a thesis or a book.
 - An `\input` path starts from the folder of the root file, also inside a file
-  in `sections/`. Write `\input{sections/simulation-design}`, not
-  `\input{simulation-design}`.
+  in `sections/`. Write `\input{sections/30-methods/10-estimator}`, and in a
+  section file write `\input{theory/nu-clt}`.
 - A split only moves text. Compare the text of the PDF before and after the
   split with `pdftotext`. It must not change.
 - Overleaf review comments and tracked changes do not move with text that
-  moves to another file through git, and they can be lost. Before you split a
-  file that coauthors review on Overleaf, read its open comments with the
+  moves to another file through git, and they can be lost. Treat a file that
+  you rename in the same way. Before you split or renumber a file that
+  coauthors review on Overleaf, read its open comments with the
   `overleaf-comments` skill if it is installed. Tell the user which comments
   are on text that will move.
+- When a push renames a folder, Overleaf keeps an empty folder with the old
+  name. Tell the user to delete it in the Overleaf editor.
 
 ### One sentence per line
 
@@ -215,7 +258,8 @@ shows the sentence that changed, not its whole paragraph.
 ## Set up a paper
 
 1. Copy `assets/template/deferproofs.sty` next to `main.tex`, and make the
-   folders `theory/`, `tikz/` and `sections/`.
+   folders `theory/`, `tikz/` and `sections/`. The template's
+   `sections/10-setup.tex` and `sections/A1-proofs.tex` show the names.
 2. Load `\usepackage{deferproofs}` in the preamble after the theorem
    declarations, and after `hyperref` and `cleveref`. For each other result
    environment the paper declares, add an alias after it, for example
@@ -234,16 +278,21 @@ shows the sentence that changed, not its whole paragraph.
   it where the statement belongs.
 - **New figure.** Copy `tikz/mean-tails.tex` to `tikz/<slug>.tex`, replace the
   drawing and the header, and input it where the figure belongs.
-- **New section.** Write it in `sections/<slug>.tex`, which starts with its
-  heading, and input it from the root file.
+- **New section.** Write it in `sections/<NN>-<slug>.tex`, with a free
+  number at its place, and start the file with its heading. Add its `\input`
+  line to the root file at the same place.
 - **A file of text passes about 200 lines.** Split it as in "Section files".
-- **Move a result, a figure or a section.** Move its `\input` line.
+- **Move a result or a figure.** Move its `\input` line.
+- **Move a section.** Give its file a free number at the new place, and move
+  its `\input` line. For a folder, rename the folder and move all of its
+  `\input` lines together.
 - **Edit a result.** Find the file from the label and edit it there. The
   appendix prints from a generated file, so a jump from the PDF appendix to
   the source can land in `main-pratenddefaultcategory.tex`. Do not edit that
   file.
-- **Delete a result or a figure.** Remove its `\input` line and its file, then
-  search for `\autoref`, `\ref` and `\cref` calls to its labels.
+- **Delete a result, a figure or a section.** Remove its `\input` line and its
+  file, then search for `\autoref`, `\ref` and `\cref` calls to its labels.
+  Do not renumber the other section files to close the gap.
 - **A coauthor's inline result or figure.** Coauthors on Overleaf may write a
   theorem or a TikZ picture inline. Move it into its own file, as for a new
   one.
@@ -274,6 +323,15 @@ Two warnings are about the text. `long-file` marks a file past the line target
 more than one sentence. A paper written in another style gets many
 `sentence-lines` warnings. Fix them in the paragraphs that you edit, and leave
 the rest. The `long-file` rule skips a root file whose mode line says `note`.
+
+Two rules are about `sections/`. `section-order` is an error: a section file
+that another section file inputs, or a root file that inputs the section
+files in another order than their names. `section-name` warns about a name
+with no number, and about two names with the same number in one folder. A
+paper whose section files have no numbers at all, from before this rule, gets
+one `section-name` warning and no `section-order` check. Keep its names until
+the user asks to number them, then follow `references/migration.md`. Add
+`--sections-dir <dir>` when the paper keeps its sections in another folder.
 
 Then build the paper with `latexmk -pdf main.tex`, or with three `pdflatex`
 passes, since the appendix references settle on the third. Read the log for

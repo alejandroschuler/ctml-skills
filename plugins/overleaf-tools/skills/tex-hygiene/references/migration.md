@@ -90,10 +90,39 @@ unless the author asks for it now.
 ## 7. Move the sections
 
 When the checker gives a `long-file` warning for the root file, move each
-section to `sections/<slug>.tex`, with its heading and label at the top, and
-replace it with `\input{sections/<slug>}`. Then split each section file that is
-still past the target, as in "Section files" in `SKILL.md`. Do not change any
-words on the way.
+section to `sections/<NN>-<slug>.tex`, with its heading and label at the top,
+and replace it with `\input{sections/<NN>-<slug>}`. Number the body sections
+10, 20, 30 in order, and the appendix sections A1, A2, A3. Then split each
+section file that is still past the target, as in "Section files" in
+`SKILL.md`. Do not change any words on the way.
+
+### Number a sections/ folder that has no numbers
+
+A paper set up before the numbering rule keeps its sections in
+`sections/<slug>.tex`, and a long section can input its parts from
+`sections/<section-slug>-<slug>.tex`. The checker gives one `section-name`
+warning for such a paper. Number its files only when the user asks, because
+every file gets a new name.
+
+1. Read the open Overleaf comments on the section files with the
+   `overleaf-comments` skill, if it is installed. A file that gets a new name
+   can lose its comments, so tell the user which files have open comments
+   before you start.
+2. Give each section file its number with `git mv`, in the order of the root
+   file: 10, 20, 30 for the body, and A1, A2, A3 for the appendix.
+3. A section that inputs its parts becomes a folder. Move the section file to
+   `<NN>-<slug>/00-<slug>.tex`. Move each part to `10-<slug>.tex`,
+   `20-<slug>.tex` and so on in that folder, in the order that the section
+   inputs them, and drop the section's slug from the front of the part's
+   name. Move each part's `\input` line from the section file to the root
+   file, after the line of the section.
+4. Change the `\input` lines in the root file to the new paths. Run the
+   checker again until it reports no `section-name` or `section-order`
+   problem.
+5. Build and compare as in step 9. Commit the renames with no other change,
+   so that git records them as renames.
+6. After the push, tell the user to delete any empty old folder in the
+   Overleaf file tree.
 
 ## 8. Re-break the lines, if the user agrees
 

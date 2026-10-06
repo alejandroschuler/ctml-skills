@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Check that a LaTeX paper keeps each result in theory/ and each TikZ figure in tikz/,
-keeps its files of text short, and puts each sentence on its own line.
+keeps its text in short numbered files in sections/, and puts each sentence on its own line.
 
 Read-only: it never changes a file. Usage:
 
     python3 check_tex_hygiene.py [PAPER_DIR] [--main FILE] [--theory-dir DIR]
-                                 [--tikz-dir DIR] [--result-env NAME]
-                                 [--max-lines N] [--json]
+                                 [--tikz-dir DIR] [--sections-dir DIR]
+                                 [--result-env NAME] [--max-lines N] [--json]
 
 PAPER_DIR defaults to the current directory. The root file is --main, else
 main.tex, else the one top-level .tex file that has a \\documentclass.
@@ -33,9 +33,9 @@ and \\iffalse blocks. Its rules:
   verbatim        verbatim material inside a deferred result or its proofE
   hash            a macro parameter # inside proofE, which proof-at-the-end
                   doubles when it writes the proof out
-  twice           a theory/ or tikz/ file is read more than once, which
-                  defines its labels twice
-  orphan          a file in theory/ or tikz/ that nothing reads
+  twice           a theory/, tikz/ or sections/ file is read more than once,
+                  which defines its labels twice
+  orphan          a file in theory/, tikz/ or sections/ that nothing reads
   missing         an \\input target that does not exist
   old-pointer     preamble code for the run-in proof pointer that puts the
                   pointer into a heading or loses it at a list
@@ -46,6 +46,14 @@ and \\iffalse blocks. Its rules:
                   root file counts from \\begin{document}. Files in theory/,
                   tikz/ and artefacts/ are exempt.
   sentence-lines  a line of prose holds more than one sentence
+  section-name    a file or folder in sections/ does not start with a number
+                  such as 10- or A1-, or shares its number with another one
+                  in the same folder. When no file there has a number, the
+                  paper keeps an older layout, and one warning says so.
+  section-order   a sections/ file is input from a file other than the root,
+                  or the root inputs the sections/ files in an order other
+                  than the order of their names. Skipped when no file in
+                  sections/ has a number.
 
 The long-file rule is for the manuscript only. When the root file has the mode
 line % writing-math: note, the document is a note, and that rule is skipped.
@@ -136,6 +144,9 @@ NOT_A_START = {
 }
 # Folders of generated files, which no one splits or edits by hand.
 GENERATED_DIRS = {"artefacts"}
+# The name of a file or folder in sections/: two digits, or A and a digit for
+# the appendix, then a hyphen and the slug.
+SECTION_NAME = re.compile(r"^(\d{2}|A\d)-(.+)$")
 SENTENCE_END = re.compile(r"[.?!]+['\")}]*[ \t]+(?=[A-Z]|\\([A-Za-z]+))")
 HEADING = re.compile(r"\\(section|subsection|subsubsection|paragraph)\*?\s*[\[{]")
 NOTE_MODE = re.compile(r"^\s*%\s*writing-math:\s*note\b", re.M | re.I)
@@ -426,10 +437,12 @@ def declared_envs(preamble: str) -> tuple[set[str], set[str], set[str]]:
 
 
 class Walker:
-    def __init__(self, paper: Path, theory: Path, tikz: Path, extra_results: set[str]):
+    def __init__(self, paper: Path, theory: Path, tikz: Path, sections: Path,
+                 extra_results: set[str]):
         self.paper = paper
         self.theory = theory
         self.tikz = tikz
+        self.sections = sections
         self.results_envs = set(RESULT_NAMES) | extra_results
         self.deferred_envs = set(DEFERRED_DEFAULTS)
         self.proof_deferred = set(PROOF_DEFERRED_DEFAULTS)
@@ -440,6 +453,7 @@ class Walker:
         self.proofs: list[tuple[Path, int, str, str]] = []  # file, line, env, context
         self.pf_outside: list[tuple[Path, int, str]] = []  # file, line, label
         self.prints: list[tuple[int, str, Path, int]] = []  # seq, category, file, line
+        self.section_reads: list[tuple[Path, Path, int]] = []  # file, reader, line
         self.stack: list[tuple[str, object]] = []
         self.seq = 0
         self.in_body = False
@@ -563,6 +577,8 @@ class Walker:
                         self.add("missing", "warning", path, line,
                                  f"\\{kind}{{{target}}} names a file that does not exist.")
                     continue
+                if self.under(found, self.sections):
+                    self.section_reads.append((found, path, line))
                 self.walk(found)
         self.active.pop()
 
@@ -642,9 +658,9 @@ class Walker:
 # The rules
 
 
-def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str],
-          max_lines: int = 200) -> tuple[Walker, dict]:
-    w = Walker(paper, theory, tikz, extra)
+def check(paper: Path, root: Path, theory: Path, tikz: Path, sections: Path,
+          extra: set[str], max_lines: int = 200) -> tuple[Walker, dict]:
+    w = Walker(paper, theory, tikz, sections, extra)
     w.walk(root)
     tdir, fdir = w.rel(theory), w.rel(tikz)
 
@@ -678,7 +694,7 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str],
 
     for fi in w.files.values():
         path = fi.path
-        if fi.reads > 1 and (w.under(path, theory) or w.under(path, tikz)):
+        if fi.reads > 1 and any(w.under(path, d) for d in (theory, tikz, sections)):
             w.add("twice", "error", path, None,
                   f"read {fi.reads} times, which defines its labels {fi.reads} times. "
                   "\\input it once.")
@@ -688,7 +704,7 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str],
             check_tikz_file(w, fi)
 
     read = {p for p, fi in w.files.items()}
-    for d in (theory, tikz):
+    for d in (theory, tikz, sections):
         if d.is_dir():
             for p in sorted(d.rglob("*.tex")):
                 if p.resolve() not in read:
@@ -723,6 +739,7 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str],
 
     check_pointer(w, root)
     check_generated(w, paper, root)
+    check_sections(w, root)
     check_text(w, root, max_lines)
 
     summary = {
@@ -896,26 +913,98 @@ def check_text(w: Walker, root: Path, max_lines: int) -> None:
             before = h - first + sum(1 for b in breaks if b < h)
             if min(before, size - before) >= max_lines // 5:
                 heads.append((abs(size / 2 - before), h, m.group(1)))
+        sdir = w.rel(w.sections)
         if path == root:
             if any(m.group(1) == "section" for m in HEADING.finditer(text)):
                 w.add("long-file", "warning", path, first,
-                      f"the body has {counted}. Move each "
-                      "\\section to sections/<slug>.tex and \\input it here.")
+                      f"the body has {counted}. Move each \\section to "
+                      f"{sdir}/<NN>-<slug>.tex, numbered 10, 20, 30 in order, and \\input "
+                      "each one here.")
             elif size > max_lines + max_lines // 4:
                 w.add("long-file", "warning", path, first,
-                      f"the body has {counted}. Move its "
-                      "text to files under sections/ and \\input them here.")
-        elif heads:
+                      f"the body has {counted}. Move its text to numbered files in "
+                      f"{sdir}/ and \\input them here.")
+            continue
+        folder, head = split_hint(w, path)
+        if heads:
             _, h, kind = min(heads)
             w.add("long-file", "warning", path, h,
-                  f"has {counted}. Split it at the "
-                  f"\\{kind} on line {h}: move that part to sections/{path.stem}-<slug>.tex "
-                  "and "
-                  "\\input it here.")
+                  f"has {counted}. Split it at the \\{kind} on line {h}: replace this "
+                  f"file with the folder {folder}/, put the text before that line in "
+                  f"{head} and the rest in {folder}/10-<slug>.tex, and \\input both "
+                  "from the root file.")
         elif size > max_lines + max_lines // 4:
             w.add("long-file", "warning", path, None,
                   f"has {counted}. No heading splits it, so split it between paragraphs "
-                  "where the topic turns.")
+                  f"where the topic turns: replace this file with the folder {folder}/, "
+                  f"with the first part in {head} and the rest in {folder}/10-<slug>.tex.")
+
+
+def section_parts(w: Walker, path: Path) -> tuple[str, ...]:
+    """The path of a sections/ file below that folder, without .tex. Tuples of
+    these sort in the same order as the file manager shows the files."""
+    return path.resolve().relative_to(w.sections.resolve()).with_suffix("").parts
+
+
+def check_sections(w: Walker, root: Path) -> None:
+    """The section-name and section-order rules."""
+    d = w.sections
+    files = sorted(d.rglob("*.tex")) if d.is_dir() else []
+    if not files:
+        return
+    sdir = w.rel(d)
+    numbered = {p.resolve() for p in files
+                if all(SECTION_NAME.match(s) for s in section_parts(w, p))}
+    if not numbered:
+        w.add("section-name", "warning", d, None,
+              f"no file in {sdir}/ has a number, so the folder does not show the order of "
+              "the paper. Keep the names until the user asks to number them, then follow "
+              "references/migration.md.")
+        return
+    owners: dict[tuple[tuple[str, ...], str], Path] = {}
+    for p in files:
+        if p.resolve() not in numbered:
+            w.add("section-name", "warning", p, None,
+                  "the name does not start with a number such as 10- or A1-. Give it the "
+                  "number of its place in the paper.")
+            continue
+        parts = section_parts(w, p)
+        for i, s in enumerate(parts):
+            num = SECTION_NAME.match(s).group(1)
+            here = d.joinpath(*parts[: i + 1])
+            other = owners.setdefault((parts[:i], num), here)
+            if other != here:
+                w.add("section-name", "warning", here, None,
+                      f"shares the number {num} with {w.rel(other)}. Give one of them a "
+                      "free number between its neighbours.")
+
+    root = root.resolve()
+    last: tuple[tuple[str, ...], Path] | None = None
+    seen: set[Path] = set()
+    for f, reader, line in w.section_reads:
+        if reader.resolve() != root:
+            w.add("section-order", "error", reader, line,
+                  f"{w.rel(f)} is input here. Input every file in {sdir}/ from "
+                  f"{w.rel(root)}, so that the root file lists the whole paper in order.")
+        key = f.resolve()
+        if key in seen or key not in numbered:
+            continue
+        seen.add(key)
+        parts = section_parts(w, f)
+        if last and parts < last[0]:
+            w.add("section-order", "error", reader, line,
+                  f"{w.rel(f)} is input after {w.rel(last[1])}, but its name sorts "
+                  "before it, so the folder shows another order than the paper. Give the "
+                  "file a number that fits its place, or move this line.")
+        last = (parts, f)
+
+
+def split_hint(w: Walker, path: Path) -> tuple[str, str]:
+    """The folder that replaces a long file, and the name of its first part."""
+    folder = path.with_suffix("")
+    m = SECTION_NAME.match(folder.name)
+    slug = m.group(2) if m else folder.name
+    return w.rel(folder), f"{w.rel(folder)}/00-{slug}.tex"
 
 
 def check_pointer(w: Walker, root: Path) -> None:
@@ -964,6 +1053,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--main", help="the root .tex file, relative to the paper directory")
     ap.add_argument("--theory-dir", default="theory", help="directory of result files (default: theory)")
     ap.add_argument("--tikz-dir", default="tikz", help="directory of figure files (default: tikz)")
+    ap.add_argument("--sections-dir", default="sections",
+                    help="directory of section files (default: sections)")
     ap.add_argument("--result-env", action="append", default=[],
                     help="another environment that holds a result; may repeat")
     ap.add_argument("--max-lines", type=int, default=200,
@@ -982,7 +1073,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     theory = paper / args.theory_dir
     tikz = paper / args.tikz_dir
-    w, summary = check(paper, root, theory, tikz, set(args.result_env), args.max_lines)
+    sections = paper / args.sections_dir
+    w, summary = check(paper, root, theory, tikz, sections, set(args.result_env),
+                       args.max_lines)
 
     errors = [f for f in w.findings if f.severity == "error"]
     warnings = [f for f in w.findings if f.severity == "warning"]

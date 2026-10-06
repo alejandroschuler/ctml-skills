@@ -1,6 +1,6 @@
 {
   "skill_name": "tex-hygiene",
-  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split.",
+  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split. Evals 12 and 13 test the section numbers: a new section between two others, and a paper from before the numbering rule.",
   "evals": [
     {
       "id": 0,
@@ -62,21 +62,21 @@
       "id": 8,
       "name": "split-long-section",
       "prompt": "add a subsection to the simulation section with the results under a misspecified propensity score",
-      "fixture": "paper that follows the layout; sections/simulation.tex has 190 lines at one sentence per line, with the subsections Design and Results",
-      "expected_output": "Writes the new subsection with one sentence per line. The file then passes 200 lines, so it moves each subsection to sections/simulation-<slug>.tex, which starts with its heading, and inputs each one from sections/simulation.tex with a path from the root folder, such as \\input{sections/simulation-design}. Adds no heading to make the split. The PDF text is unchanged except for the new subsection, and the checker gives no long-file warning."
+      "fixture": "paper that follows the layout; sections/40-simulation.tex has 190 lines at one sentence per line, with the subsections Design and Results",
+      "expected_output": "Writes the new subsection with one sentence per line. The file then passes 200 lines, so it becomes the folder sections/40-simulation/: the section heading, label and lead-in in 00-simulation.tex, and the subsections in 10-design.tex, 20-results.tex and 30-<slug>.tex, each starting with its heading. Replaces the one \\input line in main.tex with one line for each file, in order, with paths from the root folder such as \\input{sections/40-simulation/10-design}. No section file inputs another. Adds no heading to make the split. The PDF text is unchanged except for the new subsection, and the checker gives no long-file, section-name or section-order problem."
     },
     {
       "id": 9,
       "name": "slightly-over-no-heading",
       "prompt": "add a paragraph on limitations to the discussion",
-      "fixture": "paper that follows the layout; sections/discussion.tex has 205 lines at one sentence per line and no subsections",
+      "fixture": "paper that follows the layout; sections/50-discussion.tex has 205 lines at one sentence per line and no subsections",
       "expected_output": "Adds the paragraph with one sentence per line and leaves the file whole, since it is only a few paragraphs over the target and no heading splits it. Adds no heading. May tell the user that the file is near the point where it would split between paragraphs."
     },
     {
       "id": 10,
       "name": "edit-in-paragraph-per-line",
       "prompt": "in the intro, the paragraph on rates should say we prove the rate, not that we show it",
-      "fixture": "paper whose sections/introduction.tex was written on Overleaf with each paragraph on one line",
+      "fixture": "paper whose sections/10-introduction.tex was written on Overleaf with each paragraph on one line",
       "expected_output": "Edits the word and re-breaks that paragraph so that each sentence is on its own line. Leaves the other paragraphs of the file as they are, and does not convert the paper unasked."
     },
     {
@@ -85,6 +85,20 @@
       "prompt": "add a derivation of the variance of the one-step estimator to the end of my variance notes",
       "fixture": "paper repo with notes/variance.tex, a standalone document of 600 lines whose root has the mode line % writing-math: note, probability theory",
       "expected_output": "Judges the file-split rule not to apply, since the document is a note. Adds the derivation to notes/variance.tex with one sentence per line, and does not split the note into files or create a sections/ folder."
+    },
+    {
+      "id": 12,
+      "name": "insert-section-between",
+      "prompt": "add a related work section between the introduction and the setup",
+      "fixture": "paper that follows the layout, with sections/10-introduction.tex, 20-setup.tex, 30-methods/ (00-methods.tex, 10-estimator.tex), 40-simulation.tex and A1-proofs.tex",
+      "expected_output": "Creates sections/15-related-work.tex, which starts with \\section{Related work} and a sec: label, and inputs it in main.tex between the lines for 10-introduction and 20-setup. Renames no other file. The checker reports no section-name or section-order problem."
+    },
+    {
+      "id": 13,
+      "name": "unnumbered-sections-folder",
+      "prompt": "add a short discussion section at the end of the body",
+      "fixture": "paper set up under overleaf-tools 0.4.0: sections/introduction.tex, setup.tex, methods.tex (which inputs sections/methods-estimator.tex) and proofs.tex, none numbered",
+      "expected_output": "Adds sections/discussion.tex without a number, to match the paper, and inputs it in main.tex before \\appendix. Does not rename the other files unasked. Mentions the checker's section-name warning and offers to number the files with the steps in references/migration.md, noting that renamed files can lose their Overleaf comments."
     }
   ]
 }
