@@ -1,6 +1,6 @@
 ---
 name: tex-hygiene
-description: "Keeps the LaTeX source of a paper in fixed places, so that agents can edit it in parallel and merge cleanly. Each theorem, proposition, lemma and corollary lives with its proof in its own file in theory/, and proof-at-the-end prints the proof in the appendix. Each TikZ figure has its own file in tikz/. The text lives in numbered section files of at most about 200 lines, so that sections/ reads as the table of contents, and is written one sentence per line. Use when adding, moving, splitting, restating or deleting a result, proof, TikZ figure or section in a .tex paper, writing or re-breaking its paragraphs, starting a new paper, moving proofs to the appendix, or tidying or checking a paper's layout, even when the user does not name the convention. Covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
+description: "Keeps the LaTeX source of a paper in fixed places, so that agents can edit it in parallel and merge cleanly. Each theorem, proposition, lemma and corollary lives with its proof in its own file in theory/, and proof-at-the-end prints the proof in the appendix. Each TikZ figure has its own file in tikz/. The text lives in numbered section files of at most about 200 lines, so that sections/ reads as the table of contents, and is written one sentence per line, with cleveref naming each cross-reference. Use when adding, moving, splitting, restating or deleting a result, proof, TikZ figure or section in a .tex paper, writing or re-breaking its paragraphs, citing a result, section, figure or equation, starting a new paper, moving proofs to the appendix, or tidying or checking a paper's layout, even when the user does not name the convention. Covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
 ---
 
 # TeX hygiene
@@ -34,6 +34,29 @@ hyphens. When you rename a label, rename the file and the `pf:` label with it.
 A paper that already uses this layout under another folder name, such as
 `theorems/`, keeps that name unless the author asks for the rename. Give the
 name to the checker with `--theory-dir`.
+
+## Cross-references
+
+Cite a result, a section, a figure or a table with `\cref{<label>}`, and with
+`\Cref{<label>}` at the start of a sentence. Cite an equation with
+`\eqref{<label>}`, which prints "(3)". Do not type the name in front of a
+plain `\ref`, as in `Lemma~\ref{lem:tail}`. When an edit turns the lemma into
+a proposition, `\cref` prints the new name, but the typed name stays wrong.
+`\cref` also puts the name inside the link, and it takes a list:
+`\cref{lem:tail,thm:nu-clt}` prints "Lemma 2 and Theorem 1".
+
+- Load `\usepackage[capitalise,noabbrev]{cleveref}` after `hyperref`, as the
+  template does, so that `\cref` prints "Figure 2" and not "fig. 2". A paper
+  that already loads cleveref with other options keeps them.
+- The proof heading `Proof of \autoref{thm:<slug>}` and the `text link`
+  pointer keep `\autoref`, as the templates write them. With `\cref` in a
+  heading, the PDF bookmark reads "Proof of thm:<slug>". On a `pf:` label,
+  `\cref` prints "Section A.3", and `\autoref` prints "subsection A.3".
+- Keep a plain `\ref` after the word "Appendix", because `\cref` calls an
+  appendix section "Section A". Keep it also for the label of a list item,
+  where `\cref` prints "Item".
+- Fix the typed names in each paragraph that you edit, and leave the other
+  paragraphs, for the reason in "One sentence per line".
 
 ## Result files
 
@@ -286,8 +309,9 @@ shows the sentence that changed, not its whole paragraph.
   the source can land in `main-pratenddefaultcategory.tex`. Do not edit that
   file.
 - **Delete a result, a figure or a section.** Remove its `\input` line and its
-  file, then search for `\autoref`, `\ref` and `\cref` calls to its labels.
-  Do not renumber the other section files to close the gap.
+  file, then search for `\cref`, `\Cref`, `\autoref`, `\eqref` and `\ref`
+  calls to its labels. Do not renumber the other section files to close the
+  gap.
 - **A coauthor's inline result or figure.** Coauthors on Overleaf may write a
   theorem or a TikZ picture inline. Move it into its own file, as for a new
   one.
@@ -314,11 +338,19 @@ in document order, skips comments, and prints each problem with its
 It exits 1 when there is an error. The docstring at the top of the script
 lists every rule, and `--json` gives the same report as JSON.
 
-Two warnings are about the text. `long-file` marks a file past the line target
-(`--max-lines`, 200 by default), and `sentence-lines` marks lines that hold
-more than one sentence. A paper written in another style gets many
-`sentence-lines` warnings. Fix them in the paragraphs that you edit, and leave
-the rest. The `long-file` rule skips a root file whose mode line says `note`.
+Three warnings are about the text. `long-file` marks a file past the line
+target (`--max-lines`, 200 by default), and `sentence-lines` marks lines that
+hold more than one sentence. `typed-ref` marks a name typed in front of
+`\ref`, as in "Cross-references". A paper written in another style gets many
+`sentence-lines` and `typed-ref` warnings. Fix them in the paragraphs that you
+edit, and leave the rest. The `long-file` rule skips a root file whose mode
+line says `note`.
+
+After a build, the checker reads the kind of each label from the `.aux` file
+that cleveref writes. It then skips the labels of list items, and it gives a
+`typed-ref` line of its own for a typed name that no longer matches its label,
+such as "Lemma" in front of a proposition. That name is wrong in the PDF, so
+fix it even in a paragraph that you do not otherwise edit.
 
 Two rules are about `sections/`. `section-order` is an error: a section file
 that another section file inputs, or a root file that inputs the section
