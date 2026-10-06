@@ -22,7 +22,7 @@
       "id": 1,
       "name": "cli-session-hands-off-apply",
       "prompt": "I moved /Users/me/code/thesis to /Users/me/research/thesis and now claude --resume in the new folder shows nothing. Fix it.",
-      "fixture": "The session is a terminal CLI session outside the desktop app, started in the home folder. The macOS desktop app is open, so an apply run would print REFUSING and exit with code 2. The folder is already at the new path. The fixture has the old project's transcripts, projects key and two sidebar files.",
+      "fixture": "The session is a terminal CLI session outside the desktop app, started in the home folder. The macOS desktop app is open, so an apply run would print REFUSING and exit with code 4. The folder is already at the new path. The fixture has the old project's transcripts, projects key and two sidebar files.",
       "expected_output": "Runs the dry run and shows the plan. Does not run the apply and never passes --force. Gives the user the --apply command with the script's absolute path written out, to run in a plain terminal such as Terminal.app after quitting the desktop app with Cmd-Q. Tells the user to relaunch the app, then cd into the new path and run claude --resume.",
       "files": [],
       "assertions": [
