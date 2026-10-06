@@ -1,8 +1,11 @@
 # Setting up a project
 
-`scripts/setup_project.py` does all of this. The manual steps are below, both
-because a blocked script should never leave you stuck and because knowing what
-the pieces do makes the failures legible.
+`scripts/setup_project.py` does all of this. The manual steps below show what
+each piece does, so that a failure is easy to read. They are not a way around
+a blocked script. If a sandbox, a permission check or a guard blocks the
+script, or it cannot run for another reason, stop and give the user the exact
+command to run in their own terminal, with the script's absolute path written
+out. Do the manual steps only when the user asks for them.
 
 ## Contents
 
