@@ -7,6 +7,16 @@ project's `CLAUDE.md`. This file has the procedures that follow from them.
 Every artefact carries a stamp: the commit of the code repo that it was built
 from, recorded in `BUILD.json` when the file was written.
 
+## Contents
+
+- Where work goes: wip branches, and when to ask before creating one
+- Nothing is built from a dirty tree: the guard, and what auto-commit refuses
+- The two invariants: the ancestry check and the reachability check
+- Promotion: the steps, in order
+- Recovery: built on the wrong branch, a stamp that ends in `-dirty`, a
+  deleted wip branch, an abandoned line of inquiry, a rejected paper push,
+  code pushed but paper not, no upstream for `main`
+
 ## Where work goes
 
 Exploratory work happens on `wip/<topic>`, never on `main`. The instinct that

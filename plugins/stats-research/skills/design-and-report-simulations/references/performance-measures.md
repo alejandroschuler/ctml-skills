@@ -2,6 +2,16 @@
 
 **Use this file when the claim is about an estimator's accuracy or its intervals.** It is a resource, not a checklist. Claims about runtime, model selection, prediction, or qualitative behaviour need different measures, and a study whose claim does not concern estimator accuracy needs none of these.
 
+## Contents
+
+- Which measure answers which claim
+- Notation
+- The table: each measure's estimate and its Monte Carlo SE, from bias to rejection rate
+- Choosing $n_{sim}$: worked numbers for bias and coverage
+- Failures, non-convergence and missing estimates: what to report first
+
+## Which measure answers which claim
+
 The measures below answer specific questions, so pick by question:
 
 | The claim is about... | Measure |

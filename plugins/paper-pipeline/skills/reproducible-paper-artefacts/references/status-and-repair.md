@@ -5,6 +5,17 @@ sidecars, the per-artefact records a build writes before it merges them), the
 compile record (what the manuscript actually opened and expanded), and
 Snakemake (what would re-run now).
 
+## Contents
+
+- Reading the manuscript by observation: the compile record, and when it
+  cannot be trusted
+- The five states: current, stale, drifted, orphan and unused, each with its
+  repair
+- Methods warnings
+- Repairs that span both repos: the paper repo that always looks dirty, a push
+  that failed part way, an old paper commit
+- ARTEFACTS.md: `make package`, for a replication package
+
 ## Reading the manuscript by observation
 
 Grepping `.tex` for `\includegraphics` finds text that looks like a reference,

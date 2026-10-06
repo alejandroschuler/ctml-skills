@@ -1,11 +1,11 @@
 ---
 name: writing-math
-description: "Rules for writing mathematics in a LaTeX (.tex) document: how to define, scope, reuse and gloss symbols, and how densely to write proofs and derivations, in paper mode for the main text of a draft or in note mode for a note that the author works through, and how to lay out the source with one sentence per line. Load it before you write or edit mathematics in any .tex file, in the main conversation or in a subagent. The readable-math review checks the symbol rules and the correctness of the mathematics afterward. Nothing checks the density rules later, so they apply as you write."
+description: "Sets the rules for writing mathematics in a LaTeX (.tex) document: how to define, scope, reuse and gloss symbols, and how densely to write proofs and derivations, in paper mode for the main text of a draft or in note mode for a note that the author works through, and how to lay out the source with one sentence per line. Load it before writing or editing mathematics in any .tex file, in the main conversation or in a subagent. The readable-math review checks the symbol rules and the correctness of the mathematics afterward. Nothing checks density later, so the mode rules apply during writing."
 ---
 
 # Writing math
 
-These rules apply to every `.tex` document that you write or edit. After you edit, the `readable-math` review checks the symbol rules and whether the mathematics is correct. Text that follows the rules from the start comes back with fewer findings. No reviewer checks how densely you write a derivation, so follow the mode rules below as you write.
+These rules apply to every `.tex` document that you write or edit. After you edit, the `readable-math` review checks the symbol rules and whether the mathematics is correct. No reviewer checks how densely you write a derivation, so follow the mode rules below as you write.
 
 ## Symbols
 
@@ -53,14 +53,14 @@ How many steps a proof or a derivation shows depends on the mode of the document
 - **Paper** mode is for the main text of a draft, which readers in a field will read.
 - **Note** mode is for a note outside the main text, in which the author develops or learns an idea, often with Claude's help. A document in a `notes/` folder, or a standalone document that the paper does not input, is usually a note.
 
-The mode and the field go on a comment line near the top of the document's root file:
+The mode and the field go on a comment line near the top of the document's root file, the mode line:
 
 ```latex
 % writing-math: paper, asymptotic statistics
 % writing-math: note, probability theory
 ```
 
-The field tells you what the readers already know. When the root file has no such line, choose the mode and the field from the place and the content of the document, add the line, and tell the user what you chose, so that they can change it.
+The field tells you what the readers already know. When the root file has no mode line, choose the mode and the field from the place and the content of the document, add the line, and tell the user what you chose, so that they can change it.
 
 ### Paper mode
 

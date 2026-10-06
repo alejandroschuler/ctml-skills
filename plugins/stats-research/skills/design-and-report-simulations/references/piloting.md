@@ -4,6 +4,16 @@ A mockup asserts that certain cells of a table will differ by enough to see. Tha
 
 The reason it matters is that failure is silent. A design that cannot resolve its own contrast returns cells that look alike, which is indistinguishable from the methods genuinely performing alike. Nothing in the output says "this study was never able to answer the question". So the check has to happen before the full run, because afterwards the remaining options are to publish an ambiguous null, to re-run everything late, or to quietly change the claim to whatever the numbers did show.
 
+## Contents
+
+- Reducing any contrast to a per-repetition difference: `d_i` for each measure
+- The calculation: the bound on $n_{sim}$, and how to choose $k$
+- The pilot's own uncertainty: the two guards, the pilot's $|z|$ and `n_sim_safe`
+- What to do when the answer is bad
+- Cancellation, the usual culprit
+- Claims of no difference: sizing on an equivalence margin
+- Reporting the pilot
+
 ## Reducing any contrast to a per-repetition difference
 
 Every comparison between two means over repetitions can be written as the mean of a per-repetition quantity `d_i`, because over the same repetitions the difference of two averages is the average of the differences. That covers bias, mean squared error (MSE), coverage and rejection rate, and once a comparison is in that form, one formula covers all of them. A measure that is not a mean over repetitions, such as the empirical standard error (SE) or a variance ratio, needs a bootstrap instead, as in the last row of the table.
@@ -84,7 +94,7 @@ The same cancellation shows up whenever an estimand is a contrast or an average.
 
 ## Claims of no difference
 
-"These two methods perform equivalently" is not established by a small $\bar d$ with a large Monte Carlo SE, which is exactly the unresolvable design. It needs an equivalence margin: state the largest difference $\Delta$ that would still count as equivalent, then choose $n_{sim}$ so the Monte Carlo SE is small enough that the confidence interval for $\bar d$ fits inside $\pm\Delta$. Roughly $n_{sim} \ge (2 k \cdot \mathrm{sd}(d) / \Delta)^2$. The factor 2 leaves room for a true gap of up to half the margin: the interval $\bar d \pm k \cdot \mathrm{sd}(d)/\sqrt{n_{sim}}$ stays inside $\pm\Delta$ whenever $|\bar d| \le \Delta/2$ and $k \cdot \mathrm{sd}(d)/\sqrt{n_{sim}} \le \Delta/2$, and solving the second condition for $n_{sim}$ gives the bound. Saying what $\Delta$ is forces the useful question of how close counts as close.
+"These two methods perform equivalently" is not established by a small $\bar d$ with a large Monte Carlo SE, which is exactly the unresolvable design. It needs an equivalence margin: state the largest difference $\Delta$ that would still count as equivalent, then choose $n_{sim}$ so the Monte Carlo SE is small enough that the confidence interval for $\bar d$ fits inside $\pm\Delta$. Roughly $n_{sim} \ge (2 k \cdot \mathrm{sd}(d) / \Delta)^2$. The factor 2 leaves room for a true gap of up to half the margin: the interval $\bar d \pm k \cdot \mathrm{sd}(d)/\sqrt{n_{sim}}$ stays inside $\pm\Delta$ whenever $|\bar d| \le \Delta/2$ and $k \cdot \mathrm{sd}(d)/\sqrt{n_{sim}} \le \Delta/2$, and solving the second condition for $n_{sim}$ gives the bound. Saying what $\Delta$ is forces the useful question of how close counts as close. `pilot_equivalence` in `../assets/pilot_check.R` and `.py` computes this bound.
 
 ## Reporting the pilot
 

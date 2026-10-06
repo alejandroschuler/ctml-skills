@@ -2,6 +2,18 @@
 
 The reader is meeting this design for the first time and has no idea why any of it exists. Everything here follows from taking that seriously.
 
+## Contents
+
+- The spine: organize by claim
+- Sandwich every piece of evidence
+- ADEMP is the "tell 'em what you're going to tell 'em"
+- Captions: weak and better
+- Minimizing cognitive load: layout, naming, rounding, table size
+- Say why, not only what: the questions a reader will ask
+- Reporting results that went the wrong way
+- Common failure modes: symptoms and what they mean
+- Choosing the display: distribution plots, matched scatters, lollipop, zip and nested loop plots, and the caption checklist
+
 ## The spine: organize by claim
 
 Section structure mirrors the claims. Each claim is stated, its evidence sits next to it, and the reader is told how the one supports the other before moving on.

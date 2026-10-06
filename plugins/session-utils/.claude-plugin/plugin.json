@@ -1,6 +1,6 @@
 {
-  "name": "claude-code-utils",
-  "version": "0.1.0",
+  "name": "session-utils",
+  "version": "0.2.0",
   "description": "Utilities for Claude Code itself, such as keeping a project's session history when its folder is moved or renamed.",
   "author": {
     "name": "Alejandro Schuler"

@@ -1,9 +1,20 @@
 # Making artefacts
 
-Everything needed to write a rule and its script: where the output goes, how
-the rule is shaped, how the script emits, how numbers are named and rounded,
-and what the provenance record can and cannot see. Methods settings, the list
+Everything needed to write a rule and its script. Methods settings, the list
 and set helpers, and learner-grid tables are in `methods.md`.
+
+## Contents
+
+- Layout: where the output goes, the preamble, and notes documents
+- The rule: two layers, the registry, code dependencies with `lib()`,
+  software, and two traps
+- The script: how it emits, and the checks the emit helpers make before each
+  write
+- Numbers: grain, macro names, collisions, rounding and formatting, and use in
+  the text
+- What the provenance record sees: `track_read()`, what it misses, and
+  `make deps`
+- BUILD.json: the record of each artefact, and the changelog it gives
 
 ## Layout
 
@@ -34,6 +45,9 @@ The manuscript preamble needs two lines, and then it never changes:
 file, so numbers can come and go without touching `main.tex`. It covers only
 the paper tier.
 
+A document that inputs generated tables also needs `\usepackage{booktabs}`,
+because `save_table` and `grid_table()` write booktabs rules.
+
 ### Notes documents
 
 Notes documents live in `paper/notes/`, next to their artefacts, so the folder
@@ -63,10 +77,10 @@ same name.
 
 ### Two layers
 
-This is the most important structural decision in the Snakefile, and getting it
-wrong is what makes people abandon a pipeline. Every expensive computation
-writes a results file that is itself a pipeline output. Figures, tables and
-numbers then depend on that file plus the plotting helper code:
+This is the most important structural decision in the Snakefile. Every
+expensive computation writes a results file that is itself a pipeline output.
+Figures, tables and numbers then depend on that file plus the plotting helper
+code:
 
 ```python
 rule simulate_primary:                    # expensive
@@ -82,10 +96,8 @@ rule fig_primary:                         # cheap
 ```
 
 Without the split, fixing a typo in a plotting comment re-runs the Monte Carlo.
-A pipeline that charges an hour for a cosmetic change is one you stop using,
-and then every guarantee downstream stops being true. In the Snakefile, `ART`
-and `NOTES` name the tier directories `paper/artefacts` and
-`paper/notes/artefacts`. `results/` is gitignored, so the build's own output
+In the Snakefile, `ART` and `NOTES` name the tier directories `paper/artefacts`
+and `paper/notes/artefacts`. `results/` is gitignored, so the build's own output
 never dirties the tree.
 
 ### The registry
@@ -122,10 +134,12 @@ marks every fit stale, and nothing that was read is ever missed. If
 
 Python rules run under Snakemake's own interpreter, so the packages a Python
 script imports must be installed there. With a uv install of Snakemake, that is
-`uv tool install snakemake --with pandas --with matplotlib`. The other way is a
-per-rule `conda:` environment with `--use-conda`, which also makes a dependency
-bump mark the affected artefacts stale, because `software-env` is a rerun
-trigger. R rules run `Rscript` from PATH, with its usual library.
+`uv tool install snakemake --with pandas --with matplotlib --with jinja2`.
+pandas needs jinja2 for `to_latex`, which the Python `save_table` calls. The
+other way is a per-rule `conda:` environment with `--use-conda`, which also
+makes a dependency bump mark the affected artefacts stale, because
+`software-env` is a rerun trigger. R rules run `Rscript` from PATH, with its
+usual library.
 
 ### Two traps
 

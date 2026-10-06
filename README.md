@@ -9,7 +9,7 @@ Agent skills for statistical methods research, packaged as a Claude Code plugin 
 | `stats-research` | `design-and-report-simulations`, `supervised-learning`, `writing-math`, `readable-math` | Planning a simulation study backwards from its claims, building the code so any piece can rerun alone and expensive fits are cached, choosing and tuning learners (including the check that each tuning grid is wide enough), and writing and reviewing the mathematics of a LaTeX document, so that every symbol is defined and scoped and every proof is correct and can be followed. |
 | `paper-pipeline` | `reproducible-paper-artefacts` | Keeping a code repo and its Overleaf manuscript in step, so every figure, table and inline number is built by the pipeline and stamped with the commit that made it. |
 | `overleaf-tools` | `overleaf-comments`, `tex-hygiene` | Reading the review comments and tracked changes on an Overleaf project, which the git bridge does not carry. Keeping each theorem with its proof in `theory/<slug>.tex`, with the proof printed in the appendix by itself, and each TikZ figure in `tikz/<slug>.tex`. Keeping each section in a numbered file such as `sections/20-setup.tex`, so that the folder reads as the table of contents, splitting a file of text into a folder of numbered parts when it grows past about 200 lines, and putting each sentence on its own line, so that agents can work on a paper in parallel and merge cleanly. Stopping Claude from reading or editing a clone that is behind Overleaf. |
-| `claude-code-utils` | `move-claude-project` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
+| `session-utils` | `move-project-sessions` | Keeping a Claude Code project's session history when its folder is moved or renamed. |
 
 The skills in `stats-research` refer to each other. The simulation skill sends learner setup to `supervised-learning` and finished LaTeX prose to `readable-math`, so install that plugin whole.
 
@@ -24,7 +24,7 @@ In a Claude Code session:
 /plugin install stats-research@ctml-skills
 ```
 
-Install `paper-pipeline@ctml-skills`, `overleaf-tools@ctml-skills` or `claude-code-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
+Install `paper-pipeline@ctml-skills`, `overleaf-tools@ctml-skills` or `session-utils@ctml-skills` the same way. From a terminal, the equivalent commands are `claude plugin marketplace add alejandroschuler/ctml-skills` and `claude plugin install stats-research@ctml-skills`.
 
 Installed skills carry their plugin's name as a prefix, for example `stats-research:supervised-learning`.
 
@@ -63,7 +63,7 @@ Update each other plugin that you use with the same command.
 
 ## Use without the plugin system
 
-Each skill is a plain folder with a `SKILL.md` at its top. You can copy `plugins/<plugin>/skills/<skill>/` into `~/.claude/skills/`, or zip a skill folder and upload it to claude.ai as a custom skill.
+Each skill is a plain folder with a `SKILL.md` at its top. You can copy `plugins/<plugin>/skills/<skill>/` into `~/.claude/skills/`, or zip a skill folder and upload it to claude.ai as a custom skill. The exception is `readable-math`, which works only inside the `stats-research` plugin. It dispatches the plugin's two reviewer agents and finds `writing-math` through the plugin's folder, and claude.ai rejects its `argument-hint` field.
 
 
 ## License

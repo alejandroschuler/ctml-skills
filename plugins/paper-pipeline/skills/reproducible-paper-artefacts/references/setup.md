@@ -1,8 +1,31 @@
 # Setting up a project
 
-`scripts/setup_project.py` does all of this. It is a dry run by default, so
-running it to see the plan costs nothing, and the dry run reports what
-`--apply` will do, including for files that a migration moves into place.
+`scripts/setup_project.py` does all of this. The manual steps are below, both
+because a blocked script should never leave you stuck and because knowing what
+the pieces do makes the failures legible.
+
+## Contents
+
+- Running the script: the dry run, then `--apply`
+- Requirements
+- Order matters in exactly one place: `/paper/` in `.gitignore` before the
+  first commit
+- From nothing: the manual steps
+- Detect the paper's branch, never assume it
+- Migrating two sibling repos, and converting the manuscript by hand
+- Running setup again
+- What setup writes, and why each piece is there
+- After setup
+
+## Running the script
+
+The script is a dry run by default, so running it to see the plan costs
+nothing, and the dry run reports what `--apply` will do, including for files
+that a migration moves into place.
+
+In these commands, `scripts/setup_project.py` is relative to the skill's base
+directory, the directory that SKILL.md was loaded from. SKILL.md has the same
+commands with the full path.
 
 ```
 python3 scripts/setup_project.py --root ~/research/my-paper \
@@ -11,14 +34,12 @@ python3 scripts/setup_project.py --root ~/research/my-paper \
     --overleaf https://git.overleaf.com/<project-id> --apply
 ```
 
-The manual steps are below, both because a blocked script should never leave
-you stuck and because knowing what the pieces do makes the failures legible.
-
 ## Requirements
 
 - Snakemake 8 or newer on PATH. Python rules run under Snakemake's own
   interpreter, so their packages go there too: with a uv install,
-  `uv tool install snakemake --with pandas --with matplotlib`.
+  `uv tool install snakemake --with pandas --with matplotlib --with jinja2`.
+  pandas needs jinja2 for `to_latex`, which the Python `save_table` calls.
 - Python 3.11 or newer as `python3`, for the tools (they need `tomllib`).
 - R with ggplot2 and knitr, for the R emit helpers.
 - A local TeX installation with latexmk, for `make pdf`.
@@ -49,7 +70,8 @@ git clone https://git.overleaf.com/<project-id> paper
 ```
 
 Overleaf's git bridge authenticates with a token as the password, generated
-under Account Settings and Git integration. The username can be anything.
+under Account Settings and Git integration. The username can be anything. If
+git asks for credentials, tell the user this.
 
 Then write `.artefacts.toml`, copy the assets into place, and point git at the
 tracked hooks directory:

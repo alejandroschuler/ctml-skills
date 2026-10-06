@@ -21,7 +21,8 @@ The project rules live in the project's `CLAUDE.md`. The setup script,
 `scripts/setup_project.py`, copies them there from `assets/project-CLAUDE.md`,
 so they are in context on every turn in the project, whether or not this skill
 loads. If the project's `CLAUDE.md` does not carry them, read
-`assets/project-CLAUDE.md` now. This file holds the procedures.
+`${CLAUDE_SKILL_DIR}/assets/project-CLAUDE.md` now. This skill holds the
+procedures.
 
 The project rules define three tiers of output. Scratch output is for this
 conversation only, and lives under `scratch/`. Notes are for coauthors, live
@@ -73,7 +74,8 @@ commit.
 5. Run `make notes` for the notes tier, or `make build` for the paper tier.
 6. Use the artefact in the `.tex`: `\includegraphics{artefacts/figures/x.pdf}`,
    `\input{artefacts/tables/x.tex}`, or a macro such as `\resPrimaryAte`.
-7. Run `make pdf`, then `make check`.
+7. Run `make pdf`, then `make check`. If `make check` fails, apply the repair
+   for what it reports, then run both again.
 8. Report what you built and its tier. Do not push unless asked.
 
 The emit helpers check every write before it happens. A paper-tier path off
@@ -97,8 +99,8 @@ API, macro naming and rounding, and what the read tracking can and cannot see.
 | unused | a paper artefact the manuscript does not use | place it, or drop its Snakemake rule before submission |
 
 `stale` and `unused` are warnings. `drifted` and `orphan` fail `make check`.
-`unused` and `orphan` come from what the LaTeX compiler opened, so run `make
-pdf` first. `references/status-and-repair.md` has each repair in detail.
+`unused` and `orphan` come from what the LaTeX compiler opened, so run
+`make pdf` first. `references/status-and-repair.md` has each repair in detail.
 
 ## Methods
 
@@ -110,8 +112,9 @@ hand. A generated setting is one the text prints through its macro, or a
 methods table from `grid_table()`. `make methods` shows every tracked setting,
 whether the text prints it, and whether it changed since the last review.
 `make check` warns about changes the text may have missed. Everything that
-stays prose gets the methods audit. `references/methods.md` has the helpers,
-the grid check, and the audit.
+stays prose gets the methods audit: run it when a notes result is promoted to
+the paper, before submission, and when the user asks. `references/methods.md`
+has the helpers, the grid check, and the steps of the audit.
 
 ## Promotion
 
@@ -140,11 +143,21 @@ them.
 ## Setting up
 
 `scripts/setup_project.py` creates a project, or migrates a code repo and a
-paper repo that sit side by side into this layout. It is a dry run by default;
-pass `--apply` to carry it out. Running it again on a project refreshes the
-checkers in `tools/` and the project rules in `CLAUDE.md`.
-`references/setup.md` has the details, and the manuscript conversion that the
-script cannot do.
+paper repo that sit side by side into this layout. It is a dry run by default.
+Run it first without `--apply` to see the plan, then run it again with
+`--apply` to carry it out:
+
+```
+python3 "${CLAUDE_SKILL_DIR}/scripts/setup_project.py" --root <project-dir> \
+    --overleaf https://git.overleaf.com/<project-id>
+python3 "${CLAUDE_SKILL_DIR}/scripts/setup_project.py" --root <project-dir> \
+    --overleaf https://git.overleaf.com/<project-id> --apply
+```
+
+`--overleaf` is needed only when `paper/` is not there yet. Running the script
+again on a project refreshes the checkers in `tools/` and the project rules in
+`CLAUDE.md`. `references/setup.md` has the requirements, the manual steps, and
+the manuscript conversion that the script cannot do.
 
 ## Working with other skills
 
@@ -161,5 +174,5 @@ methods and applies its edge rule to the recorded fits.
 | writing a Snakemake rule or a script, or naming a number | `references/making-artefacts.md` |
 | promoting notes work, or git went wrong | `references/promotion-and-recovery.md` |
 | recording a methods setting, or reviewing the methods section | `references/methods.md` |
-| `make status` or `make check` reports a problem | `references/status-and-repair.md` |
+| `make status` or `make check` reports a problem, or preparing a replication package (`make package`) | `references/status-and-repair.md` |
 | creating or migrating a project | `references/setup.md` |

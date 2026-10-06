@@ -1,0 +1,87 @@
+{
+  "skill_name": "readable-math",
+  "note": "Each fixture is a LaTeX paper in a git repository, with the stats-research plugin installed, so its two reviewer agents and its hooks are present. Unless a fixture says otherwise, the paper uses the tex-hygiene layout: main.tex inputs numbered files in sections/ and one file for each result in theory/. The assertions are about tool calls and replies that a transcript shows. Eval 5 is a near-miss that must not trigger the skill.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "small-edit-default-scope",
+      "prompt": "Add a remark after Lemma 3 saying that the bound is sharp, with a short displayed calculation for a case where equality holds.",
+      "fixture": "a 1,400-line paper with eleven results; Lemma 3 and its proof are in theory/remainder-bound.tex; a review of the whole paper was saved last week, and no file has changed since",
+      "expected_output": "Writes the remark. Before declaring the task done, invokes readable-math and runs tex_changes.py report on the edited file with the default scope, not --full. Dispatches one notation reviewer for the document and one correctness reviewer for the new calculation in a single message, each with the prompt of step 3 and nothing added. Runs tex_changes.py mark after both reviewers report and before any fix.",
+      "files": [],
+      "assertions": [
+        "Runs tex_changes.py report without --full, and does not start a review of the whole paper on its own",
+        "Dispatches the notation reviewer and the correctness reviewer in a single message",
+        "Each reviewer prompt is the template of step 3, with only the report path and, for correctness, the group's assignment filled in",
+        "Runs tex_changes.py mark after every reviewer has reported and before any edit that fixes a finding"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "rename-without-priming",
+      "prompt": "I renamed the outcome regression estimate from \\hat m to \\hat\\mu in the main text and in the proofs of Lemmas 1 to 6. Can you run the math review?",
+      "fixture": "the user's rename is not committed; it touches sections/30-method.tex and six files theory/lemma-*.tex, each with one short lemma about the outcome regression and its proof; one \\hat m is left in sections/60-appendix.tex, and sections/20-setup.tex uses \\hat\\mu before its definition; the last review was saved before the rename",
+      "expected_output": "Invokes readable-math and runs tex_changes.py report with the default scope. The six lemma proofs overlap regions, so all of them are in scope. Puts them into at most four correctness groups, with related lemmas merged, and gives each group its assignment. Dispatches one notation reviewer and the correctness reviewers in one message, each with the prompt of step 3 and nothing added beyond the assignments: no list of symbols, no mention of the rename, and no hint about where a definition is or what to look for.",
+      "files": [],
+      "assertions": [
+        "Apart from the correctness assignments, no reviewer prompt adds anything to the template of step 3: no list of symbols such as \\hat m or \\hat\\mu, no mention of the rename, and no hint about where a definition is or what to look for",
+        "Dispatches at most four correctness reviewers, so some related lemma proofs share a group",
+        "Each correctness assignment gives each argument's FILE:FIRST-LAST and a short phrase for what it proves",
+        "Runs tex_changes.py report without --full"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "mark-then-fix-false-claim",
+      "prompt": "I added Theorem 2 and its proof to theory/dr-remainder.tex. Check the math and fix whatever the review finds.",
+      "fixture": "Theorem 2 claims that the second-order remainder is o_P(n^{-1/2}) when either nuisance estimate converges faster than n^{-1/4}, which is false as stated, since the proof needs both rates; one step of the proof applies Cauchy-Schwarz with an L1 norm where an L2 norm belongs, which a fix to that step repairs without new notation; the prose after the proof uses \\hat\\pi twice with no gloss",
+      "expected_output": "Runs report, dispatches the reviewers in one message, and runs mark as soon as all of them have reported, before any edit. Fixes the Cauchy-Schwarz step first, then adds glosses to the two uses of \\hat\\pi. Does not change the statement of Theorem 2. Tells the user that the reviewer found it false as stated, and proposes a correction, such as a statement that asks both nuisance estimates to converge faster than n^{-1/4}. Then runs the review again: a correctness reviewer for the proof of Theorem 2, whose mathematics changed, and no notation reviewer, because the notation fixes only added glosses.",
+      "files": [],
+      "assertions": [
+        "Runs tex_changes.py mark after every reviewer has reported and before the first edit that fixes a finding",
+        "Fixes the correctness finding in the proof before it adds the glosses",
+        "Leaves the statement of Theorem 2 unchanged, tells the user that the reviewer found it may be false as stated, and proposes a correction",
+        "Runs tex_changes.py report again after the fixes",
+        "In the second round, sends only the proof of Theorem 2 to a correctness reviewer and skips the notation review"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "full-review-from-argument",
+      "prompt": "/stats-research:readable-math full",
+      "fixture": "eleven results in theory/, each with its proof, and three derivations that end in displayed results in sections/30-method.tex; no file has changed since the last saved review",
+      "expected_output": "Runs tex_changes.py report with --full, so every line is a region although nothing changed. Puts the fourteen arguments into at most eight correctness groups, merging the smallest related ones, and gives each group its assignment. Dispatches one notation reviewer and all the correctness reviewers in a single message, with the prompts of step 3.",
+      "files": [],
+      "assertions": [
+        "Passes --full to tex_changes.py report",
+        "Dispatches at most eight correctness reviewers, merging related arguments into shared groups",
+        "Dispatches exactly one notation reviewer for the document",
+        "Dispatches all the reviewers in a single message"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "typo-fix-skips-review",
+      "prompt": "fix the typo 'estimater' in sections/30-method.tex",
+      "fixture": "the typo is in a sentence of prose with no mathematics",
+      "expected_output": "Fixes the typo. If the hook's reminder makes it invoke readable-math, it judges the edit a trivial typo fix and skips the review: it does not run tex_changes.py and dispatches no reviewer. The fix stays unreviewed until the next report.",
+      "files": [],
+      "assertions": [
+        "Does not dispatch a math-notation-reviewer or a math-correctness-reviewer agent",
+        "Does not run tex_changes.py"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "near-miss-quarto-derivation",
+      "prompt": "Add a derivation of the asymptotic variance of the IPW estimator to notes/ipw.qmd, right after the estimator is defined.",
+      "fixture": "a Quarto project, not a LaTeX paper; notes/ipw.qmd defines the IPW estimator in LaTeX math; the project has no .tex file",
+      "expected_output": "Judges the skill not to apply: the file is .qmd, and the user did not ask for the review. Writes the derivation. Does not invoke readable-math, does not run tex_changes.py, and dispatches no reviewer agent.",
+      "files": [],
+      "assertions": [
+        "Does not invoke the readable-math skill",
+        "Does not run tex_changes.py, and does not dispatch a math-notation-reviewer or a math-correctness-reviewer agent"
+      ]
+    }
+  ]
+}
