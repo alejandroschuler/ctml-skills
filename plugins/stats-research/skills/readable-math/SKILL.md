@@ -1,12 +1,21 @@
 ---
 name: readable-math
-description: "Review the mathematics of a LaTeX document after editing it: a notation review of definitions, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The symbol rules that it checks are in the writing-math skill, which also sets how densely to write derivations; the review does not check density. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
+description: "Reviews the mathematics of a LaTeX document after an edit: a notation review of definitions, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The symbol rules that it checks are in the writing-math skill, which also sets how densely to write derivations; the review does not check density. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
 argument-hint: "[full]"
 ---
 
 # Readable math
 
-Before declaring a LaTeX document (`.tex`) finished, run this review. It does not apply to `.qmd`, `.md`, `.rmd` or `.markdown` files unless the user asks for it.
+Before declaring a LaTeX document (`.tex`) finished, run this review, unless a case under "When to skip" applies.
+
+## When to skip
+
+- Files that are not `.tex`, such as `.qmd`, `.md`, `.rmd` and `.markdown` documents, unless the user asks for the review.
+- Pure code edits (no narrative changes).
+- Trivial typo or whitespace fixes. They stay unreviewed until the next report, which is fine.
+- `.tex` files with no mathematical prose, such as a preamble of macro definitions. This is a judgment call.
+
+## The two reviews
 
 The review has two parts, and they run at the same time:
 
@@ -15,16 +24,18 @@ The review has two parts, and they run at the same time:
 
 Neither part checks how densely a derivation is written. The mode rules of `writing-math` set that, and you follow them as you write.
 
+## Changes or full
+
 The reviewers read the whole document every time, so they can find a definition, a clash or a cited result anywhere. What they review depends on the scope:
 
-- **Changes**, the default, reviews the text that changed since the last review. After a small edit that is a few paragraphs, so the review is quick.
-- **Full** reviews the whole document. Use it when this skill's arguments say `full`, or when the user asks for a full or whole-document check. It is slow on a long paper, so do not choose it on your own.
+- **Changes**, the default, reviews the text that changed since the last review.
+- **Full** reviews the whole document. Use it when this skill's arguments say `full`, or when the user asks for a full or whole-document check. It is slow on a long paper, so do not choose it on your own. After a large reorganization, run a full review to start from a clean record.
 
 Arguments: $ARGUMENTS
 
 ## Procedure
 
-1. **Get the change report.** Pass the `.tex` files that you edited, or the paper's root file or folder:
+1. **Get the change report.** Run the script on the `.tex` files that you edited, or on the paper's root file or folder:
 
    ```bash
    python3 "${CLAUDE_SKILL_DIR}/scripts/tex_changes.py" report <files>
@@ -58,25 +69,18 @@ Arguments: $ARGUMENTS
 
 5. **Fix the correctness findings first**, then the notation findings. A proof that you rewrite for correctness can make its notation findings moot. When a finding shows that a claim is false as stated, do not change the claim on your own: tell the user what the reviewer found, and propose a correction. For a step that the reviewer could not confirm, write out the argument that settles it, at the density of the mode, or tell the user when you cannot. Change only the regions and the text that the findings name, unless this is a full review.
 
-6. **Check the fixes.** Run the review again. The report now holds only your fixes, so this round is short.
+6. **Check the fixes.** Run the review again.
 
    - Send an argument back to the correctness review only when its mathematics changed.
    - When every notation fix only adds words around existing notation, such as a gloss, a definition sentence or a scope phrase, skip the notation review.
    - When no reviewer is needed, run `report` and then `mark` without dispatching.
 
-   Re-render when a round finds nothing to fix, or after you skip one this way.
-
-## When to skip
-
-- Files that are not `.tex`, such as `.qmd`, `.md` and `.rmd` documents, unless the user asks for the review.
-- Pure code edits (no narrative changes).
-- Trivial typo or whitespace fixes. They stay unreviewed until the next report, which is fine.
-- `.tex` files with no mathematical prose, such as a preamble of macro definitions. This is a judgment call.
+   Re-render the document when a round finds nothing to fix, or after you skip a round this way.
 
 ## Notes
 
+- `tex_changes.py` needs only `python3`. It uses `git` when the document is in a repository.
 - The saved copies and the last report live in the repository's git directory, under `readable-math/`, so nothing is committed or pushed to Overleaf. Outside git they live in `~/.cache/readable-math/`.
 - Coauthors' edits pulled from Overleaf count as new text, so the next report includes them.
 - A file that no root file reads, such as a standalone note, is reviewed as a document of its own.
-- After a large reorganization, run a full review to start from a clean record.
 - The two agent files in the plugin's `agents/` folder set each reviewer's model and effort.

@@ -1,6 +1,31 @@
 # The three-draw split: why it works and where it fails
 
-In a simulation, the `supervised-learning` skill gives each dataset three independent draws, each with the $n$ observations of the real-data analysis it stands for, so $3n$ observations in all. The learners are fit on the training draw, tuned and chosen on the validation draw, and the estimators run on the estimation draw. This file calls that design the three-draw split. It gives the argument that the three-draw split emulates cross-validated cross-fitting at sample size $n$, which the skill calls the nested scheme, works through the cases where it does not, and records the checks behind the numbers in the skill.
+In a simulation, the `supervised-learning` skill gives each dataset three independent draws, each with the $n$ observations of the real-data analysis it stands for, so $3n$ observations in all. The learners are fit on the training draw, tuned and chosen on the validation draw, and the estimators run on the estimation draw. This file calls that design the three-draw split. It gives the argument that the three-draw split emulates cross-validated cross-fitting at sample size $n$, which the skill calls the nested scheme, works through the cases where it does not, and records the checks behind the numbers in the first section below.
+
+## Contents
+
+- In brief: why the three-draw split emulates the nested scheme, what it saves, and how it parts from the nested scheme in the three cases that the skill lists
+- Notation
+- What the three-draw split stands in for: cross-fitting, the nested scheme and the split's estimator
+- The first-order argument: the four conditions, the error decomposition, cross-fitting, the reported standard errors, and what the argument needs
+- When a nuisance fit converges to the wrong function: the variance under each scheme, what the reported standard error misses, inverse probability weighting, the mirror case, and both fits wrong
+- When a learner is noisy: smaller training sets and averaging over fits
+- The checks: the parametric check and the boosting check, with their tables
+- Reference
+
+## In brief
+
+**Why the three-draw split emulates the nested scheme.** Cross-fitting and cross-validation rotate the roles. Each observation is held out of one of the $K$ fits and trains the other $K-1$, so the estimate averages over all $n$ observations and each fit trains on most of them. The inner cross-validation does the same inside each training set. A simulation can draw new data at no cost, so it can give each role $n$ observations of its own and skip the rotation.
+
+Take an orthogonal estimator, such as augmented inverse probability weighting (AIPW) or targeted maximum likelihood estimation (TMLE). Orthogonal means that small errors in the nuisance fits, near the true functions, have no first-order effect on the estimate. If its nuisance fits converge to the true functions fast enough, both schemes give the true value, plus an average over $n$ independent observations of the efficient influence function, a fixed function of one observation, plus terms that shrink faster than $1/\sqrt{n}$. The two estimators then have the same sampling distribution to first order. Training on $n$ observations instead of the $(K-1)n/K$ in each cross-fitting training set changes only the smaller terms. The first-order argument below works this through.
+
+**What it saves.** The three-draw split fits each setting once per dataset. The nested scheme fits it $K(V+1)$ times: in each of the $K$ training sets, $V$ times for the inner cross-validation and once more on the whole training set. With five folds at each level, that is 30 fits.
+
+**How it parts from the nested scheme.** With good nuisance fits, the three-draw split tracks cross-fitting closely. The skill lists three cases where it can part from it.
+
+- *The claim is about the scheme itself,* such as the number of folds, cross-fitting against a single sample split, or cross-validated TMLE against ordinary TMLE.
+- *The nuisance fits' errors move the estimate at first order,* because a fit converges to the wrong function or the estimator is not orthogonal. Under cross-fitting, those errors come from the same observations as the estimate and can partly cancel its own error. An independent training draw removes the cancellation, so the errors add variance instead. With a correct logistic propensity model and an outcome regression that left out a confounder, the spread of the three-draw split's AIPW estimates across repetitions, its empirical standard error, was twice that of cross-fitting, and its 95% intervals covered 87% of the time, against 99.8% under cross-fitting. The section on a nuisance fit that converges to the wrong function derives the variances, and the parametric check has the numbers.
+- *A learner is noisy,* meaning its fits change a lot from one training sample to the next, as untuned boosting's do at $n = 500$. Cross-fitting's smaller training sets raise the standard error it reports, and its average over $K$ fits lowers the actual spread of its estimates. With untuned boosting, 5-fold cross-fitting's intervals covered 98% of the time and the three-draw split's 95%. The section on a noisy learner and the boosting check have the details.
 
 ## Notation
 

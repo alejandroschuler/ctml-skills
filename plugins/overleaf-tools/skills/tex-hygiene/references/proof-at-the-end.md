@@ -3,6 +3,15 @@
 Read this when a deferred proof misbehaves, when you change `deferproofs.sty`,
 or when a paper moves to a new document class or a new TeX Live.
 
+## Contents
+
+- The mechanism, and four things that follow from it
+- What deferproofs.sty adds, and the internal names of the package that it
+  depends on
+- Pointer wording
+- Categories
+- Editing and debugging
+
 ## The mechanism
 
 - A deferred statement, such as `propositionE`, is typeset where it stands,

@@ -5,6 +5,18 @@ results: the learners, the tuning grids, the cross-validation folds, the sample
 sizes, the number of repetitions. This file covers how to keep those in step,
 one setting at a time, and how to check the parts that stay prose.
 
+## Contents
+
+- Record what ran: where to read each setting from
+- Three levels, chosen per setting: manual, tracked, generated
+- Recording a setting: `mth` macros, for a model fit and for a simulation
+- Formatting helpers: `words`, `numlist`, `numset`, `pkg_version`, `text`
+- Methods tables: `grid_table()`, `rows_from_search()`, and the grid check
+- The sheet and the review: `make methods`, `make methods-ok`, and the
+  methods check
+- The methods audit: the steps for what stays prose
+- With the other skills
+
 ## Record what ran
 
 A methods description goes wrong in three ways:

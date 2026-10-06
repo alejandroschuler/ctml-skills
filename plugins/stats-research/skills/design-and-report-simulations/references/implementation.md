@@ -4,12 +4,28 @@ Simulation code is written to be run and rewritten, not maintained. Fast, modula
 
 This guidance is written for R but the same ideas apply in Python or other languages, although the implementation will look slightly different.
 
+## Contents
+
+- The scaffolds: one per language, their packages, and the demo run
+- Architecture: DGPs, learners, estimators, the run, and their files
+- One pipeline serves every claim
+- Any piece runs alone: seeds from the cell's name, results stored per cell
+- Cache what is expensive: what to store, how to key it, where to keep it
+- Speed: parallel cells, the three draws in place of cross-fitting, small libraries
+- What to save: the raw per-repetition results, and the cache
+- Testing and documentation
+- Analysis: from tidy results to the mockup's tables
+
+## The scaffolds
+
 Two working skeletons in the shape described here, pick by language:
 
 - `../assets/simulation-scaffold.R` (tidyverse, S3 classes, `furrr` for parallelism)
 - `../assets/simulation-scaffold.py` (numpy/pandas, dataclasses, `joblib` for parallelism)
 
 Both build the same pipeline and produce the same two tidy results frames, so the R snippets below describe the pattern regardless of which you use. Run as a script, each prints the diagnostics of its data-generating processes (DGPs) first, which is the habit worth copying, then runs a small grid and reruns one piece of it from the cache.
+
+The R scaffold needs the tidyverse, magrittr and earth packages, and furrr for a parallel run. The Python scaffold needs numpy, pandas and scikit-learn, and joblib for a parallel run. The header of each file gives the command that runs its demo, from the skill's `assets/` directory.
 
 ## Architecture
 

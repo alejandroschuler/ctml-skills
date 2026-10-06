@@ -1,0 +1,94 @@
+{
+  "skill_name": "move-project-sessions",
+  "note": "Run every case against a throwaway copy of the three stores, for example with HOME pointed at a fixture folder that holds .claude.json, .claude/projects/ and Library/Application Support/Claude/claude-code-sessions/, so that no real session history is touched. The script finds the stores through HOME. Its check for a running desktop app reads the real process list, so set the app open or quit as each fixture says. Case 5 is a near-miss that must not trigger the skill.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "desktop-app-sidebar-lost",
+      "prompt": "I renamed ~/Documents/research/projects/har to ~/Documents/research/projects/har-paper in Finder, and now the project is gone from the sidebar. Can you get my old sessions back?",
+      "fixture": "The session runs inside the macOS desktop app, in another project folder. The folder is already at the new path. The fixture has a transcript folder, a projects key and three sidebar files for the old path.",
+      "expected_output": "Runs the dry run itself, from the script in the skill's installed folder, with both absolute paths, and shows the user what will change in the three stores. Does not run the apply and does not pass --force. Gives the user the --apply command with the script's absolute path written out, and tells them to quit the desktop app with Cmd-Q, run the command in Terminal.app, and relaunch the app. Gives all of this before the user quits, because quitting ends the session.",
+      "files": [],
+      "assertions": [
+        "Runs the script without --apply before anything changes, and reports the transcript folder, the projects key and the sidebar files from its plan",
+        "Runs the script from the skill's installed folder, not from a guessed path such as ~/.claude/skills/move-project-sessions/",
+        "Does not run the script with --apply and does not pass --force",
+        "Gives the user the --apply command with the script's absolute path written out in full, with no unexpanded variable such as ${CLAUDE_SKILL_DIR} in it",
+        "Tells the user to quit the desktop app fully with Cmd-Q, then run the command in a plain terminal such as Terminal.app, then relaunch the app",
+        "Gives the command and all the steps in the same reply, before the user quits the app"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "cli-session-hands-off-apply",
+      "prompt": "I moved /Users/me/code/thesis to /Users/me/research/thesis and now claude --resume in the new folder shows nothing. Fix it.",
+      "fixture": "The session is a terminal CLI session outside the desktop app, started in the home folder. The macOS desktop app is open, so an apply run would print REFUSING and exit with code 2. The folder is already at the new path. The fixture has the old project's transcripts, projects key and two sidebar files.",
+      "expected_output": "Runs the dry run and shows the plan. Does not run the apply and never passes --force. Gives the user the --apply command with the script's absolute path written out, to run in a plain terminal such as Terminal.app after quitting the desktop app with Cmd-Q. Tells the user to relaunch the app, then cd into the new path and run claude --resume.",
+      "files": [],
+      "assertions": [
+        "Runs the script without --apply before anything changes",
+        "Does not run the script with --apply and never passes --force",
+        "Gives the --apply command with the script's absolute path written out in full",
+        "Tells the user to quit the desktop app with Cmd-Q, run the command in a plain terminal, and relaunch the app",
+        "Tells the user to cd into the new path and run claude --resume"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "before-the-move",
+      "prompt": "I want to move ~/Desktop/scratch into ~/Documents/research/projects/. How do I do that without Claude losing track of it?",
+      "fixture": "The session runs inside the macOS desktop app, in another project folder. The folder is still at ~/Desktop/scratch, and the fixture has its transcripts, projects key and sidebar files.",
+      "expected_output": "Says that the folder moves first, in Finder or with mv, because the script edits only Claude Code's metadata and does not move project files. After the move, runs the dry run and shows the plan. Then gives the user the --apply command and tells them to quit the desktop app with Cmd-Q, run the command in Terminal.app, and relaunch the app. Does not apply anything while the folder is still at the old path.",
+      "files": [],
+      "assertions": [
+        "Says that the folder must move first and that the script does not move project files",
+        "Does not run the script with --apply while the folder is still at the old path",
+        "Runs or plans the dry run before the apply",
+        "Says that the desktop app must be fully quit (Cmd-Q) before the apply, that the user runs the apply in a plain terminal, and that the app is relaunched afterward"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "boundary-guard-abort",
+      "prompt": "I moved /Users/me/proj to /Users/me/work/proj. Please fix the Claude sidebar.",
+      "fixture": "The session is a terminal CLI session outside the desktop app, which is quit. The old project's transcripts also mention /Users/me/proj-backup/data.csv, so the dry run prints ABORT and exits with code 3.",
+      "expected_output": "Reports that the script stopped at its boundary guard: in the transcripts the old path is the prefix of a longer name, /Users/me/proj-backup, so a string replace would corrupt that other path, and nothing changed. Inspects those matches by hand. Does not get around the guard with sed or another replace of the old path that would also hit /Users/me/proj-backup, and does not say that the migration is done.",
+      "files": [],
+      "assertions": [
+        "Explains that the script stopped because the old path is the prefix of a longer path in the transcripts (/Users/me/proj-backup), and that no store changed",
+        "Does not rewrite the transcripts with sed, a script of its own, or any other replace of the old path that would also change /Users/me/proj-backup",
+        "Does not tell the user that the migration is done"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "manual-fallback",
+      "prompt": "python3 on this laptop only opens a box that asks me to install the developer tools, and I can't install anything. I moved /Users/me/My Projects/sim_study to /Users/me/research/sim_study. Can you do the fix by hand?",
+      "fixture": "The session is a terminal CLI session outside the desktop app, started in the home folder. The desktop app is open. There is no working python3. The fixture has the old project's transcript folder, -Users-me-My-Projects-sim-study, its projects key, two sidebar files for it, and another project's transcript that mentions the old path.",
+      "expected_output": "Follows the manual fallback, and gives the user the edits as commands or steps to carry out in a plain terminal such as Terminal.app, not from its own Claude Code session. Has the user quit the desktop app before the first edit, and back up each file before editing it. Renames the transcript folder to -Users-me-research-sim-study, with every character other than a letter or digit replaced by -, and replaces the old path with the new one in each *.jsonl inside that folder only, keeping the JSON valid. Renames the projects key in ~/.claude.json. Sets cwd and originCwd to the new path in the sidebar files whose cwd is the old path. Leaves the other project's transcript as it is, and tells the user to relaunch the app.",
+      "files": [],
+      "assertions": [
+        "Gives the edits to the user to carry out in a plain terminal, and does not make them from its own Claude Code session",
+        "Has the desktop app quit before the first edit",
+        "Has each file or folder backed up before it is edited",
+        "Names the new transcript folder -Users-me-research-sim-study, with the underscore replaced by -",
+        "Replaces the old path only in the *.jsonl files inside the moved project's own transcript folder, and leaves the other project's transcript unchanged",
+        "Renames the projects key in ~/.claude.json from the old path to the new one",
+        "Sets both cwd and originCwd to the new path in the sidebar files whose cwd is the old path",
+        "Tells the user to relaunch the desktop app afterward"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "near-miss-subfolder-rename",
+      "prompt": "I renamed the data folder inside this project to raw-data. Update the paths in the analysis scripts.",
+      "fixture": "The session runs in the project's root folder, which has not moved. Several R and Python scripts read files from data/.",
+      "expected_output": "Judges the skill not to apply: only a folder inside the project was renamed, and the project folder that Claude Code tracks has not moved. Does not run migrate_claude_project.py. Updates the data/ paths in the scripts to raw-data/.",
+      "files": [],
+      "assertions": [
+        "Does not invoke the move-project-sessions skill or run migrate_claude_project.py",
+        "Updates the paths in the scripts from data/ to raw-data/"
+      ]
+    }
+  ]
+}

@@ -1,19 +1,13 @@
 ---
 name: design-and-report-simulations
-description: 'How to design a simulation study and how to organize its write-up so a reader can see what was done and why. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing a simulation section, or answering "how did the methods compare". The core move is backwards design: a simulation exists to support a claim, so the claim comes first, the mockup of the tables and figures comes before any code, and the write-up is organized claim by claim with the purpose of every table stated out loud. Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.'
+description: 'Designs simulation studies and organizes their write-ups so a reader can see what was done and why. The core move is backwards design: a simulation exists to support a claim, so the claim comes first, the mockup of the tables and figures comes before any code, and the write-up is organized claim by claim with the purpose of every table stated out loud. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing up simulation results in any form (a simulation section, a slide, a README or a chat reply), or answering "how did the methods compare". Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.'
 ---
 
 # Designing and reporting simulation studies
 
-A paper is claims plus evidence. Simulations are one kind of evidence, next to theory and real-data applications, and they have no value apart from the claim they support. Everything in this skill follows from that.
+A paper is claims plus evidence. Simulations are one kind of evidence, next to theory and real-data applications, and they have no value apart from the claim they support.
 
-Two failures account for most bad simulation work, and they are the same failure seen from two ends.
-
-**At the write-up end:** a results section that presents output without saying what any of it is for. Tables appear, numbers are described, and the reader is left to reverse-engineer why each table exists and what it proves. Even correct, well-executed simulations fail here, because the reader cannot follow an argument that was never stated.
-
-**At the design end:** a simulation built before anyone decided what it needed to show. The data-generating processes (DGPs) were picked because they seemed reasonable, the settings because they seemed standard. Output like that cannot be organized well afterwards, because there is no argument to organize it around.
-
-The fix for both is backwards design: decide the claim, mock up the table that would prove it, then build the simulation that fills the mockup.
+Most bad simulation work fails at one of two ends. A simulation built before anyone decided what it needed to show has data-generating processes (DGPs) picked because they seemed reasonable and settings picked because they seemed standard. Its output cannot be organized afterwards, because there is no argument to organize it around. A results section that presents output without saying what any of it is for leaves the reader to reverse-engineer why each table exists and what it proves. The fix for both is backwards design: decide the claim, mock up the table that would prove it, then build the simulation that fills the mockup.
 
 ## The workflow
 
@@ -26,13 +20,23 @@ The fix for both is backwards design: decide the claim, mock up the table that w
 
 Stage 6 is a gate, not a formality. It is where a mockup that cannot be filled in gets caught, while fixing it still costs minutes.
 
-Three things drive quality at different stages, and it helps to know which one you are serving:
-
-- **Thoughtful goals give direction.** Practical utility, real insight, a specific audience.
-- **Communication gives focus.** Structure and organize; minimize the reader's cognitive load.
-- **Clean, fast sims give productivity.** Simple DGPs, minimal compute, modular code.
-
 Find out where the user actually is and enter there. Someone arriving with results already in hand still needs stages 1 through 3 reconstructed before the write-up can be organized, because the write-up is organized by claim and there is nothing to organize without one. Reconstructing a claim from finished results is legitimate and common. Pretending the claim was prespecified when it was not is not.
+
+When the work spans more than one stage, copy this checklist and check off an item only when it holds. For results already in hand, check items 1 to 3 when they are reconstructed. Each line abbreviates its stage below.
+
+```
+Simulation progress:
+- [ ] 1. Claims: well-scoped, each sorted by the evidence that can carry it
+- [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
+- [ ] 3. Mockups: every table and figure drawn with empty cells and a caption, before any code
+- [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning
+- [ ] 5. Build: one pipeline for pilot, full run and every display; any piece runs alone; expensive steps cached
+- [ ] 6. Pilot: code runs; DGP diagnostics sane; every promised contrast resolvable; n_sim set
+- [ ] Full run at that n_sim; raw per-repetition results saved
+- [ ] Write-up: passes "Before calling a write-up done"
+```
+
+For a plan kept in a file, copy `assets/simulation-plan.md`, a fill-in template with one section per stage.
 
 ## Stage 1: claims
 
@@ -73,7 +77,7 @@ The mockup answers questions that are expensive to answer later:
 
 Layout follows from the comparison the reader cares about, which is usually between methods, so methods belong in adjacent rows or adjacent columns and the other factors vary along the other axis. A reader who has to look across a page break to compare two methods will not do it.
 
-Mockups are also the cheapest possible feedback. Show them to a coauthor before a single line of simulation code exists.
+Mockups are also the cheapest possible feedback. Suggest that the user show them to a coauthor before a single line of simulation code exists.
 
 ## Stage 4: DGPs and settings
 
@@ -81,7 +85,7 @@ Being able to *reason* about a DGP and *iterate* on it matters more than making 
 
 Sensible defaults, and the diagnostics worth computing on any DGP before trusting it, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, variance explained, and how nonlinear the truth actually is.
 
-Learners and their tuning are settings too, and so is the way each dataset is split between fitting the learners, validating them and computing the estimators. Set all of these up with the `supervised-learning` skill. By default each dataset is three independent draws, each with the dataset's full sample size: a training draw to fit the learners, a validation draw to tune and choose them, and an estimation draw for the estimators. The three draws are a cheap stand-in for cross-validated cross-fitting at that sample size, and the skill also lists the cases where the stand-in fails.
+Learners and their tuning are settings too, and so is the way each dataset is split between fitting the learners, validating them and computing the estimators. Set all of these up with the `supervised-learning` skill. By default each dataset is three independent draws (that skill's three-draw split), each with the dataset's full sample size: a training draw to fit the learners, a validation draw to tune and choose them, and an estimation draw for the estimators. The three draws are a cheap stand-in for cross-validated cross-fitting at that sample size, and the skill also lists the cases where the stand-in fails.
 
 Design DGPs to archetype the extremes. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
@@ -99,17 +103,17 @@ Three properties decide how cheap the rest of the project will be:
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
 - **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it, so that a hit always equals what recomputing would give and deleting the cache changes nothing but runtime.
 
-Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape. The learners in that code come from the `supervised-learning` skill.
+Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape, to read and adapt. Their learners are placeholders: set up the real ones with the `supervised-learning` skill.
 
 ## Stage 6: pilot, and check the design can show what the mockup promises
 
 A mockup is a hypothesis. It says that once this table is filled in, particular cells will differ, in a particular direction, by enough to see. A pilot tests that hypothesis for a few minutes of compute, before the full run spends hours either confirming it or quietly failing to.
 
-The failure this catches is specific and expensive. When the contrast a table was built to display is less than about three Monte Carlo standard errors (SEs) of the difference between its cells at the planned number of repetitions, the cells cannot be reliably told apart, and **an unresolvable design produces a null result that looks exactly like a true null.** You cannot tell "these methods really do perform the same" from "this simulation could never have told them apart", and neither can a reader. The discovery also arrives after the compute is spent and the deadline is near, when every remaining fix is a bad one.
+The failure this catches is specific and expensive. When the contrast a table was built to display is less than about three Monte Carlo standard errors (SEs) of the difference between its cells at the planned number of repetitions, the cells cannot be reliably told apart, and **an unresolvable design produces a null result that looks exactly like a true null.** You cannot tell "these methods really do perform the same" from "this simulation could never have told them apart", and neither can a reader.
 
 Three checks, in increasing cost:
 
-1. **Does it run?** Two repetitions. Catches the errors that are embarrassing rather than interesting.
+1. **Does it run?** Two repetitions.
 2. **Are the DGPs what you think they are?** One large draw, computing the diagnostics in `references/designing-dgps.md`: true estimand value, overlap, variance explained, and how nonlinear the truth is. These belong in the paper, so the work is not wasted.
 3. **Is the designed contrast resolvable?** Roughly 100 to 200 repetitions. This is the check that gets skipped, and the one that saves whole runs.
 
@@ -119,7 +123,7 @@ The third check, briefly. A contrast between two means over repetitions (bias, m
 n_sim  >=  ( k * sd(d) / mean(d) )^2        k = 3 to see it, 5 to be comfortable
 ```
 
-The pilot only estimates `mean(d)` and `sd(d)`, and plugging in the estimates is optimistic exactly when the pilot was lucky. `references/piloting.md` has two guards for that: size on a lower bound for the gap (the tools report it as `n_sim_safe`), and treat a pilot whose own `|z|` is below 2 as too small to size anything. Run the check for every cell comparison the mockup promises, and let the largest requirement set `n_sim`. The same file has the derivation step by step, what `d_i` is for each performance measure, the bootstrap for measures that are not means, and what to do when the answer comes back bad. `assets/pilot_check.R` and `assets/pilot_check.py` implement it.
+The pilot only estimates `mean(d)` and `sd(d)`, and plugging in the estimates is optimistic exactly when the pilot was lucky. `references/piloting.md` has two guards for that: size on a lower bound for the gap (the tools report it as `n_sim_safe`), and treat a pilot whose own `|z|` is below 2 as too small to size anything. Run the check for every cell comparison the mockup promises, and let the largest requirement set `n_sim`. The same file has the derivation step by step, what `d_i` is for each performance measure, the bootstrap for measures that are not means, what to do when the answer comes back bad, and what to report about the pilot. For a claim of no difference, use that file's equivalence section instead of this formula. `assets/pilot_check.R` (base R) and `assets/pilot_check.py` (numpy, pandas, scipy) implement the check as functions to call on the pilot's results.
 
 A requirement in the millions is a verdict only when the pilot can see the gap at all. If the pilot cannot tell the gap from zero, the `n_sim` it implies is noise: enlarge the pilot, or, for a bias contrast, measure the gap directly on one very large draw as `references/piloting.md` describes. If the gap is still indistinguishable from zero, the design is dead as drawn. The fix is then upstream, in Stage 3 or Stage 4: amplify the signal by changing the DGP, or change what the table displays. That is exactly why this gate sits before the full run instead of after it.
 
@@ -137,19 +141,17 @@ Flag this explicitly when it comes up. A user looking at a disappointing simulat
 
 ## Writing it up
 
-Read `references/writing-the-writeup.md` before drafting. It carries the detail; the spine is here.
+Read `references/writing-the-writeup.md` before drafting. It carries the detail; the spine is here. For a paper section, `assets/writeup-skeleton.md` is a fill-in skeleton in this shape.
 
-**Organize by claim, not by output.** The section structure mirrors the claims, and each claim gets its evidence next to it. A results section ordered by table number forces the reader to hold every table in mind until the discussion finally explains what they were for.
+**Organize by claim, not by output.** The section structure mirrors the claims, and each claim gets its evidence next to it.
 
 **Sandwich every piece of evidence.** Tell the reader the goal, give the evidence, then say how the evidence supports the goal. Be direct and prosaic about it; this is one place where spelling out the obvious is correct, because what is obvious to the author is not obvious to a reader meeting the design for the first time.
-
-> In the first part I tell 'em what I am going to tell 'em; in the second part, well, I tell 'em; in the third part I tell 'em what I've told 'em.
 
 **Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
 
 **Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose cannot be stated in one sentence is a display to cut.
 
-**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. Each oracle or semi-oracle gets one too, and its reason is the claim or subclaim it helps test. "Why" is the part that gets dropped, and it is the part that separates a report from a list of numbers.
+**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. Each oracle or semi-oracle gets one too, and its reason is the claim or subclaim it helps test.
 
 ## Performance measures
 
@@ -158,6 +160,8 @@ Which measures to compute depends entirely on the claim. Bias, empirical SE, mea
 That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behaviour need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
 
 Two habits from that file are worth carrying everywhere, cheaply: reporting a Monte Carlo SE alongside a headline number keeps you from over-reading noise, and saying how many repetitions failed keeps the rest of the numbers interpretable. Neither needs to dominate the write-up.
+
+`assets/performance_measures.R` computes the standard set and their Monte Carlo SEs in base R, as functions to call on the raw per-repetition results. The file prefers the `rsimsum` package when it is installed.
 
 ## Before calling a write-up done
 

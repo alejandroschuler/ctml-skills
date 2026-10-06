@@ -1,0 +1,86 @@
+{
+  "skill_name": "writing-math",
+  "note": "Fixtures are described in `fixture` and not shipped, so build each one as a small folder before the run. The plugin's PreToolUse hook makes Claude load the skill before its first .tex edit, so evals 0 to 3 test what the rules change, and their assertions are checked on the edited files and the transcript. Eval 4 is a near-miss on a .qmd file, on which the hook does not fire, so it tests that the description alone does not trigger the skill.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "note-names-add-and-subtract",
+      "prompt": "in notes/one-step.tex, pick up after the von Mises expansion and show that the one-step estimator is asymptotically linear",
+      "fixture": "notes/one-step.tex, a standalone note that no paper inputs, whose first line is the mode line % writing-math: note, semiparametric statistics. It defines the data O = (X, A, Y) from P_0, the target \\psi(P) = E_P[\\mu_P(1, X)] with efficient influence function \\varphi_P, an initial estimate \\hat P of P_0 with \\hat\\varphi = \\varphi_{\\hat P}, and the one-step estimator \\hat\\psi = \\psi(\\hat P) + P_n \\hat\\varphi. It ends with the von Mises expansion \\psi(\\hat P) - \\psi(P_0) = -P_0 \\hat\\varphi + R_2(\\hat P, P_0), which defines the remainder R_2.",
+      "expected_output": "Writes \\hat\\psi - \\psi(P_0) = (P_n - P_0)\\hat\\varphi + R_2 in short steps from the definition of the one-step estimator and the expansion. Then adds and subtracts (P_n - P_0)\\varphi_0, names that step, and says that it isolates the term to which the central limit theorem applies. Briefly states the result that makes the empirical process term (P_n - P_0)(\\hat\\varphi - \\varphi_0) of order o_P(n^{-1/2}), such as a Donsker-class lemma or a sample-splitting argument through Chebyshev's inequality, with its conditions, and checks them or adds them as assumptions. States the condition that makes R_2 of order o_P(n^{-1/2}) instead of asserting the order. No line of the derivation jumps more than two or three elementary moves. No 'clearly' or 'it follows' stands without the steps that show why, and each new sentence is on its own line.",
+      "files": [],
+      "assertions": [
+        "Names the add-and-subtract step that splits (P_n - P_0)\\hat\\varphi into (P_n - P_0)\\varphi_0 and (P_n - P_0)(\\hat\\varphi - \\varphi_0), or an equivalent step, and says what it is for",
+        "Briefly states the result that makes (P_n - P_0)(\\hat\\varphi - \\varphi_0) = o_P(n^{-1/2}), with its conditions, for example a Donsker condition, or sample splitting with L2(P_0) consistency of \\hat\\varphi",
+        "Checks the conditions of that result where the note applies it, or adds them to the note as assumptions",
+        "States the condition under which R_2 = o_P(n^{-1/2}), such as a product-rate condition on the nuisance errors, and does not assert the order without it",
+        "Makes at most two or three elementary moves between any two consecutive lines of the derivation",
+        "Uses 'clearly', 'it follows', 'after some algebra' or a similar phrase only where the text around it shows why",
+        "Puts each new sentence of prose on its own line"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "new-letter-has-global-meaning",
+      "prompt": "add a corollary right after theorem 1 that gives a wald confidence interval for psi_0, with a short proof",
+      "fixture": "paper/ with main.tex, whose first line is the mode line % writing-math: paper, semiparametric statistics, and which inputs sections/20-setup.tex and sections/40-theory.tex. The setup file defines, with no scope, the Riesz representer \\alpha_0 of the target functional, its Riesz-regression estimate \\hat\\alpha, and the conditional variance of the outcome \\sigma^2(a, x) = Var(Y | A = a, X = x). Theorem 1 in sections/40-theory.tex states that \\sqrt{n}(\\hat\\psi - \\psi_0) converges in distribution to N(0, V), with V = Var \\varphi_0(O), under Assumptions 1 to 3 of the setup file. The text of sections/40-theory.tex uses neither \\alpha nor \\sigma. All the text is at one sentence per line.",
+      "expected_output": "Reads or searches the files that main.tex inputs before it chooses letters, and finds that \\alpha and \\sigma already have global meanings. Writes the confidence level with another letter, such as 1 - \\gamma, and writes the variance estimator with a symbol that does not use \\sigma, such as \\hat V for an estimate of the V of Theorem 1. Defines the normal quantile and the variance estimator at or before their first use. Says that the coverage holds asymptotically, and states the consistency of the variance estimator as a condition or proves it. Each new sentence is on its own line, and the text after each display starts on a new line.",
+      "files": [],
+      "assertions": [
+        "Does not use the letter \\alpha for the confidence level or for any other new symbol, because the setup defines \\alpha_0 as the Riesz representer",
+        "Does not use the letter \\sigma for the variance estimator or for any other new symbol, because the setup defines \\sigma^2(a, x) as the conditional variance of the outcome",
+        "Reads or searches sections/20-setup.tex, or every file that main.tex inputs, for the letters that it introduces before it writes them",
+        "Defines the normal quantile and the variance estimator at or before their first use",
+        "Says that the coverage of the interval holds asymptotically",
+        "States the consistency of the variance estimator as a condition of the corollary, or proves it",
+        "Puts each new sentence on its own line, and starts the text after each display on a new line"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "root-file-without-mode-line",
+      "prompt": "add a remark after theorem 2 on why the product rate condition is needed and when it holds",
+      "fixture": "paper/ folder of a paper on cross-fitted TMLE. main.tex has no % writing-math: line and inputs sections/10-introduction.tex to sections/50-discussion.tex. sections/20-setup.tex defines the propensity score \\pi_0 and the outcome regression \\mu_0. Theorem 2 in sections/40-theory.tex assumes \\|\\hat\\pi - \\pi_0\\| \\|\\hat\\mu - \\mu_0\\| = o_P(n^{-1/2}), with norms in L2(P_0). The text is at one sentence per line.",
+      "expected_output": "Sees that the root file main.tex has no mode line. Chooses paper mode, since the remark goes in the main text of the paper, and a field from the content, such as semiparametric statistics. Adds % writing-math: paper, <field> near the top of main.tex, and tells the user which mode and field it chose, so that they can change the line. Writes the remark in sections/40-theory.tex at the density of a paper in that field. In the remark's prose, each content-bearing symbol has a short gloss in its sentence, such as 'the propensity score \\pi_0'. Each new sentence is on its own line.",
+      "files": [],
+      "assertions": [
+        "Adds a comment line of the form % writing-math: paper, <field> near the top of paper/main.tex",
+        "Puts the mode line in the root file main.tex and not in a section file",
+        "Chooses paper mode and a field that fits the paper, such as semiparametric statistics, causal inference or asymptotic statistics",
+        "Tells the user which mode and field it chose, and that they can change the line",
+        "Gives each content-bearing symbol in the remark's prose, such as \\pi_0 and \\mu_0, a short noun-phrase gloss in the same sentence, unless the sentence or clause just before glossed it",
+        "Puts each new sentence on its own line"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "note-optimum-in-full",
+      "prompt": "in notes/allocation.tex, work out the treated fraction that minimizes the variance of the difference in means, given that at most 70% of the units can be treated",
+      "fixture": "notes/allocation.tex, a standalone note whose first line is the mode line % writing-math: note, design of experiments. It defines n units, the treated fraction p, the outcome standard deviations \\sigma_1 and \\sigma_0 in the treated and the control arm, and the difference-in-means estimator \\hat\\tau.",
+      "expected_output": "Writes the variance of \\hat\\tau as the function \\sigma_1^2/(np) + \\sigma_0^2/(n(1-p)) of p, and states the feasible region 0 < p \\le 0.7. Gives the reason for the direction of monotonicity, from the sign of the derivative on each side of the stationary point or from convexity. Derives the unconstrained minimizer p = \\sigma_1/(\\sigma_1 + \\sigma_0) from the first-order condition. Treats both cases of the cap: that minimizer when it is at most 0.7, and p = 0.7 when \\sigma_1 > (7/3)\\sigma_0, where the variance decreases on the whole feasible region. Makes at most two or three elementary moves per line, and puts each new sentence on its own line.",
+      "files": [],
+      "assertions": [
+        "Writes the variance of the difference in means as a function of the treated fraction p",
+        "States the feasible region of p, 0 < p \\le 0.7",
+        "Gives the reason for the direction of monotonicity, such as the sign of the derivative on each side of the stationary point, or convexity",
+        "Derives the unconstrained minimizer \\sigma_1/(\\sigma_1 + \\sigma_0) from the first-order condition, and does not only assert it",
+        "Treats both cases of the cap: the minimizer when \\sigma_1/(\\sigma_1 + \\sigma_0) \\le 0.7, and p = 0.7 otherwise, which happens when \\sigma_1 > (7/3)\\sigma_0",
+        "Shows why the cap binds in the second case, because the variance decreases on the whole feasible region, and does not only say that it binds",
+        "Makes at most two or three elementary moves between any two consecutive lines of the derivation",
+        "Puts each new sentence on its own line"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "near-miss-quarto-note",
+      "prompt": "add the delta-method variance of the sample log odds to notes/delta-method.qmd",
+      "fixture": "a Quarto project whose notes/delta-method.qmd holds a short derivation in Quarto's $...$ math, with no .tex file in the project",
+      "expected_output": "Judges the skill not to apply, since the file is a Quarto document and not a .tex file. Does not invoke writing-math and adds no % writing-math: line. Writes the derivation in Quarto's math syntax.",
+      "files": [],
+      "assertions": [
+        "Does not invoke the writing-math skill",
+        "Adds no % writing-math: line to notes/delta-method.qmd"
+      ]
+    }
+  ]
+}

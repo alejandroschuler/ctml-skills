@@ -4,6 +4,19 @@ A conversion only moves text between files. Keep content edits out of it, so
 that the before and after builds can be compared line by line. Work in the
 paper repo, and change one kind of thing at a time.
 
+## Contents
+
+1. Before you start
+2. Build a baseline
+3. Get the worklist
+4. Set up
+5. Move the results, one at a time
+6. Move the figures, one at a time
+7. Move the sections, and number a sections/ folder that has no numbers
+8. Re-break the lines, if the user agrees
+9. Build and compare
+10. Check and commit
+
 ## 1. Before you start
 
 - Pull first, with `git pull` in a plain Overleaf clone or `make pull-paper`
@@ -29,8 +42,11 @@ every result, equation and figure must keep its number.
 
 ## 3. Get the worklist
 
+`${CLAUDE_SKILL_DIR}` is the folder that holds `SKILL.md`. Write out its path,
+as the command in "Check" in `SKILL.md` shows it.
+
 ```bash
-python3 <skill-dir>/scripts/check_tex_hygiene.py .
+python3 "${CLAUDE_SKILL_DIR}/scripts/check_tex_hygiene.py" .
 ```
 
 The errors are the worklist, chiefly `inline-result`, `stray-proof` and
@@ -102,7 +118,8 @@ A paper set up before the numbering rule keeps its sections in
 `sections/<slug>.tex`, and a long section can input its parts from
 `sections/<section-slug>-<slug>.tex`. The checker gives one `section-name`
 warning for such a paper. Number its files only when the user asks, because
-every file gets a new name.
+every file gets a new name. Do "1. Before you start" and "2. Build a baseline"
+first. Step 5 below compares with that baseline.
 
 1. Read the open Overleaf comments on the section files with the
    `overleaf-comments` skill, if it is installed. A file that gets a new name

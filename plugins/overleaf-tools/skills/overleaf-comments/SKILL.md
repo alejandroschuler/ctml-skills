@@ -15,12 +15,16 @@ It only reads. It never edits the text, replies to a thread, or resolves one.
 
 ## Read the comments
 
-Run the script with `uv run`, which installs its two Python packages. Here
-`<skill-dir>` is the absolute path of this skill's directory:
+Run the script with `uv run`, which installs its two Python packages,
+`requests` and `websocket-client`:
 
 ```bash
-uv run <skill-dir>/scripts/overleaf_comments.py read <project>
+uv run "${CLAUDE_SKILL_DIR}/scripts/overleaf_comments.py" read <project>
 ```
+
+Run `read` once for each user request. Do not run it in a loop or on a
+schedule. Overleaf's terms ask for use that is close to normal human
+interaction.
 
 `<project>` can be an editor URL (`https://www.overleaf.com/project/<id>`), a
 git bridge URL (`https://git.overleaf.com/<id>`), a bare project id, or a
@@ -35,7 +39,7 @@ These flags change what `read` shows:
 |---|---|
 | `--include-resolved` | Also show resolved threads, marked as resolved. |
 | `--changes` | Also list tracked insertions and deletions, with author and time. |
-| `--file <glob>` | Only read files whose path in the project matches, for example `--file 'sections/*'`. |
+| `--file <glob>` | Only read files whose path in the project matches, for example `--file 'sections/*'`. Repeat the flag to give more than one glob. |
 | `--json` | Print JSON instead of Markdown, with line and column numbers, user ids and ISO 8601 times. |
 
 The Markdown output starts with the number of open threads, and with the
@@ -49,48 +53,6 @@ When the script finds a local clone of the project, in the current directory
 or in `paper/`, it says where the clone is. It also compares each file that
 has comments with the clone's copy of that file, and warns when the two
 differ.
-
-Run `read` once for each user request. Do not run it in a loop or on a
-schedule. Overleaf's terms ask for use that is close to normal human
-interaction.
-
-## When there is no valid session
-
-Exit code 3 means that there is no saved session, or that the saved session
-expired. A session expires after five days without use. Do not guess the
-comments, and do not look for them another way. Do these steps:
-
-1. Tell the user in one line that the Overleaf session expired and that a
-   login window will open.
-2. Run `uv run <skill-dir>/scripts/overleaf_comments.py login` in the
-   background, because it waits for the user. It opens a Chrome, Chromium,
-   Edge or Brave window at the Overleaf login page. The window has its own
-   profile, so the user logs in to Overleaf there even when their everyday
-   browser is logged in.
-3. The user logs in. The command saves the session, closes the window and
-   exits with code 0. It stops after ten minutes without a login.
-4. Run the same `read` command again.
-
-The user types their own password and login codes. Never type them for the
-user.
-
-If the window cannot open, for example because of a sandbox or because no
-Chromium-based browser is installed, give the user the `login` command with
-the real path in place of `<skill-dir>`, to run in their own terminal. If the
-browser login fails, the fallback is `login --cookie`, which the user also runs
-in their own terminal. It asks for the value of the `overleaf_session2` cookie,
-which holds the session and which they copy from a logged-in browser's
-developer tools. Do not ask the user to paste the cookie into the chat.
-
-`status` checks that the saved session still works. `logout` ends the session
-on Overleaf and deletes the saved copy, and `logout --forget-browser` also
-deletes the login profile. The saved session and the login profile live in
-`~/.config/overleaf-comments/`, which only the user can read.
-
-Exit code 4 means that this account cannot open the project. Exit code 2 means
-bad arguments, for example a `<project>` that is not a URL, an id or a clone.
-Exit code 1 is any other failure. The script uses Overleaf's private web API,
-which can change without notice. Report the error text as it is.
 
 ## Working from the comments
 
@@ -109,3 +71,44 @@ which can change without notice. Report the error text as it is.
   text a coauthor proposed and which text is settled.
 - Overleaf hides comments from people who open a project through a read-only
   link. The output says so when that is the case.
+
+## When there is no valid session
+
+Exit code 3 means that there is no saved session, or that the saved session
+expired. A session expires after five days without use. Do not guess the
+comments, and do not look for them another way. Do these steps:
+
+1. Tell the user in one line that the Overleaf session expired and that a
+   login window will open.
+2. Run `uv run "${CLAUDE_SKILL_DIR}/scripts/overleaf_comments.py" login` in
+   the background, because it waits for the user. It opens a Chrome,
+   Chromium, Edge or Brave window at the Overleaf login page. The window has
+   its own profile, so the user logs in to Overleaf there even when their
+   everyday browser is logged in.
+3. The user logs in. The command saves the session, closes the window and
+   exits with code 0. It stops after ten minutes without a login.
+4. Run the same `read` command again.
+
+The user types their own password and login codes. Never type them for the
+user.
+
+If the window cannot open, for example because of a sandbox or because no
+Chromium-based browser is installed, give the user the `login` command to run
+in their own terminal. Write the script's absolute path out in full, because
+the user's shell does not know this skill's directory. If the browser login
+fails, the fallback is `login --cookie`, which the user also runs in their own
+terminal. It asks for the value of the `overleaf_session2` cookie, which holds
+the session and which they copy from a logged-in browser's developer tools.
+Do not ask the user to paste the cookie into the chat.
+
+`status` checks that the saved session still works. `logout` ends the session
+on Overleaf and deletes the saved copy, and `logout --forget-browser` also
+deletes the login profile. The saved session and the login profile live in
+`~/.config/overleaf-comments/`, which only the user can read.
+
+## Other exit codes
+
+Exit code 4 means that this account cannot open the project. Exit code 2 means
+bad arguments, for example a `<project>` that is not a URL, an id or a clone.
+Exit code 1 is any other failure. The script uses Overleaf's private web API,
+which can change without notice. Report the error text as it is.
