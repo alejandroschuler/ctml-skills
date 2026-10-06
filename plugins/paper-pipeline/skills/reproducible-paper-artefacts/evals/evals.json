@@ -68,8 +68,8 @@
     {
       "id": 9,
       "name": "methods-change",
-      "prompt": "switch the primary analysis to 10-fold cross-validation and add max_depth 8 to the boosting grid, then rebuild",
-      "fixture": "project-a, on main, clean; mthPrimaryFolds is printed in the text, the learner grid is a methods table, and the methods text was reviewed",
+      "prompt": "switch the primary analysis to 10-fold cross-validation and add max_depth 6 to the boosting grid, then rebuild",
+      "fixture": "project-a, on main, clean; the primary analysis tunes XGBRegressor with GridSearchCV as in references/methods.md, with max_depth from 1 to 5; mthPrimaryFolds is printed in the text, the learner grid is a methods table, and the methods text was reviewed",
       "expected_output": "Reads the fold count from the fitted search, not from the config. Rebuilds on main with a commit that says what changed. Runs make methods, and says which changes update the text themselves and which parts of the methods text need rereading. Does not run make methods-ok before reading the methods section. Does not push."
     },
     {

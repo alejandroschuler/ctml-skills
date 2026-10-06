@@ -26,7 +26,7 @@ Usage:
         [--macros macros.json]
     record_provenance.py --path paper/artefacts/figures/fig-primary.pdf \\
         [--rule fig_primary] [--label fig:primary] \\
-        [--macros macros.json] [--reads reads.json] [--extra extra.json]
+        [--macros macros.json] [--reads reads.json]
     record_provenance.py --merge
 """
 
@@ -157,13 +157,8 @@ def record(
     label: str | None = None,
     macros: dict[str, str] | None = None,
     reads: list[str] | None = None,
-    extra: dict | None = None,
 ) -> Path:
-    """Write the sidecar for one artefact.
-
-    `extra` adds fields a helper wants recorded next to the file, such as the
-    grid counts that grid_table() computes. It cannot replace a core field.
-    """
+    """Write the sidecar for one artefact."""
     key = rel(cfg, path)
     tier = tier_for(cfg, path)
     if tier == "scratch":
@@ -190,10 +185,6 @@ def record(
         "macros": macros or {},
         "reads": _hash_reads(cfg, reads),
     }
-    for name, value in (extra or {}).items():
-        if name in rec:
-            raise ArtefactError(f"'{name}' is a core provenance field and cannot be set as extra.")
-        rec[name] = value
 
     cfg.prov_dir.mkdir(parents=True, exist_ok=True)
     sidecar = cfg.prov_dir / (key.replace("/", "__") + ".json")
@@ -246,7 +237,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--label")
     ap.add_argument("--macros", help="path to a JSON object of name -> rendered value")
     ap.add_argument("--reads", help="path to a JSON array of project-relative paths")
-    ap.add_argument("--extra", help="path to a JSON object of further fields to record")
     ap.add_argument("--merge", action="store_true", help="merge sidecars into BUILD.json")
     ap.add_argument(
         "--validate",
@@ -265,7 +255,6 @@ def main(argv: list[str] | None = None) -> int:
             ap.error("--path is required unless --merge is given")
         macros = json.loads(Path(args.macros).read_text()) if args.macros else None
         reads = json.loads(Path(args.reads).read_text()) if args.reads else None
-        extra = json.loads(Path(args.extra).read_text()) if args.extra else None
         if args.validate:
             tier = validate_write(cfg, Path(args.path))
             validate_macros(cfg, tier, macros)
@@ -277,7 +266,6 @@ def main(argv: list[str] | None = None) -> int:
             label=args.label,
             macros=macros,
             reads=reads,
-            extra=extra,
         )
     except ArtefactError as exc:
         fail(str(exc))
