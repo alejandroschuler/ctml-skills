@@ -12,7 +12,7 @@
 #   make pdf                 compile the manuscript with the recorder on
 #   make status              what is current, stale, drifted, orphaned, unused
 #   make check               the invariants; what pre-push and push-paper run
-#   make methods             the methods sheet: tracked settings, review state, grids
+#   make methods             the methods sheet: tracked settings and review state
 #   make methods-ok          record that the methods text was read against the sheet
 #   make deps                prove the declarations cover what the build read
 #   make pull-paper          pull the paper and rescan

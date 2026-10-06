@@ -114,7 +114,7 @@ whether the text prints it, and whether it changed since the last review.
 `make check` warns about changes the text may have missed. Everything that
 stays prose gets the methods audit: run it when a notes result is promoted to
 the paper, before submission, and when the user asks. `references/methods.md`
-has the helpers, the grid check, and the steps of the audit.
+has the helpers and the steps of the audit.
 
 ## Promotion
 
@@ -164,8 +164,9 @@ the manuscript conversion that the script cannot do.
 `design-and-report-simulations` decides what to compute and how to write it up.
 This skill decides where the output lands, which branch it runs on, and what
 commit stamps it. They compose, and both should load. `supervised-learning`
-decides which learners and grids to use; `grid_table()` reports them in the
-methods and applies its edge rule to the recorded fits.
+decides which learners and grids to use, and its edge rule checks at tuning
+time that each grid is wide enough. `grid_table()` reports them in the
+methods.
 
 ## Reference files
 

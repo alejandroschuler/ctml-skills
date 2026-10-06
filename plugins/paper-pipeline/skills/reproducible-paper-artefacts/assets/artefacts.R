@@ -267,36 +267,10 @@ pkg_version <- function(name) {
     paste0("[", paste(sprintf("\"%s\"", .artefact_escape(values)), collapse = ", "), "]")
 }
 
-.artefact_to_json <- function(x) {
-    ## General JSON for the extra fields a helper records, such as grid counts:
-    ## named lists become objects, other lists and vectors become arrays.
-    if (is.null(x)) return("null")
-    if (is.list(x)) {
-        nm <- names(x)
-        if (!is.null(nm) && length(x) && all(nzchar(nm))) {
-            parts <- vapply(seq_along(x), function(i) {
-                paste0("\"", .artefact_escape(nm[i]), "\": ", .artefact_to_json(x[[i]]))
-            }, character(1))
-            return(paste0("{", paste(parts, collapse = ", "), "}"))
-        }
-        return(paste0("[", paste(vapply(x, .artefact_to_json, character(1)), collapse = ", "), "]"))
-    }
-    one <- function(v) {
-        if (is.na(v)) return("null")
-        if (is.character(v)) return(paste0("\"", .artefact_escape(v), "\""))
-        if (is.logical(v)) return(if (v) "true" else "false")
-        if (v == round(v) && abs(v) < 1e15) return(format(round(v), scientific = FALSE, trim = TRUE))
-        format(v, digits = 15)
-    }
-    if (length(x) == 1L) return(one(x))
-    paste0("[", paste(vapply(x, one, character(1)), collapse = ", "), "]")
-}
-
-.artefact_record <- function(path, macros = NULL, label = NULL, extra = NULL) {
+.artefact_record <- function(path, macros = NULL, label = NULL) {
     macro_file <- tempfile(fileext = ".json")
     reads_file <- tempfile(fileext = ".json")
-    extra_file <- tempfile(fileext = ".json")
-    on.exit(unlink(c(macro_file, reads_file, extra_file)), add = TRUE)
+    on.exit(unlink(c(macro_file, reads_file)), add = TRUE)
 
     writeLines(.artefact_json_object(macros), macro_file)
     writeLines(.artefact_json_array(ls(.artefact_reads)), reads_file)
@@ -305,10 +279,6 @@ pkg_version <- function(name) {
               "--path", path,
               "--macros", macro_file,
               "--reads", reads_file)
-    if (!is.null(extra)) {
-        writeLines(.artefact_to_json(extra), extra_file)
-        args <- c(args, "--extra", extra_file)
-    }
     rule <- tryCatch(snakemake@rule, error = function(e) NULL)
     if (!is.null(rule)) args <- c(args, "--rule", rule)
     if (!is.null(label)) args <- c(args, "--label", label)
@@ -415,64 +385,34 @@ save_table <- function(path, x, label = NULL, ...) {
     paste0("\\{", paste(shown, collapse = ", "), "\\}")
 }
 
-.edge_counts <- function(mine, p, exempt) {
-    ## The edge rule for one tuned hyperparameter of one learner type, across
-    ## fits: within each fit, does the configuration with the smallest cv_risk sit at
-    ## the smallest or largest value of the grid?
-    mine <- mine[!is.na(mine[[p]]) & is.finite(mine$cv_risk), , drop = FALSE]
-    ## Rows without a fit form one group, as in the Python front-end.
-    groups <- if ("fit" %in% names(mine)) {
-        split(mine, ifelse(is.na(mine$fit), ".none", as.character(mine$fit)))
-    } else {
-        list(mine)
-    }
-    lower <- 0L; upper <- 0L; fits <- 0L; low <- Inf; high <- -Inf
-    for (g in groups) {
-        grid <- sort(unique(g[[p]]))
-        ## With two values every choice is an edge, so the rule says nothing.
-        if (length(grid) < 3L) next
-        value <- g[[p]][which.min(g$cv_risk)]
-        lo <- grid[1L]; hi <- grid[length(grid)]
-        if (value == lo && !(lo %in% exempt)) lower <- lower + 1L
-        if (value == hi && !(hi %in% exempt)) upper <- upper + 1L
-        fits <- fits + 1L
-        low <- min(low, lo); high <- max(high, hi)
-    }
-    if (fits == 0L) return(NULL)
-    list(lower = lower, upper = upper, fits = fits, low = low, high = high)
-}
-
 grid_table <- function(path, rows, limits = list(), label = NULL, digits = NULL,
                        max_listed = 6) {
-    ## A learner library's hyperparameters as a methods table, with the grids
-    ## checked on the way. `rows` has one row per learner configuration and fit:
-    ## `learner` (the learner type), one column per hyperparameter, `cv_risk`
-    ## (that configuration's cross-validated risk in that fit), and optionally `fit`.
-    ## A list of data frames is bound with NA for the columns a frame lacks.
+    ## A learner library's hyperparameters as a methods table. `rows` has one
+    ## row per learner configuration: `learner` (the learner type) and one
+    ## column per hyperparameter. A list of data frames is bound with NA for the
+    ## columns a frame lacks. Rows from several fits, such as the repetitions
+    ## of a simulation, can go in together.
     ##
     ## Within a learner type, a hyperparameter with one value is fixed and one
     ## with several is tuned. The table lists each with its value or its grid;
-    ## a grid longer than `max_listed` is shown by its size and range. The grid
-    ## check is the edge rule, and its counts go into the provenance record for
-    ## `make methods`; a grid of two values is reported as such, because there
-    ## every choice is an edge. `limits` names values that are hard limits of a
-    ## parameter, such as list(max_depth = 1); an edge there is exempt.
+    ## a grid longer than `max_listed` is shown by its size and range.
+    ##
+    ## The table does not check whether a grid is wide enough. That is the edge
+    ## rule of the supervised-learning skill, which applies where the learners
+    ## are tuned. Older versions ran a grid check here, from `cv_risk` and `fit`
+    ## columns and a `limits` argument. All three are now ignored.
     ##
     ## Name the path tables/methods-*.tex. The manuscript needs booktabs.
     df <- if (is.data.frame(rows)) rows else .artefact_bind(rows)
     if (!nrow(df) || !"learner" %in% names(df)) {
         stop("grid_table() needs rows with a 'learner'.", call. = FALSE)
     }
-    ## cv_risk matters only for the grid check; a learner with no
-    ## hyperparameters, such as a main-terms GLM, needs none.
-    if (!"cv_risk" %in% names(df)) df$cv_risk <- NA_real_
     .artefact_validate(path)
     params <- setdiff(names(df), c("learner", "cv_risk", "fit"))
     learners <- unique(as.character(df$learner))
     lines <- c("% Generated. Do not edit; edit the code that produces it.",
                "\\begin{tabular}{llll}", "\\toprule",
                "Learner & Hyperparameter & Value or grid & Tuned \\\\", "\\midrule")
-    edges <- list()
     for (ln in learners) {
         mine <- df[as.character(df$learner) == ln, , drop = FALSE]
         cells <- list()
@@ -481,18 +421,7 @@ grid_table <- function(path, rows, limits = list(), label = NULL, digits = NULL,
             v <- v[!is.na(v)]
             if (!length(v)) next
             vals <- if (is.numeric(v)) sort(unique(v)) else sort(unique(as.character(v)), method = "radix")
-            tuned <- length(vals) > 1L
-            cells[[length(cells) + 1L]] <- list(p = p, vals = vals, tuned = tuned)
-            if (tuned && is.numeric(v)) {
-                if (length(vals) == 2L) {
-                    edges[[length(edges) + 1L]] <- list(learner = ln, param = p, two_values = TRUE)
-                } else {
-                    counts <- .edge_counts(mine, p, as.numeric(limits[[p]]))
-                    if (!is.null(counts)) {
-                        edges[[length(edges) + 1L]] <- c(list(learner = ln, param = p), counts)
-                    }
-                }
-            }
+            cells[[length(cells) + 1L]] <- list(p = p, vals = vals, tuned = length(vals) > 1L)
         }
         if (!length(cells)) {
             lines <- c(lines, sprintf("%s & none & & \\\\", latex_text(ln)))
@@ -510,6 +439,6 @@ grid_table <- function(path, rows, limits = list(), label = NULL, digits = NULL,
     lines <- c(lines, "\\bottomrule", "\\end{tabular}")
     dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
     writeLines(lines, path)
-    .artefact_record(path, label = label, extra = list(edges = edges))
+    .artefact_record(path, label = label)
     invisible(path)
 }

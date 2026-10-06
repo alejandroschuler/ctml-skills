@@ -11,7 +11,7 @@ one setting at a time, and how to check the parts that stay prose.
 - Three levels, chosen per setting: manual, tracked, generated
 - Recording a setting: `mth` macros, for a model fit and for a simulation
 - Formatting helpers: `words`, `numlist`, `numset`, `pkg_version`, `text`
-- Methods tables: `grid_table()`, `rows_from_search()`, and the grid check
+- Methods tables: `grid_table()` and `rows_from_search()`
 - The sheet and the review: `make methods`, `make methods-ok`, and the
   methods check
 - The methods audit: the steps for what stays prose
@@ -35,7 +35,9 @@ setting from what ran:
 - the number of folds from the fitted search (`search.n_splits_`), not from
   the `cv` argument you meant to pass;
 - a fixed hyperparameter from the estimator's own parameters
-  (`search.estimator.get_params()`), so a default is reported as it was;
+  (`search.estimator.get_params()`), so a default is reported as it was. In
+  xgboost, also set it in the constructor, as the section on methods tables
+  says;
 - sample sizes, repetitions and failures from the stored per-repetition
   results, not from the config;
 - package versions from the running interpreter, with `pkg_version()`.
@@ -59,12 +61,13 @@ A methods setting is a macro whose name starts with `mth`. Emit it in the same
 
 ```python
 import artefacts as art
-from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import GridSearchCV, KFold
+from xgboost import XGBRegressor
 
 search = GridSearchCV(
-    HistGradientBoostingRegressor(learning_rate=0.1, random_state=1),
-    {"max_depth": [2, 4, 6, 8], "max_iter": [100, 200, 400]},
+    XGBRegressor(reg_lambda=1, min_child_weight=1, random_state=1),
+    {"max_depth": [1, 2, 3, 4, 5], "learning_rate": [0.1, 0.3],
+     "n_estimators": [125, 250, 500]},
     cv=KFold(n_splits=5, shuffle=True, random_state=1),
     scoring="neg_mean_squared_error",
 ).fit(X, y)
@@ -72,8 +75,12 @@ search = GridSearchCV(
 art.emit_numbers(snakemake.output.numbers,
     resPrimaryAte   = art.num(ate, 2),
     mthPrimaryFolds = art.int(search.n_splits_),
-    mthSklearn      = art.pkg_version("scikit-learn"))
+    mthXgboost      = art.pkg_version("xgboost"))
 ```
+
+The learner and its grid follow the `supervised-learning` skill. A grid over
+`n_estimators` fits the model again for each number of trees.
+`supervised-learning` shows how to score every round of one fit instead.
 
 The settings then carry the same stamp as the results, the commit that built
 them, and go stale with them. A numbers file that holds only methods settings
@@ -122,16 +129,19 @@ A long list belongs in a table, not a macro. A table named
 content hash, and `make status` never reports it as unused.
 
 `grid_table()` writes a learner library's hyperparameters as such a table,
-from the configurations the fits used, and checks the grids on the way:
+from the configurations the fits used:
 
 ```python
-rows = art.rows_from_search(search, "gradient boosting", fixed=["learning_rate"])
+rows = art.rows_from_search(search, "gradient boosting",
+                            fixed=["reg_lambda", "min_child_weight"])
 rows += [{"learner": "main-terms GLM"}]
 art.grid_table(snakemake.output.library, rows, label="tab:library")
 ```
 
-Here "main-terms GLM" is a generalized linear model with one term per
-covariate.
+The search's estimator sets `reg_lambda` and `min_child_weight` to their
+xgboost defaults. Without that, xgboost's scikit-learn wrapper keeps `None` for
+them, and the table would show `None`. Here "main-terms GLM" is a generalized
+linear model with one term per covariate.
 
 ```latex
 \begin{table}
@@ -143,52 +153,30 @@ covariate.
 The manuscript needs the booktabs package.
 
 Each row is one configuration of a learner, that is, one combination of its
-hyperparameter values, in one fit. A row is a dict or a DataFrame row with:
+hyperparameter values. A row is a dict or a DataFrame row with:
 
 - `learner`: the learner type, as the table names it;
-- one entry per hyperparameter;
-- `cv_risk`: that configuration's cross-validated risk in that fit, where
-  lower is better;
-- `fit`, optionally: which fit the row comes from, such as a repetition, an
-  outer cross-fitting fold, or an outcome.
+- one entry per hyperparameter.
 
 `rows_from_search()` builds these rows from a fitted `GridSearchCV` or
-`RandomizedSearchCV`. It sets the cross-validated risk, `cv_risk`, to the
-negated mean test score, because scikit-learn scorers are all
-greater-is-better. It drops pipeline prefixes such as `model__`, and it reads
-the values of the untuned hyperparameters listed in `fixed` from the search's
-estimator. Rows for other learners can be added by hand. A learner with no
-hyperparameters needs only its type name, `learner`. In R, `grid_table()`
-takes a data frame, or a list of data frames, with the same columns.
+`RandomizedSearchCV`. It drops pipeline prefixes such as `model__`, and it
+reads the values of the untuned hyperparameters listed in `fixed` from the
+search's estimator. Rows for other learners can be added by hand. A learner
+with no hyperparameters needs only its type name, `learner`. Rows from several
+fits, such as the repetitions of a simulation, can go in together. In R,
+`grid_table()` takes a data frame, or a list of data frames, with the same
+columns.
 
 Within a learner type, a hyperparameter with one value is fixed, and one with
 several is tuned. The table lists each with its value or its grid; a grid with
 more than six values is shown by its size and range.
 
-### The grid check
-
-This is the edge rule from the `supervised-learning` skill. Within each learner
-type and fit, take the configuration with the smallest cross-validated risk.
-Then see whether any tuned hyperparameter sits at the smallest or the largest
-value of its grid. `grid_table()` counts that across fits and records the
-counts, and `make methods` reports them:
-
-- at one edge in at least half of the fits: a warning, because the grid is too
-  narrow in that direction and has to move;
-- at an edge now and then: a note, because it is probably noise;
-- a grid of two values: a note, because every choice is then an edge and the
-  rule cannot say anything, so the grid needs a third value.
-
-Pass `limits` to `grid_table()` for values that are hard limits of a
-hyperparameter, such as a tree depth of 1: `{"max_depth": [1]}`. An edge
-choice there tells you something about the data, and it is not counted. The
-check needs no refit, because the search already stored the cross-validated
-risk of every configuration.
-
-In a simulation, collect the rows of every repetition, and give each row its
-repetition number as its fit (`fit=rep`). The simulation code already stores
-each configuration's cross-validated risk next to its predictions, so the
-Snakemake rule that writes the table can read them from `results/`.
+`grid_table()` does not check whether a grid is wide enough. That check is the
+edge rule of the `supervised-learning` skill. Apply it where the learners are
+tuned, while a wider grid can still change the results. Earlier versions of
+`grid_table()` ran a grid check, so older code may pass `cv_risk` and `fit`
+columns, a `limits` argument, or `fit` and `metric` to `rows_from_search()`.
+That code still runs, and those values are ignored.
 
 ## The sheet and the review
 
@@ -198,8 +186,7 @@ Snakemake rule that writes the table can read them from `results/`.
 - whether the text prints it through its macro (`macro`) or not (`by hand`).
   This comes from the compile record, the files and macros that the last
   `make pdf` saw, so run `make pdf` first;
-- whether it changed since the last review;
-- the grid findings.
+- whether it changed since the last review.
 
 `make methods-ok` records the current values as reviewed, in
 `paper/methods-reviewed.json`, and commits that file in the paper repo. The
@@ -212,14 +199,13 @@ methods check warns when:
 
 - a setting that the text does not print through its macro changed since the
   review, is new, or is no longer recorded;
-- the methods text has never been reviewed against the recorded settings;
-- a grid finding counts as a warning.
+- the methods text has never been reviewed against the recorded settings.
 
 A printed setting that changed gets a note instead of a warning: its text
 updates itself, but the sentence around it may need rereading. With
-`[methods] strict = true` in `.artefacts.toml`, the setting warnings fail
-`make check` and `make push-paper`. The grid warnings never fail. The code
-repo's pre-push hook does not run the methods check.
+`[methods] strict = true` in `.artefacts.toml`, the warnings fail `make check`
+and `make push-paper`. The code repo's pre-push hook does not run the methods
+check.
 
 ## The methods audit
 
@@ -249,6 +235,7 @@ reader reimplement this from the text alone?", against the real code.
   for the DGP diagnostics in the paper, and for the number of repetitions and
   failures. Emit the numbers from the diagnostic draw and the stored results.
   The aims, the formulas and the reasons stay prose, and the audit checks them.
-- `supervised-learning` says that the fixed values and the grids are both part
-  of the method, and it holds the edge rule. `grid_table()` reports both, and
-  its grid check applies the rule.
+- `supervised-learning` chooses the learners and their grids, and says that the
+  fixed values and the grids are both part of the method. Its edge rule checks,
+  at tuning time, that each grid is wide enough. `grid_table()` reports the
+  fixed values and the grids in the paper.

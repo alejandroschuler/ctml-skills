@@ -202,6 +202,8 @@ def pkg_version(name: str) -> str:
 # Methods: learner grids
 # --------------------------------------------------------------------------
 
+# Older versions ran a grid check on `cv_risk` and `fit`. Rows written for it
+# still carry them, and neither is a hyperparameter.
 _RESERVED = ("learner", "cv_risk", "fit")
 
 
@@ -213,35 +215,24 @@ def rows_from_search(search, learner: str, fixed=(), fit=None, metric=None) -> l
 
     `learner` is the learner type's name in the table. `fixed` lists the
     hyperparameters that were set rather than tuned and that the methods should
-    report, such as ["learning_rate"]; their values come from the search's
-    estimator, so defaults are reported as they were, not as remembered. `fit`
-    marks which fit the rows come from (a repetition, a fold, an outcome), so
-    the grid check can read across fits. `metric` picks the scorer when the
-    search used several and `refit` names none.
+    report, such as ["reg_lambda"]; their values come from the search's
+    estimator, so defaults are reported as they were, not as remembered.
+    xgboost's scikit-learn wrapper is the exception: it keeps None for a
+    parameter that is not set, so set the values to report in its constructor.
+    Pipeline prefixes such as "model__" are dropped from the hyperparameter
+    names.
 
-    cv_risk is the negated mean test score. scikit-learn scorers are all
-    greater-is-better, so the configuration with the smallest cv_risk is the one the
-    search ranked best. Pipeline prefixes such as "model__" are dropped from the
-    hyperparameter names.
+    `fit` and `metric` are ignored. Older versions used them for a grid check,
+    and they stay so that older calls still run.
     """
     results = search.cv_results_
-    if metric is not None:
-        key = f"mean_test_{metric}"
-    elif "mean_test_score" in results:
-        key = "mean_test_score"
-    elif isinstance(getattr(search, "refit", None), str):
-        key = f"mean_test_{search.refit}"
-    else:
-        raise ValueError("The search used several scorers and refit names none, so pass metric=.")
-    if key not in results:
-        raise ValueError(f"cv_results_ has no {key!r}.")
 
     def short(name: str) -> str:
         return name.split("__")[-1]
 
     base = search.estimator.get_params() if fixed else {}
     rows = []
-    for params, score in zip(results["params"], results[key]):
+    for params in results["params"]:
         row = {"learner": learner}
         for name, value in params.items():
             s = short(name)
@@ -252,9 +243,6 @@ def rows_from_search(search, learner: str, fixed=(), fit=None, metric=None) -> l
             if name not in base:
                 raise ValueError(f"The estimator of the {learner} search has no parameter {name!r}.")
             row.setdefault(short(name), base[name])
-        row["cv_risk"] = -float(score)
-        if fit is not None:
-            row["fit"] = fit
         rows.append(row)
     return rows
 
@@ -285,49 +273,16 @@ def _grid_cell(values: list, digits: int | None, max_listed: int) -> str:
     return r"\{" + ", ".join(shown) + r"\}"
 
 
-def _as_json_number(value):
-    value = float(value)
-    return round(value) if value.is_integer() else value
-
-
-def _edge_counts(rows: list[dict], param: str, exempt) -> dict | None:
-    """The edge rule for one tuned hyperparameter of one learner type, across fits."""
-    groups: dict[str, list[dict]] = {}
-    for r in rows:
-        if param in r and _is_number(r[param]) and _is_number(r.get("cv_risk")):
-            groups.setdefault(repr(r.get("fit")), []).append(r)
-    lower = upper = fits = 0
-    low = high = None
-    for group in groups.values():
-        grid = sorted({float(r[param]) for r in group})
-        if len(grid) < 3:
-            # With two values every choice is an edge, so the rule says nothing.
-            continue
-        best = min(group, key=lambda r: r["cv_risk"])
-        value = float(best[param])
-        lo, hi = grid[0], grid[-1]
-        lower += value == lo and lo not in exempt
-        upper += value == hi and hi not in exempt
-        fits += 1
-        low = lo if low is None else min(low, lo)
-        high = hi if high is None else max(high, hi)
-    if fits == 0:
-        return None
-    return {"lower": lower, "upper": upper, "fits": fits,
-            "low": _as_json_number(low), "high": _as_json_number(high)}
-
-
 def grid_table(path, rows, limits=None, label: str | None = None,
                digits: int | None = None, max_listed: int = 6) -> Path:
-    """Write a learner library's hyperparameters as a methods table, and check its grids.
+    """Write a learner library's hyperparameters as a methods table.
 
-    `rows` has one row per learner configuration and fit, as a list of dicts or
-    a DataFrame: a `learner` column (the learner type), one column per
-    hyperparameter, `cv_risk` (that configuration's cross-validated risk in that fit),
-    and optionally `fit` (which fit the row is from). rows_from_search()
-    builds these rows from a fitted search. Rows for other learners can be
-    added by hand; a learner with no hyperparameters needs only `learner`, and
-    `cv_risk` matters only for the grid check.
+    `rows` has one row per learner configuration, as a list of dicts or a
+    DataFrame: a `learner` column (the learner type) and one column per
+    hyperparameter. rows_from_search() builds these rows from a fitted search.
+    Rows for other learners can be added by hand; a learner with no
+    hyperparameters needs only `learner`. Rows from several fits, such as the
+    repetitions of a simulation, can go in together.
 
     Within a learner type, a hyperparameter with one value is fixed and one with
     several is tuned. The table lists each with its value or its grid; a grid
@@ -335,18 +290,13 @@ def grid_table(path, rows, limits=None, label: str | None = None,
     tables/methods-*.tex, so `make methods` tracks it. The manuscript needs the
     booktabs package.
 
-    The grid check is the edge rule: within each learner type and fit, take the
-    configuration with the smallest cv_risk, and see whether a tuned hyperparameter
-    sits at the smallest or the largest value of its grid. The counts go into
-    the table's provenance record, and `make methods` reports them. A grid of
-    two values is reported as such instead, because there every choice is an
-    edge and the rule can say nothing. `limits`
-    maps a hyperparameter to values that are hard limits of the parameter, such
-    as {"max_depth": [1]}; an edge choice at a hard limit is exempt.
+    The table does not check whether a grid is wide enough. That is the edge
+    rule of the supervised-learning skill, which applies where the learners are
+    tuned. Older versions ran a grid check here, from `cv_risk` and `fit`
+    columns and a `limits` argument. All three are now ignored.
     """
     out = _target(path)
     record_provenance.validate_write(_CFG, out)
-    limits = limits or {}
     source = rows.to_dict("records") if hasattr(rows, "to_dict") else rows
     rows = [dict(r) for r in source]
     if not rows:
@@ -371,7 +321,6 @@ def grid_table(path, rows, limits=None, label: str | None = None,
         r"Learner & Hyperparameter & Value or grid & Tuned \\",
         r"\midrule",
     ]
-    edges = []
     for learner in learners:
         mine = [r for r in rows if r["learner"] == learner]
         cells = []
@@ -379,16 +328,7 @@ def grid_table(path, rows, limits=None, label: str | None = None,
             values = _distinct(r[p] for r in mine if p in r and not _is_nan(r[p]))
             if not values:
                 continue
-            tuned = len(values) > 1
-            cells.append((p, values, tuned))
-            if tuned and all(_is_number(v) for v in values):
-                if len(values) == 2:
-                    edges.append({"learner": str(learner), "param": p, "two_values": True})
-                    continue
-                exempt = {float(v) for v in limits.get(p, ())}
-                counts = _edge_counts(mine, p, exempt)
-                if counts:
-                    edges.append({"learner": str(learner), "param": p, **counts})
+            cells.append((p, values, len(values) > 1))
         if not cells:
             lines.append(rf"{text(learner)} & none & & \\")
             continue
@@ -400,7 +340,7 @@ def grid_table(path, rows, limits=None, label: str | None = None,
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    _record(out, macros=None, label=label, extra={"edges": edges})
+    _record(out, macros=None, label=label)
     return out
 
 
@@ -476,8 +416,7 @@ def _target(path: str | Path) -> Path:
     return out if out.is_absolute() else (_ROOT / out)
 
 
-def _record(path: Path, macros: dict[str, str] | None, label: str | None,
-            extra: dict | None = None) -> None:
+def _record(path: Path, macros: dict[str, str] | None, label: str | None) -> None:
     record_provenance.record(
         _CFG,
         path,
@@ -485,7 +424,6 @@ def _record(path: Path, macros: dict[str, str] | None, label: str | None,
         reads=_observed_reads(),
         label=label,
         rule=_rule_name(),
-        extra=extra,
     )
 
 

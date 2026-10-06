@@ -113,9 +113,7 @@ because notes documents read them and the manuscript must not.
 `[methods] strict = true`. A setting warning names a tracked methods setting
 that the text types by hand and that changed since the last review, is new, or
 is no longer recorded. The repair: run `make methods`, read the methods
-section against it, fix the text or the code, then run `make methods-ok`. A
-grid warning says that a learner's best setting sits on the edge of its grid
-in at least half of the fits; move the grid in that direction.
+section against it, fix the text or the code, then run `make methods-ok`.
 `methods.md` has the details.
 
 ## Repairs that span both repos

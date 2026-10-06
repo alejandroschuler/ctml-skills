@@ -15,10 +15,6 @@ The review record says nothing about the text itself. It records which values
 the text was read against, so that a later change to a value the text types by
 hand gets caught. A value the text prints through its macro updates itself. The
 sheet says so, but the sentence around it may still need rereading.
-
-The grid counts come from grid_table() and follow the edge rule: the best
-configuration of a learner type should not sit on the edge of its tuning grid. They
-are warnings only, and never fail a check.
 """
 
 from __future__ import annotations
@@ -53,8 +49,8 @@ NOTE = (
 # --------------------------------------------------------------------------
 
 
-def current(cfg: Config) -> tuple[dict[str, str], dict[str, str], list[dict]]:
-    """Methods settings and tables in the paper tier, and grid counts in both tiers."""
+def current(cfg: Config) -> tuple[dict[str, str], dict[str, str]]:
+    """Methods settings and tables in the paper tier."""
     settings: dict[str, str] = {}
     tables: dict[str, str] = {}
     for key, rec in sorted(load_records(cfg, "paper").items()):
@@ -63,12 +59,7 @@ def current(cfg: Config) -> tuple[dict[str, str], dict[str, str], list[dict]]:
                 settings[name] = value
         if cfg.is_methods_table(key):
             tables[key] = rec.get("sha256")
-    grids = []
-    for tier in ("paper", "notes"):
-        for key, rec in sorted(load_records(cfg, tier).items()):
-            for entry in rec.get("edges") or []:
-                grids.append({**entry, "artefact": key, "tier": tier})
-    return settings, tables, grids
+    return settings, tables
 
 
 def load_review(cfg: Config) -> dict | None:
@@ -95,7 +86,7 @@ def plain(value: str) -> str:
 
 def evaluate(cfg: Config):
     """Compare what is recorded with what was reviewed and what the text prints."""
-    settings, tables, grids = current(cfg)
+    settings, tables = current(cfg)
     review = load_review(cfg)
     used_macros, used_files = read_macro_log(cfg), read_fls(cfg)
     rows = [_row("setting", name, value, review, used_macros) for name, value in settings.items()]
@@ -104,7 +95,7 @@ def evaluate(cfg: Config):
     if review:
         removed += [n for n in review.get("settings", {}) if n not in settings]
         removed += [k for k in review.get("tables", {}) if k not in tables]
-    return rows, removed, review, grids
+    return rows, removed, review
 
 
 def _row(kind: str, name: str, value: str, review: dict | None, used: set[str] | None) -> dict:
@@ -155,36 +146,6 @@ def text_findings(rows: list[dict], removed: list[str], review: dict | None) -> 
     return findings
 
 
-def _number(value) -> str:
-    return f"{value:g}" if isinstance(value, float) else str(value)
-
-
-def grid_findings(grids: list[dict]) -> tuple[list[str], list[str]]:
-    """(warnings, notes) from the grid counts. A warning means at least half the fits."""
-    warnings, notes = [], []
-    for g in grids:
-        if g.get("two_values"):
-            notes.append(
-                f"{g['learner']} {g['param']}: a grid of two values puts every choice on "
-                "an edge, so the edge rule cannot be checked. Add a third value."
-            )
-            continue
-        for side, count, edge in (("upper", g.get("upper", 0), g.get("high")),
-                                  ("lower", g.get("lower", 0), g.get("low"))):
-            if not count:
-                continue
-            where = (
-                f"{g['learner']} {g['param']}: the best configuration sits at the {side} "
-                f"edge of its grid ({_number(edge)}) in {count} of {g['fits']} fit(s)"
-            )
-            if count * 2 >= g["fits"]:
-                direction = "upward" if side == "upper" else "downward"
-                warnings.append(f"{where}. The grid is too narrow there; move it {direction}.")
-            else:
-                notes.append(f"{where}. That is occasional, so probably noise.")
-    return warnings, notes
-
-
 # --------------------------------------------------------------------------
 # Output
 # --------------------------------------------------------------------------
@@ -194,7 +155,7 @@ def _clip(s: str, width: int = 44) -> str:
     return s if len(s) <= width else s[: width - 3] + "..."
 
 
-def print_sheet(rows: list[dict], removed: list[str], review: dict | None, grids: list[dict]) -> None:
+def print_sheet(rows: list[dict], removed: list[str], review: dict | None) -> None:
     n_settings = sum(r["kind"] == "setting" for r in rows)
     print(f"methods:   {n_settings} setting(s) and {len(rows) - n_settings} table(s) in the paper tier")
     if review is None:
@@ -229,16 +190,6 @@ def print_sheet(rows: list[dict], removed: list[str], review: dict | None, grids
     if any(r["printed"] is None for r in rows):
         print("\n  Run `make pdf` so the sheet can see which settings the text prints.")
 
-    if grids:
-        print("\ngrids (the edge rule, from grid_table() and the recorded cross-validated risks):")
-        warnings, notes = grid_findings(grids)
-        if not warnings and not notes:
-            print("  No learner's best configuration sits on the edge of its grid.")
-        for w in warnings:
-            warn(w)
-        for n in notes:
-            info(n)
-
 
 # --------------------------------------------------------------------------
 # Actions
@@ -246,7 +197,7 @@ def print_sheet(rows: list[dict], removed: list[str], review: dict | None, grids
 
 
 def record_review(cfg: Config) -> int:
-    settings, tables, _ = current(cfg)
+    settings, tables = current(cfg)
     if not settings and not tables:
         warn("No methods settings or tables are recorded yet, so there is nothing to review.")
         return 0
@@ -276,17 +227,14 @@ def record_review(cfg: Config) -> int:
 
 
 def check(cfg: Config) -> int:
-    rows, removed, review, grids = evaluate(cfg)
+    rows, removed, review = evaluate(cfg)
     findings = text_findings(rows, removed, review)
-    grid_warnings, _ = grid_findings(grids)
     for f in findings:
         warn(f)
     printed = [r["name"] for r in rows if r["state"] == "changed" and r["printed"]]
     if printed:
         info(f"Changed since the review, and printed through a macro, so the text updates "
              f"itself: {', '.join(printed)}. Reread the sentence around each.")
-    for w in grid_warnings:
-        warn(w)
     if findings:
         info("Read the methods section against `make methods`, fix the text or the code, "
              "then run `make methods-ok`.")
