@@ -65,43 +65,6 @@ Update each other plugin that you use with the same command.
 
 Each skill is a plain folder with a `SKILL.md` at its top. You can copy `plugins/<plugin>/skills/<skill>/` into `~/.claude/skills/`, or zip a skill folder and upload it to claude.ai as a custom skill.
 
-## Making the main skills load reliably
-
-Claude loads a skill when a request matches the skill's description. If you want the two main skills to load every time they apply, add lines like these to your `~/.claude/CLAUDE.md`:
-
-```
-Any time simulation work is in play, invoke the `stats-research:design-and-report-simulations` skill first.
-
-Any time supervised machine learning, or similar loss-based learning such as Riesz regression, is in play, invoke the `stats-research:supervised-learning` skill first.
-```
-
-## Writing and reviewing math
-
-`stats-research:writing-math` holds the rules for mathematics in a LaTeX document. The symbol rules always apply: define each symbol before its first use, scope local symbols, never give a global symbol a second meaning, and gloss content-bearing symbols in prose. How densely to write proofs depends on the mode, which a comment line at the top of the root file names, such as `% writing-math: paper, asymptotic statistics`. Paper mode writes at the density of papers in that field. Note mode, for notes in which the author works an idea out, states each theorem that is not among the field's most common and moves at most two or three steps per line. In both modes, each sentence of prose goes on its own line of the source. A hook makes Claude load the skill before its first `.tex` edit.
-
-`stats-research:readable-math` then reviews the new text in two parts that run at the same time. A notation reviewer (Sonnet, high effort) checks the symbol rules. Correctness reviewers (Opus, high effort) check that each step of each proof is true, one agent for each group of arguments that Claude chooses. No reviewer checks the density of the proofs, because the mode sets it as Claude writes. The reviewers always read the whole document, but by default they review only the text that changed since the last review. A small script, `tex_changes.py`, finds the document's root file and the files it inputs, compares them with a copy saved at the last review, and lists the statements that changed and the places that cite them. With no saved copy it compares with the last git commit. The copies live in the repository's git directory, so they are never committed or pushed to Overleaf.
-
-To review the whole document, run `/stats-research:readable-math full`, or ask Claude for a full readable-math check.
-
-## Reading Overleaf comments
-
-`overleaf-tools:overleaf-comments` runs a Python script with `uv run`, so it needs [uv](https://docs.astral.sh/uv/). It works on any Overleaf project, and it finds the `paper/` clone of a `paper-pipeline` project by itself. The first login opens a Chrome, Chromium, Edge or Brave window with a separate profile, and you log in to Overleaf there. The session is saved in `~/.config/overleaf-comments/` and lasts while it is used at least once every five days.
-
-The script reads through Overleaf's private web API with your own session, and it never writes. Overleaf's [Acceptable Use Policy](https://www.overleaf.com/legal) restricts scripted access to the service. Read it and decide for yourself before you use the script.
-
-## Keeping Overleaf clones current
-
-`overleaf-tools` also installs a hook that keeps Claude off an old copy of a paper. It runs before each Read, Edit, Write, Grep, Glob and Bash call, also in subagents. It looks for a git repo with a remote on `git.overleaf.com` among the files that the call touches. For Bash, that is the working directory and each word of the command that names a path. For each such repo, the hook compares the local commit with the latest commit on Overleaf. If Overleaf has commits that the local copy does not have, the hook blocks the call and tells Claude to pull first, with `make pull-paper` in a `paper-pipeline` project or `git pull --rebase --autostash` in a plain clone. Claude pulls and tries again.
-
-A check of Overleaf takes about a second, so the hook makes one at most every five minutes for each repo and uses the last answer between checks. A coauthor's edit can therefore go unseen for up to five minutes. A Bash command that runs git or `make pull-paper` is never blocked, so the pull itself always goes through. A copy with local commits that are not pushed yet also goes through. If the check fails, for example with no network, the hook lets the call through. The hook needs `python3` and `git` on your `PATH`, and it uses the same Overleaf credentials as `git pull`.
-
-## Companion skill
-
-The simulation skill also hands finished prose to [avoid-ai-writing](https://github.com/conorbronsdon/avoid-ai-writing) by Conor Bronsdon, when it is installed. That skill is not part of this repo.
-
-## Evals
-
-Most skills have an `evals/evals.json` with test prompts and assertions, in the format that Anthropic's skill-creator skill runs.
 
 ## License
 
