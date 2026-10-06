@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Check that a LaTeX paper keeps each result in theory/ and each TikZ figure in tikz/.
+"""Check that a LaTeX paper keeps each result in theory/ and each TikZ figure in tikz/,
+keeps its files of text short, and puts each sentence on its own line.
 
 Read-only: it never changes a file. Usage:
 
     python3 check_tex_hygiene.py [PAPER_DIR] [--main FILE] [--theory-dir DIR]
-                                 [--tikz-dir DIR] [--result-env NAME] [--json]
+                                 [--tikz-dir DIR] [--result-env NAME]
+                                 [--max-lines N] [--json]
 
 PAPER_DIR defaults to the current directory. The root file is --main, else
 main.tex, else the one top-level .tex file that has a \\documentclass.
@@ -38,6 +40,15 @@ and \\iffalse blocks. Its rules:
   old-pointer     preamble code for the run-in proof pointer that puts the
                   pointer into a heading or loses it at a list
   generated       <jobname>-pratend*.tex is tracked by git, or not ignored
+  long-file       a file of text is past the line target (--max-lines, 200 by
+                  default, counted at one sentence per line) and a heading
+                  splits it, or it is more than a quarter past the target. The
+                  root file counts from \\begin{document}. Files in theory/,
+                  tikz/ and artefacts/ are exempt.
+  sentence-lines  a line of prose holds more than one sentence
+
+The long-file rule is for the manuscript only. When the root file has the mode
+line % writing-math: note, the document is a note, and that rule is skipped.
 
 An error loses text, breaks the build or breaks a layout rule. A warning is
 drift worth fixing. The exit code is 1 when there is an error, 0 when there is
@@ -100,6 +111,35 @@ TOKEN = re.compile(
     re.X,
 )
 
+# Environments that hold no prose. The sentence rule skips them.
+NONPROSE_ENVS = {
+    "equation", "align", "gather", "multline", "flalign", "alignat", "eqnarray",
+    "displaymath", "math", "tikzpicture", "tabular", "tabularx", "longtable",
+    "array", "algorithm", "algorithmic", "thebibliography",
+}
+# Words that end with a period inside a sentence. A word with a dot inside it,
+# such as e.g. or i.i.d., and a single letter, such as an initial, count too.
+ABBREVIATIONS = {
+    "al", "cf", "vs", "etc", "viz", "resp", "approx", "ca", "fig", "figs", "eq",
+    "eqs", "sec", "secs", "ch", "chap", "app", "thm", "prop", "lem", "cor",
+    "def", "assump", "no", "nos", "vol", "pp", "ed", "eds", "dr", "mr", "mrs",
+    "ms", "prof", "st", "jr", "sr", "inc", "ltd", "co",
+}
+# Commands that can follow the end of a sentence on its line without starting
+# a new sentence. A textual citation such as \citet does start one.
+NOT_A_START = {
+    "label", "begin", "end", "item", "ref", "eqref", "pageref", "citep",
+    "citealp", "parencite", "autocite", "footcite", "citeyearpar", "footnote",
+    "footnotemark", "nonumber", "notag", "qedhere", "hfill", "vspace", "hspace",
+    "smallskip", "medskip", "bigskip", "par", "newline", "linebreak",
+    "pagebreak", "newpage", "clearpage", "index", "unskip", "ignorespaces",
+}
+# Folders of generated files, which no one splits or edits by hand.
+GENERATED_DIRS = {"artefacts"}
+SENTENCE_END = re.compile(r"[.?!]+['\")}]*[ \t]+(?=[A-Z]|\\([A-Za-z]+))")
+HEADING = re.compile(r"\\(section|subsection|subsubsection|paragraph)\*?\s*[\[{]")
+NOTE_MODE = re.compile(r"^\s*%\s*writing-math:\s*note\b", re.M | re.I)
+
 
 @dataclass
 class Finding:
@@ -152,6 +192,7 @@ class FileInfo:
     deferred_proofs: int = 0
     pf_labels: list[str] = field(default_factory=list)
     textatend_categories: list[str] = field(default_factory=list)
+    body: bool = False  # read inside the document body, not from the preamble
 
 
 # --------------------------------------------------------------------------
@@ -471,6 +512,8 @@ class Walker:
         key = path.resolve()
         fi = self.info(path)
         fi.reads += 1
+        if fi.reads == 1:
+            fi.body = self.in_body
         if fi.reads > 1 or key in self.active:
             return
         self.active.append(key)
@@ -599,7 +642,8 @@ class Walker:
 # The rules
 
 
-def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str]) -> tuple[Walker, dict]:
+def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str],
+          max_lines: int = 200) -> tuple[Walker, dict]:
     w = Walker(paper, theory, tikz, extra)
     w.walk(root)
     tdir, fdir = w.rel(theory), w.rel(tikz)
@@ -679,6 +723,7 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, extra: set[str]) ->
 
     check_pointer(w, root)
     check_generated(w, paper, root)
+    check_text(w, root, max_lines)
 
     summary = {
         "results": len(w.results),
@@ -762,6 +807,117 @@ def check_tikz_file(w: Walker, fi: FileInfo) -> None:
               f"the file is {slug_of(f.label)}.tex.")
 
 
+def fill(text: str, start: int, end: int, ch: str) -> str:
+    return text[:start] + re.sub(r"[^\n]", ch, text[start:end]) + text[end:]
+
+
+def mask_nonprose(text: str) -> str:
+    """Blank displays and environments that hold no prose, and turn inline
+    math into M's, which read as a word that starts a sentence. Every position
+    is kept, so the line numbers still match the file."""
+    for name in NONPROSE_ENVS:
+        pat = re.compile(r"\\begin\s*\{" + re.escape(name) + r"\*?\}.*?\\end\s*\{"
+                         + re.escape(name) + r"\*?\}", re.S)
+        for m in list(pat.finditer(text)):
+            text = blank(text, m.start(), m.end())
+    for pat in (r"(?<!\\)\\\[.*?\\\]", r"(?<!\\)\$\$.*?(?<!\\)\$\$"):
+        for m in list(re.finditer(pat, text, re.S)):
+            text = blank(text, m.start(), m.end())
+    for m in list(re.finditer(r"(?<!\\)\\\(.*?\\\)", text, re.S)):
+        text = fill(text, m.start(), m.end(), "M")
+    dollars = [i for i, c in enumerate(text) if c == "$" and unescaped(text, i)]
+    for a, b in zip(dollars[0::2], dollars[1::2]):
+        text = fill(text, a, b + 1, "M")
+    return text
+
+
+def sentence_breaks(text: str) -> list[int]:
+    """The line of each place where a sentence ends and the next one starts on
+    the same line. text has been through mask_nonprose."""
+    found = []
+    for m in SENTENCE_END.finditer(text):
+        cmd = m.group(1)
+        if cmd in NOT_A_START:
+            continue
+        if text[m.start()] == ".":
+            start = max(text.rfind(c, 0, m.start()) for c in " \t\n") + 1
+            token = text[start : m.start()].replace("\\@", "")
+            word = re.search(r"[A-Za-z0-9.]*$", token).group()
+            if "." in word or word.lower() in ABBREVIATIONS or (len(word) == 1 and word.isalpha()):
+                continue
+        found.append(line_of(text, m.start()))
+    return found
+
+
+def check_text(w: Walker, root: Path, max_lines: int) -> None:
+    """The long-file and sentence-lines rules, for each file that the body
+    reads. A note gets only the sentence-lines rule."""
+    note = bool(NOTE_MODE.search(root.read_text(encoding="utf-8", errors="replace")))
+    root = root.resolve()
+    for fi in w.files.values():
+        path = fi.path
+        if not (fi.body or path == root) or path.suffix == ".bbl":
+            continue
+        if any(part in GENERATED_DIRS for part in Path(w.rel(path)).parts[:-1]):
+            continue
+        text = clean(path.read_text(encoding="utf-8", errors="replace"))
+        first, last = 1, line_of(text, len(text.rstrip()))
+        if path == root:
+            doc = re.search(r"\\begin\s*\{document\}", text)
+            if not doc:
+                continue
+            text = blank(text, 0, doc.start())
+            first = line_of(text, doc.start())
+            end = re.search(r"\\end\s*\{document\}", text)
+            if end:
+                last = line_of(text, end.start())
+        breaks = sentence_breaks(mask_nonprose(text))
+
+        lines = sorted(set(breaks))
+        if lines:
+            shown = ", ".join(map(str, lines[:8])) + (", ..." if len(lines) > 8 else "")
+            many = len(lines) > 1
+            w.add("sentence-lines", "warning", path, lines[0],
+                  f"{len(lines)} line{'s' if many else ''} hold{'' if many else 's'} more than "
+                  f"one sentence (line{'s' if many else ''} {shown}). "
+                  "Put each sentence on its own line when you edit its paragraph.")
+
+        if note or w.under(path, w.theory) or w.under(path, w.tikz):
+            continue
+        n = last - first + 1
+        size = n + len(breaks)
+        if size <= max_lines:
+            continue
+        counted = f"{n} lines" + (f" (about {size} at one sentence per line)" if breaks else "")
+        counted += f", and the target is {max_lines}"
+        heads = []
+        for m in HEADING.finditer(text):
+            h = line_of(text, m.start())
+            before = h - first + sum(1 for b in breaks if b < h)
+            if min(before, size - before) >= max_lines // 5:
+                heads.append((abs(size / 2 - before), h, m.group(1)))
+        if path == root:
+            if any(m.group(1) == "section" for m in HEADING.finditer(text)):
+                w.add("long-file", "warning", path, first,
+                      f"the body has {counted}. Move each "
+                      "\\section to sections/<slug>.tex and \\input it here.")
+            elif size > max_lines + max_lines // 4:
+                w.add("long-file", "warning", path, first,
+                      f"the body has {counted}. Move its "
+                      "text to files under sections/ and \\input them here.")
+        elif heads:
+            _, h, kind = min(heads)
+            w.add("long-file", "warning", path, h,
+                  f"has {counted}. Split it at the "
+                  f"\\{kind} on line {h}: move that part to sections/{path.stem}-<slug>.tex "
+                  "and "
+                  "\\input it here.")
+        elif size > max_lines + max_lines // 4:
+            w.add("long-file", "warning", path, None,
+                  f"has {counted}. No heading splits it, so split it between paragraphs "
+                  "where the topic turns.")
+
+
 def check_pointer(w: Walker, root: Path) -> None:
     texts = list(w.preamble_parts)
     for sty in sorted(w.paper.glob("*.sty")):
@@ -810,6 +966,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tikz-dir", default="tikz", help="directory of figure files (default: tikz)")
     ap.add_argument("--result-env", action="append", default=[],
                     help="another environment that holds a result; may repeat")
+    ap.add_argument("--max-lines", type=int, default=200,
+                    help="the line target for a file of text (default: 200)")
     ap.add_argument("--json", action="store_true", help="print JSON")
     args = ap.parse_args(argv)
 
@@ -824,7 +982,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     theory = paper / args.theory_dir
     tikz = paper / args.tikz_dir
-    w, summary = check(paper, root, theory, tikz, set(args.result_env))
+    w, summary = check(paper, root, theory, tikz, set(args.result_env), args.max_lines)
 
     errors = [f for f in w.findings if f.severity == "error"]
     warnings = [f for f in w.findings if f.severity == "warning"]

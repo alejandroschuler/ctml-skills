@@ -34,7 +34,8 @@ python3 <skill-dir>/scripts/check_tex_hygiene.py .
 ```
 
 The errors are the worklist, chiefly `inline-result`, `stray-proof` and
-`inline-tikz`. Treat the warnings as questions. For an orphan file, ask the
+`inline-tikz`. A `long-file` warning on the root file adds its sections to the
+worklist. Treat the other warnings as questions. For an orphan file, ask the
 author whether to delete it or input it; do not decide alone.
 
 ## 4. Set up
@@ -86,7 +87,24 @@ Leave the drawing code as it is. Turning hardcoded coordinates into
 parameters is a separate change, best made the next time the figure is edited,
 unless the author asks for it now.
 
-## 7. Build and compare
+## 7. Move the sections
+
+When the checker gives a `long-file` warning for the root file, move each
+section to `sections/<slug>.tex`, with its heading and label at the top, and
+replace it with `\input{sections/<slug>}`. Then split each section file that is
+still past the target, as in "Section files" in `SKILL.md`. Do not change any
+words on the way.
+
+## 8. Re-break the lines, if the user agrees
+
+Coauthors are paused for the conversion, so this is the best time to put each
+sentence on its own line in the whole paper. Ask the user first, because the
+change touches almost every line of text. Replace only the space between two
+sentences with a line break, and leave all other text as it is. Build before
+and after the change, and compare the two with `pdftotext`. The text of the
+PDF must not change at all. Make the change a commit of its own.
+
+## 9. Build and compare
 
 ```bash
 latexmk -pdf -interaction=nonstopmode main.tex
@@ -104,9 +122,9 @@ number, and the body text may not change in any other way. The count of
 undefined references must not go up, and the log must show no multiply
 defined labels.
 
-## 8. Check and commit
+## 10. Check and commit
 
 Run the checker again. No errors may remain, and each remaining warning needs
-a reason. Commit in the paper repo, one commit for the results and one for the
-figures, with messages that say what moved. Push by the paper repo's rules,
-and ask first if it has none.
+a reason. Commit in the paper repo, with one commit each for the results, the
+figures, the sections and the line breaks, and messages that say what moved.
+Push by the paper repo's rules, and ask first if it has none.

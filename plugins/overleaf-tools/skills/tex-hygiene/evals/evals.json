@@ -1,6 +1,6 @@
 {
   "skill_name": "tex-hygiene",
-  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules.",
+  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split.",
   "evals": [
     {
       "id": 0,
@@ -57,6 +57,34 @@
       "prompt": "regenerate figure 3 with the new simulation results",
       "fixture": "reproducible-paper-artefacts project where figure 3 is a PNG made by the pipeline",
       "expected_output": "Judges tikz/ not to apply: the figure is a pipeline artefact, so the work goes through reproducible-paper-artefacts. Creates no tikz/ file."
+    },
+    {
+      "id": 8,
+      "name": "split-long-section",
+      "prompt": "add a subsection to the simulation section with the results under a misspecified propensity score",
+      "fixture": "paper that follows the layout; sections/simulation.tex has 190 lines at one sentence per line, with the subsections Design and Results",
+      "expected_output": "Writes the new subsection with one sentence per line. The file then passes 200 lines, so it moves each subsection to sections/simulation-<slug>.tex, which starts with its heading, and inputs each one from sections/simulation.tex with a path from the root folder, such as \\input{sections/simulation-design}. Adds no heading to make the split. The PDF text is unchanged except for the new subsection, and the checker gives no long-file warning."
+    },
+    {
+      "id": 9,
+      "name": "slightly-over-no-heading",
+      "prompt": "add a paragraph on limitations to the discussion",
+      "fixture": "paper that follows the layout; sections/discussion.tex has 205 lines at one sentence per line and no subsections",
+      "expected_output": "Adds the paragraph with one sentence per line and leaves the file whole, since it is only a few paragraphs over the target and no heading splits it. Adds no heading. May tell the user that the file is near the point where it would split between paragraphs."
+    },
+    {
+      "id": 10,
+      "name": "edit-in-paragraph-per-line",
+      "prompt": "in the intro, the paragraph on rates should say we prove the rate, not that we show it",
+      "fixture": "paper whose sections/introduction.tex was written on Overleaf with each paragraph on one line",
+      "expected_output": "Edits the word and re-breaks that paragraph so that each sentence is on its own line. Leaves the other paragraphs of the file as they are, and does not convert the paper unasked."
+    },
+    {
+      "id": 11,
+      "name": "near-miss-long-note",
+      "prompt": "add a derivation of the variance of the one-step estimator to the end of my variance notes",
+      "fixture": "paper repo with notes/variance.tex, a standalone document of 600 lines whose root has the mode line % writing-math: note, probability theory",
+      "expected_output": "Judges the file-split rule not to apply, since the document is a note. Adds the derivation to notes/variance.tex with one sentence per line, and does not split the note into files or create a sections/ folder."
     }
   ]
 }
