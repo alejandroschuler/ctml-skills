@@ -1,6 +1,6 @@
 ---
 name: writing-math
-description: "Rules for writing mathematics in a LaTeX (.tex) document: how to define, scope, reuse and gloss symbols, and how densely to write proofs and derivations, in paper mode for the main text of a draft or in note mode for a note that the author works through. Load it before you write or edit mathematics in any .tex file, in the main conversation or in a subagent. The readable-math review checks the symbol rules and the correctness of the mathematics afterward. Nothing checks the density rules later, so they apply as you write."
+description: "Rules for writing mathematics in a LaTeX (.tex) document: how to define, scope, reuse and gloss symbols, and how densely to write proofs and derivations, in paper mode for the main text of a draft or in note mode for a note that the author works through, and how to lay out the source with one sentence per line. Load it before you write or edit mathematics in any .tex file, in the main conversation or in a subagent. The readable-math review checks the symbol rules and the correctness of the mathematics afterward. Nothing checks the density rules later, so they apply as you write."
 ---
 
 # Writing math
@@ -86,3 +86,11 @@ Spell the mathematics out. The reader is the author, who is working the idea out
 - Check each algebraic step before you write it down. When a step is not obvious, verify it with `sympy` or with a numerical check in `python3`.
 - When you cite a result, check that its conditions hold where you use it.
 - State the conditions and quantifiers of every claim: the values for which it holds, and the sense in which it holds, for example exactly, asymptotically or with high probability.
+
+## One sentence per line
+
+In every `.tex` document, in paper mode and in note mode, put each sentence of prose on its own line. Do not wrap lines at a fixed width, and do not put a whole paragraph on one line. LaTeX prints a line break inside a paragraph as a space, so the output does not change. The author can then point at a sentence by its line number, and a diff shows the sentence that changed, not its whole paragraph.
+
+- The rule is for each sentence that LaTeX prints, also in statements, proofs, captions and footnotes. It is not for comments.
+- A display equation breaks its sentence. The text after the display starts on a new line.
+- When you edit a paragraph that has another style, re-break all of that paragraph. Do not re-break paragraphs that you do not otherwise change, because a coauthor may be editing them.

@@ -11,6 +11,14 @@ This paper follows the `tex-hygiene` skill of the overleaf-tools plugin.
 - Every TikZ figure lives in `tikz/<slug>.tex`, which starts with a header
   comment and holds the whole `figure` environment. `\input` it where the
   figure belongs.
+- Every section lives in `sections/<slug>.tex`, which starts with its heading,
+  and the root file inputs it. Keep each file of text under about 200 lines.
+  Split a longer file at a subsection, or between paragraphs where the topic
+  turns. Leave it when it is only a few paragraphs over and nothing splits it
+  well. An `\input` path starts from the root file's folder. Notes are not
+  split.
+- Put each sentence of prose on its own line. When you edit a paragraph in
+  another style, re-break that paragraph and no other.
 - `deferproofs.sty` holds the proof-at-the-end setup. Build with
   `latexmk -pdf main.tex`. The build writes `main-pratenddefaultcategory.tex`;
   never edit or commit it.

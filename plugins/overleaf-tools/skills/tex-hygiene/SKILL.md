@@ -1,12 +1,12 @@
 ---
 name: tex-hygiene
-description: "Keeps the LaTeX source of a paper in fixed places. Every theorem, proposition, lemma and corollary lives with its proof in its own file, theory/<slug>.tex, which the body inputs where the statement belongs, and proof-at-the-end prints the proof in the appendix by itself. Every TikZ figure lives in its own file, tikz/<slug>.tex. Use it whenever you add, move, split, restate or delete a result, a proof or a TikZ figure in a .tex paper, start a new paper, move proofs to the appendix, or tidy or check the layout of an existing paper, even when the user does not name the convention. It covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project."
+description: "Keeps the LaTeX source of a paper in fixed places. Every theorem, proposition, lemma and corollary lives with its proof in its own file, theory/<slug>.tex, which the body inputs where the statement belongs, and proof-at-the-end prints the proof in the appendix by itself. Every TikZ figure lives in its own file, tikz/<slug>.tex. The text is split into section files of at most about 200 lines, with each sentence on its own line, so that agents can work on the paper in parallel and merge cleanly. Use it whenever you add, move, split, restate or delete a result, a proof, a TikZ figure or a section in a .tex paper, write or re-break paragraphs of a paper, start a new paper, move proofs to the appendix, or tidy or check the layout of an existing paper, even when the user does not name the convention. It covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
 ---
 
 # TeX hygiene
 
-A paper's source stays easy to read and to change when every result and every
-figure has exactly one home:
+A paper's source stays easy to read and to change when every result, every
+figure and every section has exactly one home:
 
 - **Results.** Each theorem, proposition, lemma and corollary lives with its
   proof in `theory/<slug>.tex`. The body inputs the file where the statement
@@ -15,6 +15,8 @@ figure has exactly one home:
 - **Figures.** Each TikZ figure lives in `tikz/<slug>.tex`, which holds the
   whole `figure` environment. The body inputs the file where the figure
   belongs.
+- **Text.** Each section lives in `sections/<slug>.tex`, and a file that
+  grows past about 200 lines splits again. Each sentence is on its own line.
 
 This pays off in four ways. A result moves as one unit: move its `\input` line
 and the statement, proof, labels and appendix heading all go with it. Section
@@ -134,10 +136,86 @@ shape.
 - A plot that code produces is not TikZ source. It goes in `figures/`, and in
   a reproducible-paper-artefacts project it goes through the pipeline.
 
+## The text
+
+The section rule is for the manuscript: the root file, every file that it
+inputs, and a supplement with its own root. It is not for notes. A document in
+`notes/`, a document that the paper does not input, and a root file with the
+mode line `% writing-math: note` are notes. Do not split a note into files.
+The sentence rule is for every `.tex` document, notes too, and the
+`writing-math` skill states it as well.
+
+Both rules make merges easy. Agents that work at the same time on different
+files never get a merge conflict. With one sentence on each line, edits to
+different sentences of one file also merge without a conflict. Short files
+help an agent in other ways too. It reads less before an edit, the text that
+an edit replaces is more likely to be unique in the file, and `git log` on a
+file gives the history of one part of the paper.
+
+### Section files
+
+Each section lives in `sections/<slug>.tex`, which starts with its `\section`
+heading and label, and the root file inputs it. The root file then holds the
+preamble, the title, the abstract and one `\input` line for each section, and
+a section moves with its `\input` line. The slug comes from the section's
+`sec:` label, or from its heading when it has no label. A new paper starts
+this way. Convert an existing paper when the body of its root file grows past
+the target below, or when the user asks. A paper that already keeps its
+sections in another folder keeps that folder.
+
+Keep each file under about 200 lines, counted with one sentence on each line.
+That is about five pages. When a file grows past the target, split it:
+
+- **At a heading.** Move a `\subsection` or a lower heading, with its text, to
+  `sections/<section-slug>-<slug>.tex`, and input that file where the text
+  was. Each piece should hold at least a few paragraphs.
+- **Between paragraphs**, when no heading splits the file. Split where the
+  topic turns. Do not add a heading to make a split, because a new heading
+  changes the paper.
+- **Not at all**, when the file is only a few paragraphs over, up to about 250
+  lines, and no heading splits it into two good pieces.
+
+The target is for files of text. A `theory/` file keeps its whole proof, and a
+`tikz/` file its whole figure, however long they are. Never split a generated
+file, such as a table that a reproducible-paper-artefacts pipeline writes.
+
+- Use `\input`. `\include` starts a new page and cannot be nested, so it is
+  only for the chapters of a thesis or a book.
+- An `\input` path starts from the folder of the root file, also inside a file
+  in `sections/`. Write `\input{sections/simulation-design}`, not
+  `\input{simulation-design}`.
+- A split only moves text. Compare the text of the PDF before and after the
+  split with `pdftotext`. It must not change.
+- Overleaf review comments and tracked changes do not move with text that
+  moves to another file through git, and they can be lost. Before you split a
+  file that coauthors review on Overleaf, read its open comments with the
+  `overleaf-comments` skill if it is installed. Tell the user which comments
+  are on text that will move.
+
+### One sentence per line
+
+Put each sentence of prose on its own line. Do not wrap lines at a fixed
+width, and do not put a whole paragraph on one line. Inside a paragraph, LaTeX
+prints a line break as a space, and only a blank line ends the paragraph, so
+the PDF does not change. The user and coauthors can then point at a sentence
+by its line number. A LaTeX error names the line of one sentence, and a diff
+shows the sentence that changed, not its whole paragraph.
+
+- The rule is for each sentence that LaTeX prints: in the body, in statements
+  and proofs, in captions and in footnotes. It is not for comments.
+- A display equation breaks its sentence. The text after the display starts
+  on a new line.
+- Follow the rule in each paragraph that you write. When you edit a paragraph
+  that has another style, re-break all of that paragraph. Do not re-break
+  paragraphs that you do not otherwise change. A coauthor may be editing them
+  on Overleaf, and the re-break would conflict with their edit.
+- To convert a whole paper, ask the user first, and make the conversion a
+  commit with no other change. `references/migration.md` has the steps.
+
 ## Set up a paper
 
 1. Copy `assets/template/deferproofs.sty` next to `main.tex`, and make the
-   folders `theory/` and `tikz/`.
+   folders `theory/`, `tikz/` and `sections/`.
 2. Load `\usepackage{deferproofs}` in the preamble after the theorem
    declarations, and after `hyperref` and `cleveref`. For each other result
    environment the paper declares, add an alias after it, for example
@@ -156,7 +234,10 @@ shape.
   it where the statement belongs.
 - **New figure.** Copy `tikz/mean-tails.tex` to `tikz/<slug>.tex`, replace the
   drawing and the header, and input it where the figure belongs.
-- **Move a result or a figure.** Move its `\input` line.
+- **New section.** Write it in `sections/<slug>.tex`, which starts with its
+  heading, and input it from the root file.
+- **A file of text passes about 200 lines.** Split it as in "Section files".
+- **Move a result, a figure or a section.** Move its `\input` line.
 - **Edit a result.** Find the file from the label and edit it there. The
   appendix prints from a generated file, so a jump from the PDF appendix to
   the source can land in `main-pratenddefaultcategory.tex`. Do not edit that
@@ -188,6 +269,12 @@ file in document order, skips comments, and prints each problem with its
 It exits 1 when there is an error. The list of rules is at the top of the
 script, and `--json` gives the same report as JSON.
 
+Two warnings are about the text. `long-file` marks a file past the line target
+(`--max-lines`, 200 by default), and `sentence-lines` marks lines that hold
+more than one sentence. A paper written in another style gets many
+`sentence-lines` warnings. Fix them in the paragraphs that you edit, and leave
+the rest. The `long-file` rule skips a root file whose mode line says `note`.
+
 Then build the paper with `latexmk -pdf main.tex`, or with three `pdflatex`
 passes, since the appendix references settle on the third. Read the log for
 undefined or multiply defined references.
@@ -196,8 +283,8 @@ undefined or multiply defined references.
 
 Read `references/migration.md` first. You pull, build a baseline and record
 its numbering, and take the checker's errors as the worklist. Then you move one
-result or figure at a time, build again, and compare the numbering and the
-text with the baseline.
+result or figure at a time, then the sections, build again, and compare the
+numbering and the text with the baseline.
 
 ## Traps
 

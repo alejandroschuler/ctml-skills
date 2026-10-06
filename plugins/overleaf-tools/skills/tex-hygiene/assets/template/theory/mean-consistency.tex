@@ -4,8 +4,7 @@
 \end{textAtEnd}
 \begin{propositionE}[Consistency of the sample mean][text link={The proof is in \autoref{pf:mean-consistency}.}]
 \label{thm:mean-consistency}
-For every $\epsilon > 0$, the probability that the sample mean $\bar X_n$
-differs from the mean $\mu$ by at least $\epsilon$ goes to zero:
+For every $\epsilon > 0$, the probability that the sample mean $\bar X_n$ differs from the mean $\mu$ by at least $\epsilon$ goes to zero:
 \[
   \Prob\{|\bar X_n - \mu| \ge \epsilon\} \to 0
   \quad \text{as } n \to \infty.
@@ -13,10 +12,8 @@ differs from the mean $\mu$ by at least $\epsilon$ goes to zero:
 \end{propositionE}
 
 \begin{proofE}
-The draws are independent with common mean $\mu$ and common variance
-$\sigma^2$, so the sample mean has mean $\E \bar X_n = \mu$ and variance
-$\Var(\bar X_n) = \sigma^2 / n$. \autoref{lem:chebyshev}, applied with
-$Y = \bar X_n$ and $t = \epsilon$, gives
+The draws are independent with common mean $\mu$ and common variance $\sigma^2$, so the sample mean has mean $\E \bar X_n = \mu$ and variance $\Var(\bar X_n) = \sigma^2 / n$.
+\autoref{lem:chebyshev}, applied with $Y = \bar X_n$ and $t = \epsilon$, gives
 \[
   \Prob\{|\bar X_n - \mu| \ge \epsilon\} \le \frac{\sigma^2}{n \epsilon^2},
 \]
