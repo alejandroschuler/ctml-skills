@@ -1,8 +1,8 @@
 % A small paper laid out the tex-hygiene way. Each section lives in
-% sections/<slug>.tex, each result lives with its proof in theory/<slug>.tex,
-% and each TikZ figure lives in tikz/<slug>.tex. In all of them, each sentence
-% is on its own line. This file only says where they go. Build it with
-% `latexmk -pdf main.tex`, or with three pdflatex passes.
+% sections/<NN>-<slug>.tex, each result lives with its proof in
+% theory/<slug>.tex, and each TikZ figure lives in tikz/<slug>.tex. In all of
+% them, each sentence is on its own line. This file only says where they go.
+% Build it with `latexmk -pdf main.tex`, or with three pdflatex passes.
 \documentclass{article}
 
 \usepackage{amsmath, amssymb, amsthm}
@@ -28,11 +28,14 @@
 
 \begin{document}
 
-% Each section file starts with its own heading. A section moves with its
-% \input line.
-\input{sections/setup}
+% Each section file starts with its own heading. The numbers in the file names
+% sort in the order of the paper, so sections/ reads as the table of contents.
+% This file inputs every file in sections/, in that order. When a section
+% splits into the folder sections/<NN>-<slug>/, each file in it gets its own
+% \input line here.
+\input{sections/10-setup}
 
 \appendix
-\input{sections/proofs}
+\input{sections/A1-proofs}
 
 \end{document}
