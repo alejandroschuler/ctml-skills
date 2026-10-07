@@ -1,7 +1,7 @@
 {
   "name": "overleaf-tools",
-  "version": "0.7.0",
-  "description": "Work on LaTeX manuscripts that live on Overleaf: read the review comments and tracked changes that the git bridge does not carry, keep each theorem with its proof, each TikZ figure and each section in a file of its own, with the section files numbered in the order of the paper and one sentence per line, cite with cleveref rather than a typed name, and block reads and edits of a clone that is behind Overleaf.",
+  "version": "0.8.0",
+  "description": "Work on LaTeX manuscripts that live on Overleaf: read the review comments and tracked changes that the git bridge does not carry, keep each theorem with its proof, each TikZ figure and each section in a file of its own, with the section files numbered in the order of the paper and one sentence per line, cite with cleveref rather than a typed name, and block reads and edits of the files that changed on Overleaf until the clone pulls them.",
   "author": {
     "name": "Alejandro Schuler"
   },
