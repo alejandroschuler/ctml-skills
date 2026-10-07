@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/overleaf_pull_guard.py",
-            "timeout": 20
+            "timeout": 30
           }
         ]
       }
