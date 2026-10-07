@@ -1,13 +1,13 @@
 {
   "skill_name": "move-project-sessions",
-  "note": "Run every case against a throwaway copy of the three stores, for example with HOME pointed at a fixture folder that holds .claude.json, .claude/projects/ and Library/Application Support/Claude/claude-code-sessions/, so that no real session history is touched. The script finds the stores through HOME. Its check for a running desktop app reads the real process list, so set the app open or quit as each fixture says. Case 5 is a near-miss that must not trigger the skill.",
+  "note": "Run every case against a throwaway copy of the four stores, for example with HOME pointed at a fixture folder that holds .claude.json, .claude/projects/ and Library/Application Support/Claude/ (with claude-code-sessions/ and git-worktrees.json), so that no real session history is touched. The script finds the stores through HOME. Its check for a running desktop app reads the real process list, so set the app open or quit as each fixture says. Case 5 is a near-miss that must not trigger the skill.",
   "evals": [
     {
       "id": 0,
       "name": "desktop-app-sidebar-lost",
       "prompt": "I renamed ~/Documents/research/projects/har to ~/Documents/research/projects/har-paper in Finder, and now the project is gone from the sidebar. Can you get my old sessions back?",
       "fixture": "The session runs inside the macOS desktop app, in another project folder. The folder is already at the new path. The fixture has a transcript folder, a projects key and three sidebar files for the old path.",
-      "expected_output": "Runs the dry run itself, from the script in the skill's installed folder, with both absolute paths, and shows the user what will change in the three stores. Does not run the apply and does not pass --force. Gives the user the --apply command with the script's absolute path written out, and tells them to quit the desktop app with Cmd-Q, run the command in Terminal.app, and relaunch the app. Gives all of this before the user quits, because quitting ends the session.",
+      "expected_output": "Runs the dry run itself, from the script in the skill's installed folder, with both absolute paths, and shows the user what will change in the stores. Does not run the apply and does not pass --force. Gives the user the --apply command with the script's absolute path written out, and tells them to quit the desktop app with Cmd-Q, run the command in Terminal.app, and relaunch the app. Gives all of this before the user quits, because quitting ends the session.",
       "files": [],
       "assertions": [
         "Runs the script without --apply before anything changes, and reports the transcript folder, the projects key and the sidebar files from its plan",
@@ -88,6 +88,21 @@
       "assertions": [
         "Does not invoke the move-project-sessions skill or run migrate_claude_project.py",
         "Updates the paths in the scripts from data/ to raw-data/"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "project-with-worktrees",
+      "prompt": "I moved ~/Documents/research/projects/rieszreg to ~/Documents/research/archive/rieszreg. It had a few Claude worktrees in .claude/worktrees, and now none of those sessions show up in the sidebar either. Can you fix it?",
+      "fixture": "The session runs inside the macOS desktop app, in another project folder. The folder is already at the new path, with two worktrees under .claude/worktrees/ that git still records at the old path. The fixture has transcript folders, projects keys and sidebar files for the main path and for both worktree paths, and a git-worktrees.json entry for each worktree.",
+      "expected_output": "Runs the dry run for the old project path, not for each worktree, and shows from its plan that the worktree transcript folders, projects keys, sidebar files and git-worktrees.json entries move together with the main project. Tells the user to run git worktree repair .claude/worktrees/* in the moved repository, or runs it. Gives the user the --apply command with the script's absolute path written out, and tells them to quit the desktop app with Cmd-Q, run the command in Terminal.app, and relaunch the app. Does not run the apply and does not pass --force.",
+      "files": [],
+      "assertions": [
+        "Runs the script without --apply with --from set to the old project path, and never with --from set to a worktree path",
+        "Reports from the plan that the worktree transcript folders, projects keys, sidebar files and git-worktrees.json entries move too",
+        "Tells the user to run git worktree repair in the moved repository, or runs it, for example git worktree repair .claude/worktrees/*",
+        "Gives the --apply command with the script's absolute path written out in full, to run in a plain terminal after quitting the desktop app with Cmd-Q",
+        "Does not run the script with --apply and does not pass --force"
       ]
     }
   ]
