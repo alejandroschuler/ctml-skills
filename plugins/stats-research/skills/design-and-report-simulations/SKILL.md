@@ -5,7 +5,7 @@ description: 'Designs simulation studies and organizes their write-ups so a read
 
 # Designing and reporting simulation studies
 
-A paper is claims and evidence for those claims. Simulations are one kind of evidence, next to theory and real-data applications, They have no value independent of the claim they support.
+A paper is claims and evidence for those claims. Simulations are one kind of evidence, next to theory and real-data applications. They have no value independent of the claim they support.
 
 Most bad simulation work fails because the researcher did not state their hypotheses clearly enough, leading to a haphazard choice of data-generating processes, baselines, parameter settings, and metrics. The solution is to apply a backwards design loop.
 
@@ -28,7 +28,7 @@ When the work spans more than one stage, copy this checklist and check off an it
 
 ```
 Simulation progress:
-- [ ] 1. Claims: well-scoped,  with an outline of the evidence that could support each claim
+- [ ] 1. Claims: well-scoped, with an outline of the evidence that could support each claim
 - [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
 - [ ] 3. Mockups: every table and figure drawn with empty cells and a caption describing expected results, before any code
 - [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill; mockups redrawn to match
@@ -73,7 +73,7 @@ The mockup answers questions that are expensive to answer later:
 - If the numbers land where you expect, does this display convince a skeptic? If they land the other way, will you be able to tell?
 - Which DGPs does this display require? Often the mockup reveals you need a configuration nobody had planned. That is the point.
 - Do two claims share one display? Good, merge them. Does a display have no claim attached? Cut it, or find the claim.
-- What goes in the appendix? keep the main text as clean and to-the-point as possible. 1-3 claims are fine, prioritize and put any evidence for the rest in the appendix.
+- What goes in the appendix? Keep the main text as clean and to-the-point as possible. 1-3 claims are fine, prioritize and put any evidence for the rest in the appendix.
 
 Layout follows from the comparison the reader cares about, which is usually between methods, so methods belong in adjacent rows or adjacent columns and the other factors vary along the other axis. Don't make a reader look across page breaks to compare two methods.
 
@@ -89,7 +89,7 @@ Design DGPs to archetype different ends of spectra. Edge cases are what sharpen 
 
 Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default.
 
-Stages 3 and 4 are a loop. Each DGP or method you add, drop or change can change a mockup at once, before any code exists. A DGP that archetypes a new extreme adds a column or a panel. A new comparator, oracle or learner library adds a row. A DGP that cannot vary a factor the mockup assumed takes that axis away. Redraw the affected display and its caption when you make the change, and ask the Stage 3 questions of it again. Do not leave the mismatch for the pilot to find.
+Stages 3 and 4 form a loop. Adding, dropping or changing a DGP or method can change a mockup before any code exists. For example, a DGP for a new extreme adds a column or a panel, a new comparator, oracle or learner library adds a row, and a DGP that cannot vary a factor the mockup assumed removes that axis. When you make such a change, redraw the affected display and its caption, and ask the Stage 3 questions of it again.
 
 Everything chosen here stays provisional until the pilot in Stage 6 confirms it can produce the mockup. 
 
@@ -103,7 +103,7 @@ Three properties decide how cheap the rest of the project will be:
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
 - **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it so it is clear when things need to be recomputed.
 
-Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. Everything should be smoke-tested on corner case inputs, but writing formal tests for all but the most complex parts of the code is likely overkill, and the user should consider turning anything with that complexity into a separate package with. 
+Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. Everything should be smoke-tested on corner case inputs, but writing formal tests for all but the most complex parts of the code is likely overkill, and the user should consider turning anything with that complexity into a separate package with its own tests.
 
 `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape, to read and adapt. Their learners are placeholders: set up the real ones with the `supervised-learning` skill.
 
@@ -119,7 +119,7 @@ Three checks, in increasing cost:
 2. **Are the DGPs what you think they are?** One large draw, computing appropriate diagnostics such as those in `references/designing-dgps.md`: true estimand value, overlap, variance explained, and how nonlinear the truth is. 
 3. **Is the designed contrast resolvable?** Roughly 100 to 200 repetitions.
 
-Unexpected results from the pilot can sometimes indicate obvious bugs with the code, or clear misunderstandings about the methods or or DGPs. Besides this, pilots also help size the final simulation run.
+Unexpected results from the pilot can sometimes indicate obvious bugs with the code, or clear misunderstandings about the methods or DGPs. Besides this, pilots also help size the final simulation run.
 
 A contrast between two means over repetitions (bias, mean squared error, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
 
@@ -137,7 +137,7 @@ Scale up only once all three checks clear: the code runs, the DGP diagnostics ar
 
 Results that contradict the claim are the normal case, not a disaster, and a clear goal is what makes the contradiction legible in the first place. Without one you cannot tell whether an outcome is good or bad.
 
-The first step, barring bugs that should mostly be filtered out by the pilot, is to revisit the theory to try and understand the result, then iterate on the claim. A claim that gains or corrects a condition is usually a better claim, so this is progress! Burying the result, or quietly dropping the DGP that produced it, is bad. Flag this explicitly when it comes up. A user looking at a disappointing simulation often wants help making the result go away, and the useful help is the opposite.
+The first step is to check for a bug, although the pilot should have caught most of them. Then revisit the theory to try and understand the result, and iterate on the claim. A claim that gains or corrects a condition is usually a better claim, so this is progress! Burying the result, or quietly dropping the DGP that produced it, is bad. Flag this explicitly when it comes up. A user looking at a disappointing simulation often wants help making the result go away, and the useful help is the opposite.
 
 ## Writing it up
 
@@ -155,7 +155,7 @@ Read `references/writing-the-writeup.md` before drafting. For a paper section, `
 
 ## Performance measures
 
-Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions. That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behaviour need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
+Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions. That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behavior need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
 
 Reporting a Monte Carlo SE alongside a headline number keeps you from over-reading noise, and saying how many repetitions failed keeps the rest of the numbers interpretable.
 
