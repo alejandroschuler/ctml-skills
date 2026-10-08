@@ -1,11 +1,14 @@
 # ADEMP performance measures with Monte Carlo standard errors.
 # Formulas: Morris, White & Crowther (2019), Stat Med 38:2074-2102, Table 6.
 #
-# Dependency-free base R. If the `rsimsum` package is available, prefer it.
+# Dependency-free base R. The rsimsum package, if installed, computes the same
+# measures and also draws the standard plots.
 #
 # Input: a long data frame with one row per repetition x method x DGP x estimand.
 #   est   numeric, the per-repetition point estimate theta_hat_i
-#   se    numeric, the per-repetition standard error (optional but strongly wanted)
+#   se    numeric, the per-repetition standard error (optional, but supply it
+#         if you can: the model SE needs it, and so do coverage and rejection
+#         when lo, hi or p are absent)
 #   true  numeric, the true value of the estimand, constant within a `by` group
 #   lo,hi numeric, CI limits (optional; Wald limits are used if absent and `se` is present)
 #   p     numeric, p-value (optional; a Wald test is used if absent and `se` is present)
@@ -80,7 +83,7 @@ ademp_perf <- function(d,
   modse <- modse_mcse <- relerr <- relerr_mcse <- NA_real_
   if (!is.null(se)) {
     v <- (g[[se]][ok])^2
-    # root of the MEAN VARIANCE, not the mean of the SEs
+    # root of the mean variance, not the mean of the SEs
     modse      <- sqrt(mean(v))
     var_v      <- var(v)
     modse_mcse <- sqrt(var_v / (4 * n * modse^2))
@@ -132,7 +135,7 @@ ademp_perf <- function(d,
 
 # ---------------------------------------------------------------------------
 # Relative % increase in precision of method B over reference method A.
-# est_a, est_b are the per-repetition estimates from the SAME repetitions, in the
+# est_a, est_b are the per-repetition estimates from the same repetitions, in the
 # same order. The correlation term is what makes this comparison precise; the
 # two methods saw the same simulated datasets.
 rel_precision <- function(est_a, est_b) {
@@ -150,7 +153,7 @@ rel_precision <- function(est_a, est_b) {
   )
 }
 
-# Monte Carlo SE of the DIFFERENCE in a mean-type performance measure between
+# Monte Carlo SE of the difference in a mean-type performance measure between
 # two methods run on the same repetitions. Use this, not the two separate MCSEs,
 # whenever the write-up claims one method beats another.
 mcse_diff <- function(x_a, x_b) {
@@ -163,7 +166,7 @@ mcse_diff <- function(x_a, x_b) {
 # ---------------------------------------------------------------------------
 # Required n_sim for a target Monte Carlo SE.
 nsim_for_bias <- function(sd_est, mcse_req) sd_est^2 / mcse_req^2
-# coverage arguments are PERCENTAGES, e.g. expected = 95, mcse_req = 0.5
+# coverage arguments are percentages, e.g. expected = 95, mcse_req = 0.5
 nsim_for_coverage <- function(expected = 95, mcse_req) {
   expected * (100 - expected) / mcse_req^2
 }
@@ -172,7 +175,7 @@ nsim_for_coverage <- function(expected = 95, mcse_req) {
 # Round an estimate to the precision its Monte Carlo SE supports:
 # give the MCSE `sig` significant figures, then match the estimate to that
 # decimal place. Returns a character vector "est (mcse)".
-# sig = 1 is the default and the stricter choice; sig = 2 is also defensible.
+# sig = 1 is the default and the stricter choice; sig = 2 is also reasonable.
 fmt_mcse <- function(est, mcse, sig = 1) {
   dp <- pmax(0, ceiling(-log10(abs(mcse))) + sig - 1)
   dp[!is.finite(dp)] <- 3

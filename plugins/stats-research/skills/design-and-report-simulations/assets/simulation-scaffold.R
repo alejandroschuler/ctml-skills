@@ -34,8 +34,9 @@ simple_dgp <- structure(list(
 
 complex_dgp <- structure(list(
     rho   = \(w1, w2) w1 + w2 + w1 * abs(w2),
-    # heterogeneous effect: the a * (...) term is what makes the ATE nonzero.
-    # Check this. A mean function with no treatment term is a silent ATE of 0.
+    # Heterogeneous effect: the a * (...) term makes the ATE nonzero. A mean
+    # function with no treatment term has an ATE of 0 and nothing warns you,
+    # so check it.
     mu    = \(a, w1, w2) w1 + w2 + abs(w2) + 0.5 * w1 * w2 + a * (1 + 0.5 * w1),
     sigma = 1
 ), class = "dgp")
@@ -50,8 +51,8 @@ draw.dgp <- \(dgp, n) dgp %$% tibble(
     Y  = mu(A, W1, W2) + rnorm(n, 0, sigma)
 )
 
-# Draw under a fixed treatment rule. This is what makes the true estimand
-# computable by brute force, with no closed form needed.
+# Draw under a fixed treatment rule, so that the true estimand can be
+# computed by brute force, without a closed form.
 draw_intervene <- function(x, ...) UseMethod("draw_intervene")
 draw_intervene.dgp <- \(dgp, n, treatment) dgp %$% tibble(
     W1 = runif(n, -1, 1),
@@ -62,8 +63,8 @@ draw_intervene.dgp <- \(dgp, n, treatment) dgp %$% tibble(
 
 # =========================== 2. DGP diagnostics ============================
 # Run these on every DGP before trusting it, and report them next to the DGP
-# description. They tell a reader what the DGPs span far better than the
-# generating equations do.
+# description. They show a reader the range the DGPs cover more clearly than
+# the generating equations do.
 
 # Both arms start from the same seed, so they share covariates and noise and
 # their difference carries no outcome noise. Arms drawn independently would

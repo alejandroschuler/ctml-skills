@@ -8,11 +8,11 @@
 #     n_sim >= (k * sd(d) / mean(d))^2
 #
 # This is a power calculation for the simulation itself. Run it on ~100-200
-# pilot repetitions, BEFORE the full run, for every cell comparison the mockup
+# pilot repetitions, before the full run, for every cell comparison the mockup
 # promises. See references/piloting.md.
 #
-# Pairing matters: both methods see the same datasets, so d_i is formed within
-# a repetition and sd(d) is usually far below either method's own spread.
+# Both methods see the same datasets, so d_i is formed within a repetition,
+# and sd(d) is usually much smaller than either method's own spread.
 #
 # Input `results`: tidy pilot output with columns rep, DGP, est, se and a
 # column naming the method (`method`, default "estimator"). Optional: lo, hi,
@@ -101,7 +101,7 @@ pilot_contrast <- function(results,
   # The pilot's own gap estimate is noisy, and sizing the full run on the point
   # estimate inherits that noise: a gap that happened to come out large gives
   # an n_sim that is too small, so the full run lands short of k MCSEs. Two
-  # guards. First, report how well the PILOT itself resolves the gap. Second,
+  # guards. First, report how well the pilot itself resolves the gap. Second,
   # size the run on a conservative lower bound for |gap| rather than the point
   # estimate. n_sim_required is the optimistic number; use n_sim_safe.
   #
@@ -163,7 +163,7 @@ pilot_sweep <- function(results, measure, true_values, k = 5, n_sim_planned = NU
                    method = method, ...)))
 }
 
-# --- equivalence: for claims that two methods perform the SAME -------------
+# --- equivalence: for claims that two methods perform the same -------------
 # A small gap with a large MCSE is an unresolvable design, not evidence of
 # equivalence. State the largest difference `margin` that still counts as
 # equivalent, then size the run so the interval for the gap fits inside it.

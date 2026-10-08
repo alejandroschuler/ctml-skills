@@ -10,11 +10,11 @@ sd(d)/sqrt(n_sim). So to show a gap at k Monte Carlo SEs you need
     n_sim >= (k * sd(d) / mean(d))**2
 
 This is a power calculation for the simulation itself. Run it on ~100-200
-pilot repetitions, BEFORE the full run, for every cell comparison the mockup
+pilot repetitions, before the full run, for every cell comparison the mockup
 promises. See references/piloting.md.
 
-Pairing matters: both methods see the same datasets, so d_i is formed within a
-repetition and sd(d) is usually far below either method's own spread.
+Both methods see the same datasets, so d_i is formed within a repetition, and
+sd(d) is usually much smaller than either method's own spread.
 
 Input `results`: tidy pilot output with columns rep, DGP, est, se and a column
 naming the method (`method`, default "estimator"). Optional: lo, hi, p.
@@ -115,7 +115,7 @@ def _pilot_verdict(d, measure, a, b, k, n_planned) -> dict:
     # The pilot's own gap estimate is noisy, and sizing the full run on the
     # point estimate inherits that noise: a gap that happened to come out large
     # gives an n_sim that is too small, so the full run lands short of k MCSEs.
-    # Two guards. Report how well the PILOT itself resolves the gap, and size
+    # Two guards. Report how well the pilot itself resolves the gap, and size
     # the run on a conservative lower bound for |gap|. Use n_sim_safe.
     #
     # A d that never varies (every pilot rep covered, say) has an unknown SD,
@@ -175,7 +175,7 @@ def pilot_sweep(results, measure, true_values=None, k=5.0, n_sim_planned=None,
 
 
 def pilot_equivalence(results, measure, a, b, true_values, margin, k=2.0, **kw):
-    """For claims that two methods perform the SAME.
+    """For claims that two methods perform the same.
 
     A small gap with a large MCSE is an unresolvable design, not evidence of
     equivalence. State the largest difference `margin` that still counts as

@@ -1,6 +1,6 @@
 # Performance measures and their Monte Carlo standard errors
 
-**Use this file when the claim is about an estimator's accuracy or its intervals.** It is a resource, not a checklist. Claims about runtime, model selection, prediction, or qualitative behaviour need different measures, and a study whose claim does not concern estimator accuracy needs none of these.
+Use this file when the claim is about an estimator's accuracy or its intervals. It is a resource, not a checklist. Claims about runtime, model selection, prediction, or qualitative behavior need different measures, and a study whose claim does not concern estimator accuracy needs none of these.
 
 ## Contents
 
@@ -8,7 +8,7 @@
 - Notation
 - The table: each measure's estimate and its Monte Carlo SE, from bias to rejection rate
 - Choosing $n_{sim}$: worked numbers for bias and coverage
-- Failures, non-convergence and missing estimates: what to report first
+- Failures, non-convergence and missing estimates: what to report
 
 ## Which measure answers which claim
 
@@ -19,11 +19,11 @@ The measures below answer specific questions, so pick by question:
 | Finite-sample unbiasedness | Bias |
 | Precision, absolute or relative to a competitor | Empirical standard error, relative % increase in precision |
 | Overall accuracy, trading bias against variance | Mean squared error (MSE), relative efficiency |
-| Whether the method's own variance estimate is honest | Average model standard error (SE) vs empirical SE, relative % error in model SE |
+| Whether the method's own variance estimate is accurate | Average model standard error (SE) vs empirical SE, relative % error in model SE |
 | Frequentist interval validity | Coverage, with bias-eliminated coverage as a diagnostic |
 | Type I error or power | Rejection rate |
 
-Two habits travel cheaply into any write-up even when the rest of this file does not apply: a Monte Carlo SE next to a headline number keeps you from over-reading noise, and a count of failed repetitions keeps the other numbers interpretable.
+Even when the rest of this file does not apply, report a Monte Carlo SE next to each headline number, so that noise is not over-read, and report how many repetitions failed, so that the other numbers can be interpreted.
 
 Formulas follow Morris, White & Crowther (2019), Table 6, cross-checked against the `rsimsum` implementation.
 
@@ -41,7 +41,7 @@ Formulas follow Morris, White & Crowther (2019), Table 6, cross-checked against 
 | $n_{obs}$ | sample size of each simulated dataset, a parameter of the data-generating process (DGP), not $n_{sim}$ |
 | $\mathrm{MCSE}(\cdot)$ | the Monte Carlo standard error of an estimated performance measure, its standard deviation over reruns of the whole simulation at $n_{sim}$ repetitions |
 
-Keep $n_{sim}$ and $n_{obs}$ typographically distinct in the write-up. Confusing them is a common reader trap.
+Keep $n_{sim}$ and $n_{obs}$ typographically distinct in the write-up, because readers easily confuse them.
 
 ## The table
 
@@ -59,7 +59,7 @@ $$\text{EmpSE} = \sqrt{\mathrm{Var}(\hat\theta)} \qquad \widehat{\text{EmpSE}} =
 
 $$\mathrm{MCSE}(\widehat{\text{EmpSE}}) = \frac{\widehat{\text{EmpSE}}}{\sqrt{2(n_{sim}-1)}}$$
 
-This is the actual precision of the estimator. It needs no knowledge of $\theta$, so it is computable even when the true value is unknown.
+This is the precision of the estimator. It needs no knowledge of $\theta$, so it is computable even when the true value is unknown.
 
 ### Relative % increase in precision, method B against reference A
 
@@ -67,7 +67,7 @@ $$100\left[\left(\frac{\widehat{\text{EmpSE}}_A}{\widehat{\text{EmpSE}}_B}\right
 
 $$\mathrm{MCSE} \simeq 200\left(\frac{\widehat{\text{EmpSE}}_A}{\widehat{\text{EmpSE}}_B}\right)^2 \sqrt{\frac{1-\hat\rho_{AB}^2}{n_{sim}-1}}$$
 
-where $\hat\rho_{AB} = \mathrm{Corr}(\hat\theta_A, \hat\theta_B)$ across repetitions. The correlation term is the point: both methods saw the same simulated datasets, so the comparison is far more precise than two independent estimates would be. Dropping the term inflates the MCSE and hides real differences.
+where $\hat\rho_{AB} = \mathrm{Corr}(\hat\theta_A, \hat\theta_B)$ across repetitions. The correlation term is there because both methods saw the same simulated datasets, so the comparison is more precise than two independent estimates would be. Without the term, the MCSE is too large and can hide differences.
 
 Percent increase in precision is asymmetric in the direction of comparison. State which method is the reference.
 
@@ -85,7 +85,7 @@ $$\text{ModSE} = \sqrt{E[\widehat{\mathrm{Var}}(\hat\theta)]} \qquad \widehat{\t
 
 $$\mathrm{MCSE}(\widehat{\text{ModSE}}) \simeq \sqrt{\frac{\widehat{\mathrm{Var}}\left[\widehat{\mathrm{Var}}(\hat\theta_i)\right]}{4\, n_{sim}\, \widehat{\text{ModSE}}^2}}$$
 
-Note this is the root of the *mean variance*, not the mean of the SEs. Averaging SEs instead of variances is a frequent coding error and biases the result downward.
+This is the root of the *mean variance*, not the mean of the SEs. Averaging SEs instead of variances is a common coding error, and it biases the result downward.
 
 ### Relative % error in model SE
 
@@ -93,7 +93,7 @@ $$100\left(\frac{\widehat{\text{ModSE}}}{\widehat{\text{EmpSE}}} - 1\right)$$
 
 $$\mathrm{MCSE} \simeq 100\left(\frac{\widehat{\text{ModSE}}}{\widehat{\text{EmpSE}}}\right)\sqrt{\frac{\widehat{\mathrm{Var}}\left[\widehat{\mathrm{Var}}(\hat\theta_i)\right]}{4\, n_{sim}\, \widehat{\text{ModSE}}^4} + \frac{1}{2(n_{sim}-1)}}$$
 
-This is the direct test of whether the method's own variance estimator is honest. A negative value means the method understates its uncertainty, which drives undercoverage. A positive value means it overstates it, which drives overcoverage and lost power.
+This tests directly whether the method's own variance estimator is accurate. A negative value means the method understates its uncertainty, which drives undercoverage. A positive value means it overstates it, which drives overcoverage and lost power.
 
 ### Coverage
 
@@ -101,9 +101,9 @@ $$\text{Coverage} = \Pr(\hat\theta_{\text{low}} \le \theta \le \hat\theta_{\text
 
 $$\mathrm{MCSE}(\widehat{\text{Cov}}) = \sqrt{\frac{\widehat{\text{Cov}}\,(1-\widehat{\text{Cov}})}{n_{sim}}}$$
 
-Two standards exist and they are not the same bar. Neyman's *randomisation validity* requires exactly $100(1-\alpha)\%$ of intervals to contain $\theta$. *Confidence validity* requires at least that. Say which one you are judging against, because a method with 98% coverage passes one and fails the other.
+There are two standards. Neyman's *randomization validity* requires exactly $100(1-\alpha)\%$ of intervals to contain $\theta$, and *confidence validity* requires at least that. Say which one you judge against, because a method with 98% coverage passes the second and fails the first.
 
-Causes of undercoverage, in the order worth checking: nonzero bias; $\widehat{\text{ModSE}} < \widehat{\text{EmpSE}}$; a non-normal sampling distribution of $\hat\theta$ when the interval is Wald-type; a variance estimator that is itself too variable. Overcoverage usually means $\widehat{\text{ModSE}} > \widehat{\text{EmpSE}}$.
+Causes of undercoverage, in the order to check them: nonzero bias; $\widehat{\text{ModSE}} < \widehat{\text{EmpSE}}$; a non-normal sampling distribution of $\hat\theta$ when the interval is Wald-type; a variance estimator that is itself too variable. Overcoverage usually means $\widehat{\text{ModSE}} > \widehat{\text{EmpSE}}$.
 
 Undercoverage from bias gets worse as $n_{obs}$ grows, unless the bias shrinks at least as fast as the standard error, which is usually proportional to $1/\sqrt{n_{obs}}$. Intervals narrow around the wrong value. A study run at a single sample size can therefore look much better than the method is.
 
@@ -111,13 +111,13 @@ Undercoverage from bias gets worse as $n_{obs}$ grows, unless the bias shrinks a
 
 $$\widehat{\text{BECov}} = \frac{1}{n_{sim}}\sum_{i=1}^{n_{sim}} \mathbf{1}(\hat\theta_{i,\text{low}} \le \bar\theta \le \hat\theta_{i,\text{upp}}) \qquad \mathrm{MCSE} = \sqrt{\frac{\widehat{\text{BECov}}\,(1-\widehat{\text{BECov}})}{n_{sim}}}$$
 
-Coverage of $\bar\theta$ rather than $\theta$, which removes bias from the calculation. This is a **diagnostic, not a performance measure in its own right**, and the write-up must say so. It answers one question: is the coverage problem caused by bias, or by the width of the intervals? Never present it as if a method with poor coverage and good bias-eliminated coverage has acceptable intervals.
+Coverage of $\bar\theta$ instead of $\theta$, which removes bias from the calculation. Use it as a diagnostic, not as a performance measure, and say so in the write-up. It shows whether a coverage problem comes from bias or from the width of the intervals. A method with poor coverage and good bias-eliminated coverage still has poor intervals.
 
 ### Rejection rate: type I error and power
 
 $$\Pr(p_i \le \alpha) \qquad \widehat{\text{Rej}} = \frac{1}{n_{sim}}\sum_{i=1}^{n_{sim}} \mathbf{1}(p_i \le \alpha) \qquad \mathrm{MCSE} = \sqrt{\frac{\widehat{\text{Rej}}\,(1-\widehat{\text{Rej}})}{n_{sim}}}$$
 
-Under a null DGP this estimates type I error; under a non-null DGP it estimates power. Label which, state $\alpha$, and never compare power across methods whose type I error differs.
+Under a null DGP this estimates type I error; under a non-null DGP it estimates power. Say which, state $\alpha$, and do not compare power across methods whose type I errors differ.
 
 When p-values are not stored, the Wald equivalent is $\mathbf{1}\left(|\hat\theta_i| \ge z_{\alpha/2}\sqrt{\widehat{\mathrm{Var}}(\hat\theta_i)}\right)$. Say which one was used.
 
@@ -137,15 +137,15 @@ $$n_{sim} = \frac{E(\text{Cov})\,(100 - E(\text{Cov}))}{\mathrm{MCSE}_{\text{req
 
 Anticipated 95% coverage with a required MCSE of 0.5%: $n_{sim} = 95 \times 5 / 0.5^2 = 1900$. At 1.5%: 211. The worst case over all possible coverages is 50%, which at 0.5% requires $50 \times 50/0.5^2 = 10{,}000$.
 
-The anticipated values are guesses, so check the realized MCSEs after the run. Raising $n_{sim}$ is cheap next to almost any other route to precision, which is a real advantage of simulation over other empirical work and worth using rather than apologizing for.
+The anticipated values are guesses, so check the realized MCSEs after the run. In a simulation, more repetitions are usually the cheapest way to get more precision.
 
 ## Failures, non-convergence and missing estimates
 
-The count of missing $\hat\theta_i$ and missing $\widehat{\mathrm{Var}}(\hat\theta_i)$ is **the first performance measure**, reported before all others.
+Report the number of missing $\hat\theta_i$ and missing $\widehat{\mathrm{Var}}(\hat\theta_i)$ for each method and cell, because it changes how to read every other measure.
 
-Estimates go missing because of features of the simulated dataset, such as separation in a logistic model or a boundary variance component, so the missingness is informative and the complete cases are a biased subpopulation. Consequences for the write-up:
+Estimates go missing because of features of the simulated dataset, such as separation in a logistic model or a boundary variance component, so the missingness is informative and the complete cases are a biased subpopulation. In the write-up:
 
 - Report attempted and completed repetition counts per cell, per method.
-- When the missing fraction is non-trivial, label every downstream measure as conditional on convergence, and be explicit that comparisons between methods losing different numbers of repetitions are not like-for-like.
-- Consider reporting performance for a realistic fallback procedure, since an analyst facing non-convergence in practice switches methods rather than reporting nothing. That composite procedure is often the thing worth evaluating.
+- When the missing fraction is not small, label every downstream measure as conditional on convergence, and say that a comparison between methods that lost different numbers of repetitions is not like for like.
+- Consider reporting performance for a realistic fallback procedure. In practice, an analyst facing non-convergence switches methods instead of reporting nothing, so the combined procedure is often the one to evaluate.
 - Store the random number generator state per repetition during the run, so failing repetitions can be reproduced and diagnosed. Use `try()` in R or `capture` in Stata so one failure does not end the run.
