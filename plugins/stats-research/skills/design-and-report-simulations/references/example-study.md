@@ -1,6 +1,6 @@
 # Example study: aims, subclaims and scenarios
 
-Section 5 of Højbjerre-Frandsen, van der Laan & Schuler (2025), "Powering RCTs for marginal effects with GLMs using prognostic score adjustment", arXiv:2503.22284, is a simulation study whose aims have the right scope. Each aim splits into subclaims that the DGP scenarios and comparators test, the scenarios have stated reasons, and the results follow the aims.
+Section 5 of Højbjerre-Frandsen, van der Laan & Schuler (2025), "Powering RCTs for marginal effects with GLMs using prognostic score adjustment", arXiv:2503.22284, is a simulation study whose aims have the scope that Stage 2 asks for. Each aim splits into subclaims that the DGP scenarios and comparators test, the scenarios have stated reasons, and the results follow the aims.
 
 ## Contents
 
@@ -87,7 +87,7 @@ The paper lists the estimators in one table with a motivation column. All six ar
 | Estimated score only | A variant for an analyst who trusts the score |
 | Estimated score + covariates | The proposal. The covariates protect against a poor score |
 
-The oracle and the noise score give the best and the worst case to compare the proposal with. The method settings have stated reasons too. The working model is a negative binomial GLM with its dispersion fixed at 3. The true outcome is Poisson, so the model is mildly misspecified on purpose. The pilot showed that the dispersion value made little difference. The prognostic model is one MARS fit, not an ensemble, so that the study runs on a laptop. MARS suits a conditional mean made mostly of hinge functions, although the square term leaves it slightly misspecified.
+The method settings have stated reasons too. The working model is a negative binomial GLM with its dispersion fixed at 3. The true outcome is Poisson, so the model is mildly misspecified on purpose. The pilot showed that the dispersion value made little difference. The prognostic model is one MARS fit, not an ensemble, so that the study runs on a laptop. MARS suits a conditional mean made mostly of hinge functions, although the square term leaves it slightly misspecified.
 
 ## Displays and the results section
 
@@ -104,4 +104,5 @@ Results that went the other way are in the same subsections as the others. The s
 ## What could be sharper
 
 - The aims are stated as questions ("to what extent"), and the expected directions are spread through Section 5.1, next to the scenarios. The hypothesis form in `ademp.md` puts the direction in the aim, so the reader knows before the results which outcomes would confirm the theory and which would contradict it.
+- The two DGP factors are fully crossed, in 15 scenarios, but none of the subclaims above is about how the factors interact. A base case with an additive effect and no shift, plus one deviation for each other level, would test every subclaim with 7 scenarios and less compute.
 - The figure captions say what each figure contains but not which aim it serves. A caption such as "Prognostic adjustment with covariates rarely increases the SE relative to covariate adjustment, even with a useless score (aim 1)" would meet the caption rule in `writing-the-writeup.md`.

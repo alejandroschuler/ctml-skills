@@ -8,31 +8,30 @@ Write for a reader who is seeing the design for the first time and does not know
 - Sandwich every piece of evidence
 - ADEMP is the "tell 'em what you're going to tell 'em"
 - Captions: weak and better
-- Making displays easy to read: layout, naming, rounding, table size
+- Making displays easy to read: layout, naming, rounding, table size, the caption checklist
 - Say what was done and why: the questions a reader will ask
 - Reporting results that went the wrong way
 - Common failure modes: symptoms and what they mean
-- Choosing the display: distribution plots, matched scatters, lollipop, zip and nested loop plots, and the caption checklist
 
 ## Organize by claim
 
-The section structure mirrors the claims, as the aims state them. State each claim, put its evidence next to it, and tell the reader how the evidence supports the claim before moving on.
+The section structure mirrors the aims, with one subsection per aim. State each aim or subclaim, put its evidence next to it, and tell the reader how the evidence supports it before moving on.
 
 Many simulation sections are ordered by output instead: Table 1, Table 2, Figure 1, and then a discussion that says what they were for. The reader then has to remember every number until the end.
 
 When several claims share one display, present it once and point to the relevant rows from each claim's paragraph.
 
-The results in `example-study.md` follow this structure, with one subsection per aim. Their figures have one DGP factor in the rows and the other in the columns, so each subclaim is a region of a figure that the text can point to.
+Lay out each figure so that each subclaim is a region the text can point to. With a base-case design, that is the base case plus one panel for each deviation, grouped by subclaim.
 
-When one aim answers an objection to another, it usually reads best right after that aim. In the example, coverage comes right after efficiency, because an estimator that underestimates its own SE would look efficient.
+When one aim answers an objection to another, it usually reads best right after that aim, as coverage follows efficiency in `example-study.md`.
 
 ## Sandwich every piece of evidence
 
 For each piece of evidence, in this order:
 
-1. **State the goal.** What is this about to show?
+1. **Say what it will show.** Which aim or subclaim is it about to support?
 2. **Give the evidence.** The table, the figure, the numbers.
-3. **Say how the evidence supports the goal.** Say it in words.
+3. **Say how the evidence supports it.** Say it in words.
 
 > In the first part I tell 'em what I am going to tell 'em; in the second part, well, I tell 'em; in the third part I tell 'em what I've told 'em.
 
@@ -97,7 +96,7 @@ Scope every conclusion to the DGPs actually simulated. If a reader is likely to 
 | Symptom | What it means |
 |---|---|
 | A table nobody refers to in the text | No claim needs it. Cut it. |
-| "Results are shown in Table 3" and nothing more | The text does not say how the table supports the goal (the third part of the sandwich). |
+| "Results are shown in Table 3" and nothing more | The text does not say how the table supports the aim or subclaim (the third part of the sandwich). |
 | The reader cannot tell why a DGP was included | The DGP was not derived from a claim. |
 | Every number to four decimals | More precision than the number of repetitions supports. |
 | Methods split across separate tables | The reader cannot compare the methods directly. |

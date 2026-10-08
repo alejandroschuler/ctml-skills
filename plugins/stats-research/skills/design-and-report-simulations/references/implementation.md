@@ -71,7 +71,7 @@ This has three advantages:
 - Each expensive fit is paid for once.
 - Every display is computed on the same datasets, so the displays can be compared repetition by repetition. A bad TMLE estimate can be traced to the nuisance fit in the same repetition, and a contrast between two libraries is paired, which usually makes it more precise than the libraries' separate Monte Carlo errors suggest.
 
-Shared computation is the code-level version of what the mockup stage does on paper. Two claims that share a display, or a goal whose evidence is a subset of another goal's, should also share computation.
+Shared computation is the code-level version of what the mockup stage does on paper. Two claims that share a display, or an aim whose evidence is a subset of another aim's, should also share computation.
 
 The pilot and the full run are this same pipeline at different repetition counts. A separate pilot script would test different code from the full run.
 

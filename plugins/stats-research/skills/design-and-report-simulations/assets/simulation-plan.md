@@ -20,11 +20,11 @@ Simulation-supported claims usually read: *[method] works [well] when [condition
 
 ---
 
-## 2. Simulation goals
+## 2. Simulation aims
 
 For each claim assigned to simulation, sharpen until a skeptic could agree it was met or not met.
 
-### Goal 1
+### Aim 1
 
 **First pass:** [the claim, roughly]
 
@@ -34,12 +34,12 @@ For each claim assigned to simulation, sharpen until a skeptic could agree it wa
 - Under which DGPs?
 - With what nuisance estimators or tuning?
 - Against what baseline?
-- Would an oracle or semi-oracle (true values for all or some of the nuisance functions) help test this goal, and in which display?
+- Would an oracle or semi-oracle (true values for all or some of the nuisance functions) help test this aim, and in which display?
 - Does theory predict this?
 - Which way do you expect it to go?
 - Which conditions could change the answer?
 
-**Sharpened:** [a hypothesis that answers every question above inside the sentence, including the expected direction]
+**Sharpened:** [a hypothesis that answers the questions above, including the expected direction; the conditions that could change the answer go in the subclaims table]
 
 **Subclaims:**
 
@@ -47,15 +47,15 @@ For each claim assigned to simulation, sharpen until a skeptic could agree it wa
 |---|---|---|
 | | | |
 
-*(Repeat per goal. `references/example-study.md` shows a finished set.)*
+*(Repeat per aim. `references/example-study.md` shows a finished set.)*
 
 ---
 
 ## 3. Mockups
 
-For each goal, draw the display with empty cells and write the caption now.
+For each aim, draw the display with empty cells and write the caption now.
 
-### Evidence for Goal 1
+### Evidence for Aim 1
 
 **Caption (written first):** [what this shows and which claim it serves]
 
@@ -66,9 +66,9 @@ For each goal, draw the display with empty cells and write the caption now.
 - If they land the other way, will it be visible?
 - Which DGPs does this require? → feeds section 4
 - Which settings (sample size, estimand, learners) does this require? → feeds section 4
-- Does this display overlap with another goal's? Merge if so.
+- Does this display overlap with another aim's? Merge if so.
 
-*(Repeat per goal.)*
+*(Repeat per aim.)*
 
 **Main text vs appendix:** [one to three claims in the main text; what goes to the appendix]
 
@@ -78,13 +78,15 @@ For each goal, draw the display with empty cells and write the caption now.
 
 Derive these from section 3. Each DGP or method added, dropped or changed here can also change a display in section 3, so redraw that display and its caption when you make the change.
 
+Start from a base case and change one dimension at a time from it. Cross two factors only for a subclaim about their interaction, and name that subclaim.
+
 Notation as in `references/designing-dgps.md`: covariates $X$, a binary treatment $A$ with log-odds $\rho(X)$ and propensity $\pi(X) = \mathrm{expit}(\rho(X))$, and an outcome $Y$ with conditional mean $\mu(A,X)$ and noise SD $\sigma$.
 
-| DGP | Subclaim it tests, or other purpose | $\rho(X)$ | $\mu(A,X)$ | $\sigma$ | Notes |
-|---|---|---|---|---|---|
-| simple | | | | | |
-| moderate | | | | | |
-| complex | | | | | |
+| DGP | What changes from the base case | Subclaim it tests, or other purpose | $\rho(X)$ | $\mu(A,X)$ | $\sigma$ | Notes |
+|---|---|---|---|---|---|---|
+| base case | nothing | | | | | |
+| | | | | | | |
+| | | | | | | |
 
 Diagnostics to compute on a large draw, and report:
 
