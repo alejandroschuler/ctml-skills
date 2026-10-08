@@ -10,7 +10,7 @@ Delete the bracketed prompts as real content replaces them.
 
 ### Aims
 
-[State the claims this simulation supports. Specific enough to be wrong. This is the most important part of the setup; everything below serves it.]
+[State the claims this simulation supports, specifically enough that they could turn out to be wrong. This is the most important part of the setup, and everything below serves it.]
 
 We evaluate [PROPERTY] of [METHOD(S)], relative to [BASELINE], under [CONDITION]. [One sentence per additional claim.]
 
@@ -45,13 +45,11 @@ Nuisance functions were estimated with [LEARNERS], chosen because [REASON]. Each
 
 ### Performance measures
 
-We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a pointer.] Intervals are at [95]%; tests use alpha = [0.05]. We ran [N] repetitions [and how that was decided]. [Monte Carlo standard errors are reported alongside each estimate.]
+We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a pointer.] Intervals are at [95]%; tests use alpha = [0.05]. We ran [N] repetitions [and how that was decided]. [Monte Carlo standard errors are reported alongside each estimate.] [If any repetitions failed: how many, for which method, and why.]
 
 ---
 
 ## Results
-
-[If any repetitions failed: how many, for which method, and why, before anything else.]
 
 ### [Claim 1, stated as a heading a reader can act on]
 
@@ -75,4 +73,4 @@ We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a point
 
 [Scope the conclusions to the DGPs simulated. Name the extrapolation a reader is likely to make and say whether the study supports it.]
 
-[Report anything that went the other way, with the same prominence, and say what it means for the claim. A claim that gained a condition is a better claim.]
+[Report anything that went the other way, with the same prominence, and say what it means for the claim. A claim that gained a condition is usually a better claim.]

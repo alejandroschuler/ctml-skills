@@ -47,9 +47,8 @@ BASE_SEED = 20260916
 class DGP:
     """A data-generating process.
 
-    Keeping rho, mu and sigma as fields rather than inlining them into a draw
-    function is what makes the true estimand and the diagnostics below
-    computable without writing anything DGP-specific.
+    With rho, mu and sigma kept as fields, not inlined into a draw function,
+    the true estimand and the diagnostics below need no DGP-specific code.
     """
 
     rho: Callable[[np.ndarray, np.ndarray], np.ndarray]  # log-odds of treatment
@@ -69,8 +68,7 @@ class DGP:
     ) -> pd.DataFrame:
         """Draw under a fixed treatment rule.
 
-        This is what gives the true estimand by brute force, with no closed
-        form needed, and it costs almost nothing to write.
+        This gives the true estimand by brute force, without a closed form.
         """
         w1 = rng.uniform(-1, 1, n)
         w2 = rng.uniform(-1, 1, n)
@@ -93,8 +91,9 @@ class DGP:
     def diagnose(self, n: int = 100_000, seed: int = 0) -> dict:
         """Overlap, variance explained, and how nonlinear the truth actually is.
 
-        These say what the DGP spans far better than the generating equations,
-        and they catch most DGP mistakes. Report them next to the DGP.
+        These show the range the DGP covers more clearly than the generating
+        equations do, and they catch many DGP mistakes. Report them next to
+        the DGP.
         """
         rng = np.random.default_rng(seed)
         d = self.draw(n, rng)
@@ -125,9 +124,9 @@ def _treat_none(w1, w2):
     return 0.0
 
 
-# Module-level named functions, not lambdas. A DGP gets shipped to worker
+# Module-level named functions, not lambdas. A DGP is sent to worker
 # processes when you parallelize, and lambdas do not pickle, so lambdas here
-# work fine serially and then break the moment you set n_jobs > 1.
+# work serially and fail once n_jobs > 1.
 
 
 def _simple_rho(w1, w2):
@@ -143,8 +142,9 @@ def _complex_rho(w1, w2):
 
 
 def _complex_mu(a, w1, w2):
-    # heterogeneous effect: the a * (...) term is what makes the ATE nonzero.
-    # Check this. A mean function with no treatment term is a silent ATE of 0.
+    # Heterogeneous effect: the a * (...) term makes the ATE nonzero. A mean
+    # function with no treatment term has an ATE of 0 and nothing warns you,
+    # so check it.
     return w1 + w2 + np.abs(w2) + 0.5 * w1 * w2 + a * (1 + 0.5 * w1)
 
 

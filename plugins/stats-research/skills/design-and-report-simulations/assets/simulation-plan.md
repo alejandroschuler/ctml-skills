@@ -1,14 +1,14 @@
 # Simulation plan
 
-Fill this out **before writing simulation code**. It is the backwards-design artifact: the claims determine the mockups, and the mockups determine the DGPs (data-generating processes). Work top to bottom, and expect to revise upward as lower sections expose problems.
+Fill this out before you write simulation code. The claims determine the mockups, and the mockups determine the DGPs (data-generating processes). Work from top to bottom, and expect to go back and revise earlier sections when later ones show problems.
 
 ---
 
 ## 1. Claims
 
-The claims the paper makes. Not what the simulation computes.
+The claims the paper makes, not what the simulation computes.
 
-| # | Claim | Evidence type | Priority |
+| # | Claim | Evidence that could support it | Priority |
 |---|---|---|---|
 | 1 | | theory / simulation / application | |
 | 2 | | | |
@@ -62,13 +62,13 @@ For each goal, draw the display with empty cells and write the caption now.
 
 *(Repeat per goal.)*
 
-**Main text vs appendix:** [what gets cut to the appendix, usually the second estimand]
+**Main text vs appendix:** [one to three claims in the main text; what goes to the appendix]
 
 ---
 
 ## 4. DGPs and settings
 
-Derived from section 3, not chosen independently. The link runs both ways: each DGP or method added, dropped or changed here can change a display in section 3, so redraw that display and its caption at once.
+Derive these from section 3. Each DGP or method added, dropped or changed here can also change a display in section 3, so redraw that display and its caption when you make the change.
 
 Notation as in `references/designing-dgps.md`: covariates $X$, a binary treatment $A$ with log-odds $\rho(X)$ and propensity $\pi(X) = \mathrm{expit}(\rho(X))$, and an outcome $Y$ with conditional mean $\mu(A,X)$ and noise SD $\sigma$.
 
@@ -91,7 +91,7 @@ Diagnostics to compute on a large draw, and report:
 - **Data split:** [the default in the `supervised-learning` skill is three draws, each with the full sample size: fit the learners on the training draw, tune and choose them on the validation draw, and run the estimators on the estimation draw; or cross-fitting, and which claim needs it]
 - **Repetitions:** [2 → 100 to 200 → final count, and what determined the final count]
 
-Does every DGP trace to a claim? A DGP with no claim is either an unarticulated claim or a run you do not need.
+Does every DGP trace to a claim? If not, either a claim is missing from section 1 or the DGP is not needed.
 
 ---
 
@@ -111,7 +111,7 @@ Can any single DGP, estimator, or learner library be rerun alone, and return the
 
 ## 6. Pilot: can this design show what section 3 promises?
 
-Run before the full run and before freezing anything above, with the code from section 5. 2 reps that it runs, one large draw for the diagnostics in section 4, then 100 to 200 reps for the check below. Use `assets/pilot_check.R` or `.py`.
+Run this before the full run and before you settle anything above, with the code from section 5: 2 reps to check that the code runs, one large draw for the diagnostics in section 4, then 100 to 200 reps for the check below. Use `assets/pilot_check.R` or `.py`.
 
 Each contrast reduces to a per-repetition difference $d$ between the two methods (defined per measure in `references/piloting.md`). The pilot gap is the mean of $d$, and the pilot $|z|$ is that gap divided by its Monte Carlo standard error (SE). n_sim safe is the number of repetitions that shows the gap at the target number of Monte Carlo SEs, sized on a lower bound for the gap so that a lucky pilot does not undersize the run.
 
@@ -124,4 +124,4 @@ A pilot \|z\| below 2 means the pilot cannot size the run; enlarge it or treat t
 
 - **Contrasts that failed, and what changed upstream:** [which DGP, mockup, or n_obs was revised, and why]
 - **Final n_sim:** [value, and which contrast bound it]
-- **Was any DGP tuned to make a mechanism visible?** [if yes, this must be disclosed in the paper]
+- **Was any DGP tuned to make a mechanism visible?** [if yes, say so in the paper]
