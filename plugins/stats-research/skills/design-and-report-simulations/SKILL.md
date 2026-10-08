@@ -1,13 +1,13 @@
 ---
 name: design-and-report-simulations
-description: 'Designs simulation studies and organizes their write-ups so a reader can see what was done and why. The core move is backwards design: a simulation exists to support a claim, so the claim comes first, the mockup of the tables and figures comes before any code, and the write-up is organized claim by claim with the purpose of every table stated out loud. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing up simulation results in any form (a simulation section, a slide, a README or a chat reply), or answering "how did the methods compare". Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.'
+description: 'Designs simulation studies and organizes their write-ups so a reader can see what was done and why. Emphasizes backwards design: a simulation exists to support a claim. The claims come first, followed by mockups of the tables and figures and finally code, and the write-up is organized claim by claim with the purpose of every artefact stated explicitly. Use whenever simulation or Monte Carlo work is in play: planning a simulation for a paper, choosing DGPs or settings, writing or restructuring simulation code (including how to rerun parts of it and what to cache), making tables or figures from simulation output, writing up simulation results in any form (a simulation section, a slide, a README or a chat reply), or answering "how did the methods compare". Also use when simulation results contradict the claim they were meant to support and the claim needs rescoping.'
 ---
 
 # Designing and reporting simulation studies
 
-A paper is claims plus evidence. Simulations are one kind of evidence, next to theory and real-data applications, and they have no value apart from the claim they support.
+A paper is claims and evidence for those claims. Simulations are one kind of evidence, next to theory and real-data applications, They have no value independent of the claim they support.
 
-Most bad simulation work fails at one of two ends. A simulation built before anyone decided what it needed to show has data-generating processes (DGPs) picked because they seemed reasonable and settings picked because they seemed standard. Its output cannot be organized afterwards, because there is no argument to organize it around. A results section that presents output without saying what any of it is for leaves the reader to reverse-engineer why each table exists and what it proves. The fix for both is backwards design: decide the claim, mock up the table that would prove it, then build the simulation that fills the mockup.
+Most bad simulation work fails because the researcher did not state their hypotheses clearly enough, leading to a haphazard choice of data-generating processes, baselines, parameter settings, and metrics. The solution is to apply a backwards design loop.
 
 ## The workflow
 
@@ -18,18 +18,18 @@ Most bad simulation work fails at one of two ends. A simulation built before any
      └───────────────────────── results reshape the claim ─────────────────────────┘
 ```
 
-Stage 6 is a gate, not a formality. It is where a mockup that cannot be filled in gets caught, while fixing it still costs minutes.
+The pilot study in Stage 6 is a required gate. It is where we can quickly test hypotheses without consuming a lot of time and computational resources.
 
-Find out where the user actually is and enter there. Someone arriving with results already in hand still needs stages 1 through 3 reconstructed before the write-up can be organized, because the write-up is organized by claim and there is nothing to organize without one. Reconstructing a claim from finished results is legitimate and common. Pretending the claim was prespecified when it was not is not.
+Find out where the user actually is and enter there. Someone arriving with results already in hand still needs stages 1 through 3 reconstructed before the write-up can be organized. Reconstructing a hypothesis from finished results is sometimes possible and you can help the user think through what their claims should be and how they align with theory.
 
-When the work spans more than one stage, copy this checklist and check off an item only when it holds. For results already in hand, check items 1 to 3 when they are reconstructed. Each line abbreviates its stage below.
+When the work spans more than one stage, copy this checklist and check off an item only when it holds. For results already in hand, check items 1 to 3 when they are reconstructed. 
 
 ```
 Simulation progress:
-- [ ] 1. Claims: well-scoped, each sorted by the evidence that can carry it
+- [ ] 1. Claims: well-scoped,  with an outline of the evidence that could support each claim
 - [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
-- [ ] 3. Mockups: every table and figure drawn with empty cells and a caption, before any code
-- [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning
+- [ ] 3. Mockups: every table and figure drawn with empty cells and a caption describing expected results, before any code
+- [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill
 - [ ] 5. Build: one pipeline for pilot, full run and every display; any piece runs alone; expensive steps cached
 - [ ] 6. Pilot: code runs; DGP diagnostics sane; every promised contrast resolvable; n_sim set
 - [ ] Full run at that n_sim; raw per-repetition results saved
@@ -40,7 +40,7 @@ For a plan kept in a file, copy `assets/simulation-plan.md`, a fill-in template 
 
 ## Stage 1: claims
 
-Ask what the paper is claiming, not what the simulation will compute. If the answer is "we show our method works", the claim does not exist yet.
+Ask what the paper is claiming, not what the simulation will compute. "We show our method works" is far from adequate.
 
 A good claim has practical utility, builds insight, and is honest and well-scoped. Many claims are always possible, and less is more, so prioritize by relevance to the audience and by the potential to change what people do or think.
 
@@ -50,60 +50,58 @@ Simulation-supported claims usually take this shape:
 
 The second half matters as much as the first. A claim with no stated boundary is usually overstated, and usually less useful, because a reader who cannot tell when the method fails cannot tell when to use it.
 
-Sort the claims by what kind of evidence can carry them. Theory carries asymptotic and structural claims. A single real-data application carries claims about practicality, runtime, and data-type handling. Simulations carry claims about finite-sample behaviour under a known truth, which is exactly the thing no other evidence can reach.
+Sort the claims by what kind of evidence supports them. Theory usually supports asymptotic and structural claims. A single real-data application supports claims about practicality, runtime, and data-type handling. Simulations often support claims about finite-sample behavior under different operating conditions, and are best when they are supported by theory.
 
 ## Stage 2: simulation goals
 
-Turn each claim into something a simulation can actually answer, by interrogating every word that could mean more than one thing. `references/sharpening-goals.md` has a full worked example of this interrogation, and it is worth reading the first time you do it, because the move is easy to describe and easy to skip.
+Turn each claim into something a simulation can answer by recursively interrogating and splitting up ambiguous terms. `references/sharpening-goals.md` has a full worked example of this interrogation.
 
-The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. The rewrite names all four.
+The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. 
 
-Pin down the comparators here too, and always consider an oracle or semi-oracle among them. An oracle is given something only the simulation knows, so no analyst could run it on real data. Usually that is the true value of each nuisance function, such as the propensity score or the outcome regression. A semi-oracle gets the true values of some nuisance functions and estimates the rest.
-
-Both help test two kinds of claim. An ablation claim says how much one part of a method contributes to its performance, and a mechanism-of-action claim says why a method works. If one method's advantage disappears once every method gets the true propensity score, the advantage comes from how the methods cope with estimating it. An oracle also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-goals.md` works through a case and gives a reason an oracle is not always a ceiling.
+Pin down the comparators here too, and always consider an oracle or semi-oracle among them. An oracle is given something only the simulation knows, so no analyst could run it on real data. Oracles help test two kinds of claim. An ablation claim says how much one part of a method contributes to its performance, and a mechanism-of-action claim says why a method works. If one method's advantage disappears once every method gets the true propensity score, the advantage comes from how the methods cope with estimating it. An oracle also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-goals.md` works through a case and gives a reason an oracle is not always a ceiling.
 
 Stop when a skeptical reader could look at the planned output and agree the goal was met or not met. If two people could read the goal and disagree about whether a given table supports it, keep going.
 
 ## Stage 3: mock up the tables and figures
 
-This is the stage people skip, and skipping it is what produces disorganized output. Before writing simulation code, draw each table and figure with the cells empty, and write its caption.
+Before writing simulation code, draw each table and figure with the cells empty, and write its caption. This is also where appropriate metrics can be sharpened or distilled down from higher level claims. 
 
 The mockup answers questions that are expensive to answer later:
 
 - If the numbers land where you expect, does this display convince a skeptic? If they land the other way, will you be able to tell?
 - Which DGPs does this display require? Often the mockup reveals you need a configuration nobody had planned. That is the point.
 - Do two claims share one display? Good, merge them. Does a display have no claim attached? Cut it, or find the claim.
-- What goes in the appendix? A second estimand usually does. The main text carries one thing well rather than three things thinly.
+- What goes in the appendix? keep the main text as clean and to-the-point as possible. 1-3 claims are fine, prioritize and put any evidence for the rest in the appendix.
 
-Layout follows from the comparison the reader cares about, which is usually between methods, so methods belong in adjacent rows or adjacent columns and the other factors vary along the other axis. A reader who has to look across a page break to compare two methods will not do it.
-
-Mockups are also the cheapest possible feedback. Suggest that the user show them to a coauthor before a single line of simulation code exists.
+Layout follows from the comparison the reader cares about, which is usually between methods, so methods belong in adjacent rows or adjacent columns and the other factors vary along the other axis. Don't make a reader look across page breaks to compare two methods.
 
 ## Stage 4: DGPs and settings
 
 Being able to *reason* about a DGP and *iterate* on it matters more than making it realistic. If you cannot predict roughly what should happen, you cannot tell a bug from a finding, and most of your time will go to that confusion.
 
-Sensible defaults, and the diagnostics worth computing on any DGP before trusting it, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, variance explained, and how nonlinear the truth actually is.
+Sensible defaults, and some diagnostics worth computing on any DGP, are in `references/designing-dgps.md`. The short version: bounded covariates, simple and sparse nuisance functions, and a check on overlap, variance explained, and how nonlinear the truth actually is.
 
-Learners and their tuning are settings too, and so is the way each dataset is split between fitting the learners, validating them and computing the estimators. Set all of these up with the `supervised-learning` skill. By default each dataset is three independent draws (that skill's three-draw split), each with the dataset's full sample size: a training draw to fit the learners, a validation draw to tune and choose them, and an estimation draw for the estimators. The three draws are a cheap stand-in for cross-validated cross-fitting at that sample size, and the skill also lists the cases where the stand-in fails.
+Many simulations require supervised learning or generic regressions. See supervised-learning for suggestions on best practice.
 
-Design DGPs to archetype the extremes. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
+Design DGPs to archetype different ends of spectra. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
 Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default.
 
-Everything chosen here stays provisional until the pilot in Stage 6 confirms it can produce the mockup. Do not freeze the DGPs, and do not start the full run, on the strength of the equations looking right.
+Everything chosen here stays provisional until the pilot in Stage 6 confirms it can produce the mockup. 
 
 ## Stage 5: build
 
-Write the code once, in the shape every later step reuses. The pilot runs it at two and then a couple of hundred repetitions, the full run is the same code at the final number of repetitions `n_sim`, and every claim's display is a summary of what it stores. A pilot written as a separate script checks the wrong code.
+Write the code, shared between the pilot and full run. The pilot runs it at two and then a couple of hundred repetitions, the full run is the same code at the final number of repetitions `n_sim`.
 
 Three properties decide how cheap the rest of the project will be:
 
-- **Share whatever can be shared.** When two claims need overlapping computation, they get it from the same code and the same stored outputs. If one table compares learner libraries by the root mean squared error (RMSE) of their nuisance predictions and another reports TMLE built on some of those libraries, the TMLE code reads the predictions the RMSE table came from, and nothing gets refit in a second script. A fix then reaches every display at once, and the displays stay paired on the same datasets.
+- **Share whatever can be shared.** When two claims need overlapping computation, they get it from the same code and the same stored outputs. If one table compares learner libraries by the root mean squared error (RMSE) of their nuisance predictions and another reports TMLE built on some of those libraries, the TMLE code should read the predictions the RMSE table came from, and nothing gets refit in a second script. A fix then reaches every display at once, and the displays stay paired on the same datasets.
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
-- **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it, so that a hit always equals what recomputing would give and deleting the cache changes nothing but runtime.
+- **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it so it is clear when things need to be recomputed.
 
-Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape, to read and adapt. Their learners are placeholders: set up the real ones with the `supervised-learning` skill.
+Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. Everything should be smoke-tested on corner case inputs, but writing formal tests for all but the most complex parts of the code is likely overkill, and the user should consider turning anything with that complexity into a separate package with. 
+
+`references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape, to read and adapt. Their learners are placeholders: set up the real ones with the `supervised-learning` skill.
 
 ## Stage 6: pilot, and check the design can show what the mockup promises
 
