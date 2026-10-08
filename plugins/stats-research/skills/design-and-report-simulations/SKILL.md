@@ -112,10 +112,12 @@ The failure this catches is specific and expensive. When the contrast a table wa
 Three checks, in increasing cost:
 
 1. **Does it run?** Two repetitions.
-2. **Are the DGPs what you think they are?** One large draw, computing the diagnostics in `references/designing-dgps.md`: true estimand value, overlap, variance explained, and how nonlinear the truth is. These belong in the paper, so the work is not wasted.
-3. **Is the designed contrast resolvable?** Roughly 100 to 200 repetitions. This is the check that gets skipped, and the one that saves whole runs.
+2. **Are the DGPs what you think they are?** One large draw, computing appropriate diagnostics such as those in `references/designing-dgps.md`: true estimand value, overlap, variance explained, and how nonlinear the truth is. 
+3. **Is the designed contrast resolvable?** Roughly 100 to 200 repetitions.
 
-The third check, briefly. A contrast between two means over repetitions (bias, mean squared error, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
+Unexpected results from the pilot can sometimes indicate obvious bugs with the code, or clear misunderstandings about the methods or or DGPs. Besides this, pilots also help size the final simulation run.
+
+A contrast between two means over repetitions (bias, mean squared error, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
 
 ```
 n_sim  >=  ( k * sd(d) / mean(d) )^2        k = 3 to see it, 5 to be comfortable
@@ -123,9 +125,7 @@ n_sim  >=  ( k * sd(d) / mean(d) )^2        k = 3 to see it, 5 to be comfortable
 
 The pilot only estimates `mean(d)` and `sd(d)`, and plugging in the estimates is optimistic exactly when the pilot was lucky. `references/piloting.md` has two guards for that: size on a lower bound for the gap (the tools report it as `n_sim_safe`), and treat a pilot whose own `|z|` is below 2 as too small to size anything. Run the check for every cell comparison the mockup promises, and let the largest requirement set `n_sim`. The same file has the derivation step by step, what `d_i` is for each performance measure, the bootstrap for measures that are not means, what to do when the answer comes back bad, and what to report about the pilot. For a claim of no difference, use that file's equivalence section instead of this formula. `assets/pilot_check.R` (base R) and `assets/pilot_check.py` (numpy, pandas, scipy) implement the check as functions to call on the pilot's results.
 
-A requirement in the millions is a verdict only when the pilot can see the gap at all. If the pilot cannot tell the gap from zero, the `n_sim` it implies is noise: enlarge the pilot, or, for a bias contrast, measure the gap directly on one very large draw as `references/piloting.md` describes. If the gap is still indistinguishable from zero, the design is dead as drawn. The fix is then upstream, in Stage 3 or Stage 4: amplify the signal by changing the DGP, or change what the table displays. That is exactly why this gate sits before the full run instead of after it.
-
-**The trap worth knowing by name.** Designed contrasts vanish through cancellation far more often than by being genuinely small. An outcome model that misses the treated-arm mean `mu(1, X)` and the control-arm mean `mu(0, X)` in the same direction and by similar amounts is barely wrong about their difference `mu(1, X) - mu(0, X)`, so a grid built to show that misspecification hurts can end up showing almost nothing. The usual cure is effect heterogeneity in the very covariate the misspecification corrupts, in a form the working model cannot fit. This is close to invisible on paper and obvious after twenty seconds of pilot.
+If the pilot cannot tell the gap from zero, the `n_sim` it implies is noise: enlarge the pilot, or, for a bias contrast, measure the gap directly on one very large draw as `references/piloting.md` describes. If the gap is still indistinguishable from zero, the design is dead as drawn. The fix is then upstream, in Stage 3 or Stage 4: amplify the signal by changing the DGP, or change what the table displays. That is exactly why this gate sits before the full run instead of after it.
 
 Scale up only once all three checks clear: the code runs, the DGP diagnostics are sane, and the contrast is resolvable at the number of repetitions `n_sim` you are about to pay for. The full run is the Stage 5 code at that `n_sim`. Save its raw per-repetition results to disk, since every table and figure is derived from them.
 
@@ -133,33 +133,29 @@ Scale up only once all three checks clear: the code runs, the DGP diagnostics ar
 
 Results that contradict the claim are the normal case, not a disaster, and a clear goal is what makes the contradiction legible in the first place. Without one you cannot tell whether an outcome is good or bad.
 
-The honest response runs: check for a bug, then understand the theory well enough to know why the result happens, then narrow the claim to what is true. A claim that gains a condition is usually a better claim, because the condition is information the reader needs. Burying the result, or quietly dropping the DGP that produced it, is the thing to refuse.
-
-Flag this explicitly when it comes up. A user looking at a disappointing simulation often wants help making the result go away, and the useful help is the opposite.
+The first step, barring bugs that should mostly be filtered out by the pilot, is to revisit the theory to try and understand the result, then iterate on the claim. A claim that gains or corrects a condition is usually a better claim, so this is progress! Burying the result, or quietly dropping the DGP that produced it, is bad. Flag this explicitly when it comes up. A user looking at a disappointing simulation often wants help making the result go away, and the useful help is the opposite.
 
 ## Writing it up
 
-Read `references/writing-the-writeup.md` before drafting. It carries the detail; the spine is here. For a paper section, `assets/writeup-skeleton.md` is a fill-in skeleton in this shape.
+Read `references/writing-the-writeup.md` before drafting. For a paper section, `assets/writeup-skeleton.md` is a fill-in skeleton in this shape. At a high level:
 
 **Organize by claim, not by output.** The section structure mirrors the claims, and each claim gets its evidence next to it.
 
 **Sandwich every piece of evidence.** Tell the reader the goal, give the evidence, then say how the evidence supports the goal. Be direct and prosaic about it; this is one place where spelling out the obvious is correct, because what is obvious to the author is not obvious to a reader meeting the design for the first time.
 
-**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
+**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. The exact order is not as important as making sure that all the required detail is present for a reader to reasonably replicate the results without code. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
 
-**Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose cannot be stated in one sentence is a display to cut.
+**Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose(s) cannot be stated in one sentence is a display to cut.
 
-**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. Each oracle or semi-oracle gets one too, and its reason is the claim or subclaim it helps test.
+**Say what was done and why it was done that way.** Every choice a reader might question gets a reason: why these DGPs, why this sample size, why these learners, why this estimand. 
 
 ## Performance measures
 
-Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions.
+Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions. That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behaviour need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
 
-That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behaviour need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
+Reporting a Monte Carlo SE alongside a headline number keeps you from over-reading noise, and saying how many repetitions failed keeps the rest of the numbers interpretable.
 
-Two habits from that file are worth carrying everywhere, cheaply: reporting a Monte Carlo SE alongside a headline number keeps you from over-reading noise, and saying how many repetitions failed keeps the rest of the numbers interpretable. Neither needs to dominate the write-up.
-
-`assets/performance_measures.R` computes the standard set and their Monte Carlo SEs in base R, as functions to call on the raw per-repetition results. The file prefers the `rsimsum` package when it is installed.
+`assets/performance_measures.R` computes the standard set and their Monte Carlo SEs in base R, as functions to call on the raw per-repetition results. 
 
 ## Before calling a write-up done
 
