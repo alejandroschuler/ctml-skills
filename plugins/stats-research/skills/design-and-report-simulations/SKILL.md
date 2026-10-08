@@ -12,6 +12,8 @@ Most bad simulation work fails because the researcher did not state their hypoth
 ## The workflow
 
 ```
+                          ┌─ DGP or method changes ─┐
+                          ↓                         │
 1. Claims → 2. Goals → 3. Mockups → 4. DGPs & settings → 5. Build → 6. Pilot → full run
      ↑                       ↑          ↑                                │         │
      │                       └──────────┴──── design cannot show it ─────┘         │
@@ -29,7 +31,7 @@ Simulation progress:
 - [ ] 1. Claims: well-scoped,  with an outline of the evidence that could support each claim
 - [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
 - [ ] 3. Mockups: every table and figure drawn with empty cells and a caption describing expected results, before any code
-- [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill
+- [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill; mockups redrawn to match
 - [ ] 5. Build: one pipeline for pilot, full run and every display; any piece runs alone; expensive steps cached
 - [ ] 6. Pilot: code runs; DGP diagnostics sane; every promised contrast resolvable; n_sim set
 - [ ] Full run at that n_sim; raw per-repetition results saved
@@ -86,6 +88,8 @@ Many simulations require supervised learning or generic regressions. See supervi
 Design DGPs to archetype different ends of spectra. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
 Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default.
+
+Stages 3 and 4 are a loop. Each DGP or method you add, drop or change can change a mockup at once, before any code exists. A DGP that archetypes a new extreme adds a column or a panel. A new comparator, oracle or learner library adds a row. A DGP that cannot vary a factor the mockup assumed takes that axis away. Redraw the affected display and its caption when you make the change, and ask the Stage 3 questions of it again. Do not leave the mismatch for the pilot to find.
 
 Everything chosen here stays provisional until the pilot in Stage 6 confirms it can produce the mockup. 
 
