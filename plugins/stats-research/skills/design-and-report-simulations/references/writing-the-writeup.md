@@ -66,6 +66,7 @@ If you cannot state the purpose or purposes of a display in one sentence, cut it
 - **Consistent naming.** A method or DGP has the same name in the code, the tables and the prose.
 - **Rounding.** Report only the precision that the Monte Carlo error supports. `fmt_mcse()` in `../assets/performance_measures.R` rounds an estimate to match its Monte Carlo SE.
 - **Table size.** Readers rarely read a table with more than about 40 numbers. Use a figure, and put the full table in the supplementary material.
+- **Caption checklist.** Every simulation display states (as relevant) the estimand and its true value, the DGP or a pointer to it, the number of repetitions and the sample size, what any uncertainty marks represent, and the claim(s) it serves.
 
 ## Say what was done and why
 
@@ -98,20 +99,4 @@ Scope every conclusion to the DGPs actually simulated. If a reader is likely to 
 | Methods split across separate tables | The reader cannot compare the methods directly. |
 | The purpose of each table appears only in the discussion | The section is ordered by output, not by claim. |
 
-## Choosing the display
 
-Choose each display by the question it answers.
-
-**Distribution of the per-repetition estimates.** A histogram or box plot of the raw $\hat\theta_i$, per DGP and method. Include at least one somewhere in the paper, because summaries hide skew, bimodality and outliers. For example, two extreme repetitions in opposite directions can cancel in a table of means and make an estimator look unbiased. A histogram shows them.
-
-**Method against method on matched repetitions.** A scatter of one method's estimates against another's, over the same repetitions, with the line of equality. Both methods saw the same data, so this shows agreement dataset by dataset, which two marginal distributions cannot show. The Bland-Altman variant, difference against mean, works when one method is the reference.
-
-**Lollipop plot.** Performance estimates as points with their Monte Carlo intervals, methods stacked within each DGP. It shows many methods on one axis, with their uncertainty.
-
-**Zip plot** (Morris et al. 2019), for explaining why coverage is off. Compute $z_i = (\hat\theta_i - \theta)/\widehat{\mathrm{SE}}(\hat\theta_i)$, the distance from repetition $i$'s estimate $\hat\theta_i$ to the true value $\theta$, in units of the standard error (SE) that the method reports for that repetition. Rank repetitions by $|z_i|$ into fractional centiles for the vertical axis, and draw each interval as a horizontal segment colored by whether it covers $\theta$. For 95% intervals with correct coverage, the color switches at 95. With Wald intervals the switch is always clean, because such an interval misses the true value $\theta$ if and only if the standardized distance $|z_i|$ exceeds 1.96, so the diagnosis comes from two other features. The height of the switch is the coverage. Misses mostly on one side of the true value $\theta$ point to bias, while misses on both sides with the switch below 95 point to intervals that are too narrow, and a switch above 95 to intervals that are too wide. The centile scale keeps the plot legible at any number of repetitions.
-
-**Nested loop plot**, for factorial designs too large to tabulate. Nested factors run along the horizontal axis with methods overplotted as lines. It can show a four- or five-factor design that is too large for a table.
-
-In R, `rsimsum` implements the standard performance measures along with zip, lollipop and nested loop plots.
-
-**Caption checklist.** Every simulation display states the estimand and its true value, the DGP or a pointer to it, the number of repetitions and the sample size, what any uncertainty marks represent, and the claim it serves.
