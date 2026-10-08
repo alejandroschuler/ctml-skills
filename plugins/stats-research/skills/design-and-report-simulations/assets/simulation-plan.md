@@ -68,7 +68,7 @@ For each goal, draw the display with empty cells and write the caption now.
 
 ## 4. DGPs and settings
 
-Derived from section 3, not chosen independently.
+Derived from section 3, not chosen independently. The link runs both ways: each DGP or method added, dropped or changed here can change a display in section 3, so redraw that display and its caption at once.
 
 Notation as in `references/designing-dgps.md`: covariates $X$, a binary treatment $A$ with log-odds $\rho(X)$ and propensity $\pi(X) = \mathrm{expit}(\rho(X))$, and an outcome $Y$ with conditional mean $\mu(A,X)$ and noise SD $\sigma$.
 
