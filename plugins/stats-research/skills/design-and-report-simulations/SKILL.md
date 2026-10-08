@@ -29,7 +29,7 @@ When the work spans more than one stage, copy this checklist and check off an it
 ```
 Simulation progress:
 - [ ] 1. Claims: well-scoped, with an outline of the evidence that could support each claim
-- [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
+- [ ] 2. Goals: hypotheses, each split into subclaims with the scenario or comparator that tests it; a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
 - [ ] 3. Mockups: every table and figure drawn with empty cells and a caption describing expected results, before any code
 - [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill; mockups redrawn to match
 - [ ] 5. Build: one pipeline for pilot, full run and every display; any piece runs alone; expensive steps cached
@@ -58,7 +58,11 @@ Sort the claims by what kind of evidence supports them. Theory usually supports 
 
 Turn each claim into something a simulation can answer by recursively interrogating and splitting up ambiguous terms. `references/sharpening-goals.md` has a full worked example of this interrogation.
 
-The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. 
+The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it.
+
+A finished goal is a hypothesis. It names the property and how it is measured, the comparator, the conditions, the expected direction, and the theory behind it, if any. Scope it at the level of a question that a reader of the paper would ask, such as whether to use the method. "We evaluate the proposed estimator" is too broad, because no result could contradict it. "At n = 250 the relative SE is 0.9" is too narrow, because it is one cell of a table. Most studies need one to three goals, each with its own main display.
+
+Split each goal into subclaims, one for each condition that theory or practice says could change the answer, and name the scenario or comparator that tests each one. Here a scenario is named by its condition, such as "a heterogeneous effect"; its equations come in Stage 4. For example, one goal of Højbjerre-Frandsen, van der Laan & Schuler (2025), written as a hypothesis, is that adjusting for a prognostic score as well as the covariates gives smaller standard errors than adjusting for the covariates alone. The gain should be largest when the historical and trial populations match and the effect is additive, as theory predicts. It should be smaller under a heterogeneous effect, shrink as the populations move apart, and be about zero, and rarely negative, for a score with no information. `references/example-study.md` goes through that study.
 
 Pin down the comparators here too, and always consider an oracle or semi-oracle among them. An oracle is given something only the simulation knows, so no analyst could run it on real data. Oracles help test two kinds of claim. An ablation claim says how much one part of a method contributes to its performance, and a mechanism-of-action claim says why a method works. If one method's advantage disappears once every method gets the true propensity score, the advantage comes from how the methods cope with estimating it. An oracle also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-goals.md` works through a case and gives a reason an oracle is not always a ceiling.
 
@@ -87,7 +91,7 @@ Many simulations require supervised learning or generic regressions. See supervi
 
 Design DGPs to archetype different ends of spectra. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
-Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default.
+Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default. Usually each scenario tests a subclaim from Stage 2, and that subclaim is its reason.
 
 Stages 3 and 4 form a loop. Adding, dropping or changing a DGP or method can change a mockup before any code exists. For example, a DGP for a new extreme adds a column or a panel, a new comparator, oracle or learner library adds a row, and a DGP that cannot vary a factor the mockup assumed removes that axis. When you make such a change, redraw the affected display and its caption, and ask the Stage 3 questions of it again.
 
@@ -143,11 +147,11 @@ The first step is to check for a bug, although the pilot should have caught most
 
 Read `references/writing-the-writeup.md` before drafting. For a paper section, `assets/writeup-skeleton.md` is a fill-in skeleton in this shape. At a high level:
 
-**Organize by claim, not by output.** The section structure mirrors the claims, and each claim gets its evidence next to it.
+**Organize by claim, not by output.** The section structure mirrors the claims, as the aims state them: one subsection per aim, which goes through its subclaims in turn, each next to its evidence.
 
 **Sandwich every piece of evidence.** Tell the reader the goal, give the evidence, then say how the evidence supports the goal. Be direct and prosaic about it; this is one place where spelling out the obvious is correct, because what is obvious to the author is not obvious to a reader meeting the design for the first time.
 
-**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. The exact order is not as important as making sure that all the required detail is present for a reader to reasonably replicate the results without code. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
+**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one: the Stage 2 goals as hypotheses, with their subclaims. The rest exist to serve it. The exact order is not as important as making sure that all the required detail is present for a reader to reasonably replicate the results without code. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
 
 **Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose(s) cannot be stated in one sentence is a display to cut.
 

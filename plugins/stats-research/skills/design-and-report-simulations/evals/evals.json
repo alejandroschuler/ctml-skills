@@ -23,11 +23,12 @@
       "id": 1,
       "name": "design-backwards-not-code-first",
       "prompt": "I'm writing a paper on a new doubly-robust estimator for the ATE under outcome-dependent sampling. I need to set up the simulation study. Can you help me get started?",
-      "expected_output": "Starts with the claims the paper makes, sharpens them into answerable goals, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
+      "expected_output": "Starts with the claims the paper makes, sharpens them into answerable goals stated as hypotheses with subclaims, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
       "files": [],
       "assertions": [
         "Establishes or asks about the paper's claims before proposing any data-generating process",
         "Sharpens vague goals by naming what is unpinned (at least two of: performance measure, sample size, which DGPs, learners/nuisances, baseline)",
+        "States at least one sharpened goal as a hypothesis with an expected direction, and splits it into subclaims, each tied to the kind of DGP scenario or comparator that would test it",
         "Mocks up at least one table or figure (empty cells, or described axes and facets) before specifying DGPs",
         "Does not deliver executable simulation code as the primary or first deliverable",
         "Proposed DGPs are each tied to a stated claim rather than offered as generically reasonable",

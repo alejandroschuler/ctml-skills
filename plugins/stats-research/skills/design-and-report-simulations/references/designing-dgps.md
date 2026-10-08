@@ -23,6 +23,8 @@ Compute these on a single very large draw. They are cheap, and they catch many D
 - **Nonlinearity.** The fraction of $\mathrm{Var}(\mu)$ captured by the best linear approximation to $\mu$. It says how much a flexible learner can gain over a linear model, which is often what a comparison is about.
 - **The true estimand value**, computed by brute force on a large draw if no closed form exists.
 
+You can set targets for these when you build a DGP. For example, the DGP in `example-study.md` was built so that the covariates explain about half of the outcome variance and a linear model about 0.3 of it. The linear figure is in the range expected for a trial, and the gap leaves room for a nonlinear prognostic model to help.
+
 Report these with the DGP description. They show the reader the range the DGPs cover more clearly than the generating equations do.
 
 These four fit the standard causal setup with a binary treatment. Other setups call for their own, such as the censoring rate for a survival outcome or the intraclass correlation for clustered data. Decide what they are while you design the DGPs, so that you can build each DGP to land at sensible values of them.
@@ -36,6 +38,12 @@ A claim of the form "works well when X and not when Y" needs at least one DGP on
 Three DGPs of increasing complexity is a common default: one simple enough that everything should work, one moderate, and one where the flexible methods should do better than the simple ones. Keep the structure easy to follow, for example a binary treatment with two covariates, unless the claim needs otherwise.
 
 If a DGP has no claim attached, either there is a claim you have not stated or you do not need that run.
+
+It often helps to arrange the scenarios as factors and give each level the subclaim it tests. The study in `example-study.md` crosses a trial factor (null, additive or heterogeneous effect) with a historical-shift factor (none, or a small or large shift in an observed or an unobserved covariate), and gives a reason for each trial level and for the shift factor.
+
+Within a factor, change one thing at a time where you can. In that study the heterogeneous scenario keeps the rate ratio of the additive one, so that the two are as similar as possible apart from the heterogeneity.
+
+When many real-world failure modes act on the method through the same channel, it is often enough to simulate the channel and its worst case, instead of each mode. In that study, a misspecified prognostic model, covariates defined differently in the two datasets, a covariate missing from the historical data, and a population shift all reduce how well the prognostic score predicts in the trial. The study simulates a few covariate shifts, and adds as the worst case a score with no predictive power, made by shuffling the in-trial scores.
 
 ## Sample sizes
 

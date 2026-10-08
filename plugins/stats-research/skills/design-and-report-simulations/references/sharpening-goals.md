@@ -75,6 +75,8 @@ The rewritten goals answer most of the Round 3 questions in their own text. Two 
 | Against **what baseline**? | Beating a weak baseline shows little. |
 | Is there an **oracle or semi-oracle** (true nuisance functions, in whole or in part) to compare against? | It helps test ablation and mechanism-of-action claims and shows roughly what the best case looks like. Whether one belongs depends on the claim. |
 | Is there **theory** that predicts this? | A confirmed prediction is stronger evidence than a pattern found after the fact. |
+| **Which way** do you expect it to go? | A goal with an expected direction tells the reader in advance what would count as a failure. |
+| Which **conditions could change the answer**? | Each one becomes a subclaim, with a scenario or comparator that tests it. |
 
 ## Oracles and semi-oracles
 
@@ -85,6 +87,8 @@ Goal 3 above says TMLE is better than AIPW in small samples when the outcome is 
 An oracle also shows roughly what the best case looks like, but check the theory before you call it a ceiling. Inverse probability weighting is a case where it is not one: weighting by the true propensity score is, in general, asymptotically less efficient than weighting by a nonparametric estimate of it (Hirano, Imbens & Ridder 2003, *Econometrica*).
 
 ## What happens next
+
+`example-study.md` shows a study whose goals are all split into subclaims.
 
 The sharpened goal determines the mockup, and the mockup determines the DGPs. In goal 3, "when the outcome is bounded" means that one of the DGPs needs a bounded outcome. That requirement comes from the claim, not from an idea of what a realistic DGP looks like.
 

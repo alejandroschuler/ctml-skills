@@ -36,10 +36,18 @@ For each claim assigned to simulation, sharpen until a skeptic could agree it wa
 - Against what baseline?
 - Would an oracle or semi-oracle (true values for all or some of the nuisance functions) help test this goal, and in which display?
 - Does theory predict this?
+- Which way do you expect it to go?
+- Which conditions could change the answer?
 
-**Sharpened:** [rewrite with every question above answered inside the sentence]
+**Sharpened:** [a hypothesis that answers every question above inside the sentence, including the expected direction]
 
-*(Repeat per goal.)*
+**Subclaims:**
+
+| Subclaim (expected result) | Theory or reason | Scenario or comparator that tests it |
+|---|---|---|
+| | | |
+
+*(Repeat per goal. `references/example-study.md` shows a finished set.)*
 
 ---
 
@@ -72,7 +80,7 @@ Derive these from section 3. Each DGP or method added, dropped or changed here c
 
 Notation as in `references/designing-dgps.md`: covariates $X$, a binary treatment $A$ with log-odds $\rho(X)$ and propensity $\pi(X) = \mathrm{expit}(\rho(X))$, and an outcome $Y$ with conditional mean $\mu(A,X)$ and noise SD $\sigma$.
 
-| DGP | Purpose / which claim | $\rho(X)$ | $\mu(A,X)$ | $\sigma$ | Notes |
+| DGP | Subclaim it tests, or other purpose | $\rho(X)$ | $\mu(A,X)$ | $\sigma$ | Notes |
 |---|---|---|---|---|---|
 | simple | | | | | |
 | moderate | | | | | |
@@ -91,7 +99,7 @@ Diagnostics to compute on a large draw, and report:
 - **Data split:** [the default in the `supervised-learning` skill is three draws, each with the full sample size: fit the learners on the training draw, tune and choose them on the validation draw, and run the estimators on the estimation draw; or cross-fitting, and which claim needs it]
 - **Repetitions:** [2 → 100 to 200 → final count, and what determined the final count]
 
-Does every DGP trace to a claim? If not, either a claim is missing from section 1 or the DGP is not needed.
+Does every DGP trace to a subclaim in section 2? If not, either a claim or subclaim is missing or the DGP is not needed.
 
 ---
 

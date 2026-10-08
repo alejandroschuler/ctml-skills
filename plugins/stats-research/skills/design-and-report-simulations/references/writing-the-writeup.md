@@ -16,11 +16,15 @@ Write for a reader who is seeing the design for the first time and does not know
 
 ## Organize by claim
 
-The section structure mirrors the claims. State each claim, put its evidence next to it, and tell the reader how the evidence supports the claim before moving on.
+The section structure mirrors the claims, as the aims state them. State each claim, put its evidence next to it, and tell the reader how the evidence supports the claim before moving on.
 
 Many simulation sections are ordered by output instead: Table 1, Table 2, Figure 1, and then a discussion that says what they were for. The reader then has to remember every number until the end.
 
 When several claims share one display, present it once and point to the relevant rows from each claim's paragraph.
+
+The results in `example-study.md` follow this structure, with one subsection per aim. Their figures have one DGP factor in the rows and the other in the columns, so each subclaim is a region of a figure that the text can point to.
+
+When one aim answers an objection to another, it usually reads best right after that aim. In the example, coverage comes right after efficiency, because an estimator that underestimates its own SE would look efficient.
 
 ## Sandwich every piece of evidence
 
@@ -83,7 +87,7 @@ To check, give the draft to someone and ask them to mark each place where they w
 
 ## Reporting results that went the wrong way
 
-Report them as prominently as the results that went your way, and say what they mean. A claim that gains a condition from a negative result is usually a better claim, because the reader needs to know that condition.
+Report them as prominently as the results that went your way, and say what they mean. A claim that gains a condition from a negative result is usually a better claim, because the reader needs to know that condition. In `example-study.md`, the sample size subsection reports that the formula is slightly anti-conservative for two of the baselines, suggests a cause, and says what is still unclear.
 
 Scope every conclusion to the DGPs actually simulated. If a reader is likely to extrapolate past them, name the extrapolation and say whether the study supports it.
 
