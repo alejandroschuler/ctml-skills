@@ -9,7 +9,7 @@ Every parameter value and every functional form in a DGP needs a reason. It show
 For the common causal-inference setup, these choices keep everything interpretable:
 
 - **Covariates:** $X \sim \mathsf{Unif}([-1,1]^d)$ unless something requires otherwise. With a bounded domain, it is easy to reason about the range of any function you build on top.
-- **Treatment:** $A \sim \mathsf{Bern}(\mathrm{expit}(\rho(X)))$. Keep $\rho$ simple and sparse. Unless empirical positivity violations are the point of the study, aim for $\rho \in [-3, 3]$, which keeps propensities away from the boundary.
+- **Treatment:** $A \sim \mathsf{Bern}(\mathrm{expit}(\rho(X)))$. Keep $\rho$ simple and sparse. Unless empirical positivity violations are the point of the study, keep $\rho$ within $[-3, 3]$, which keeps propensities away from the boundary.
 - **Outcome:** $Y \sim \mu(A, X) + \mathsf{N}(0, \sigma^2)$, with noise standard deviation $\sigma$. Keep $\mu$ simple and sparse.
 
 You can reason completely about a DGP with two covariates and a hand-written mean function, so a surprising result takes minutes to diagnose instead of days.
@@ -23,6 +23,8 @@ Compute these on a single very large draw. They are cheap, and they catch many D
 - **Nonlinearity.** The fraction of $\mathrm{Var}(\mu)$ captured by the best linear approximation to $\mu$. It says how much a flexible learner can gain over a linear model, which is often what a comparison is about.
 - **The true estimand value**, computed by brute force on a large draw if no closed form exists.
 
+You can set targets for these when you build a DGP, as the study in `example-study.md` does for variance explained and nonlinearity.
+
 Report these with the DGP description. They show the reader the range the DGPs cover more clearly than the generating equations do.
 
 These four fit the standard causal setup with a binary treatment. Other setups call for their own, such as the censoring rate for a survival outcome or the intraclass correlation for clustered data. Decide what they are while you design the DGPs, so that you can build each DGP to land at sensible values of them.
@@ -33,9 +35,15 @@ The set of DGPs has to cover the conditions in the claims, so derive it from the
 
 A claim of the form "works well when X and not when Y" needs at least one DGP on each side. Make each one an **archetype of its extreme**, not a mild example. Edge cases are what sharpen a claim, and a sharper claim makes a more useful paper.
 
-Three DGPs of increasing complexity is a common default: one simple enough that everything should work, one moderate, and one where the flexible methods should do better than the simple ones. Keep the structure easy to follow, for example a binary treatment with two covariates, unless the claim needs otherwise.
-
 If a DGP has no claim attached, either there is a claim you have not stated or you do not need that run.
+
+Start from a base case, a scenario where the method should work as intended, and add deviations from it one dimension at a time. Each deviation tests one aim or subclaim and changes only that dimension, so the reader sees each result as a contrast with the base case. Three DGPs of increasing complexity is a common default of this kind: a base case simple enough that everything should work, then a moderate and a complex deviation, where the flexible methods should do better than the simple ones. Keep the structure easy to follow, for example a binary treatment with two covariates, unless the claim needs otherwise.
+
+A full factorial design, which crosses every level of every DGP factor, is usually unnecessary, and it often makes the study harder to read. A cell that changes two factors at once tests no single subclaim, so the reader has to find which cells matter for which subclaim. Its cost also grows with the product of the numbers of levels. Cross two DGP factors only when a subclaim is about how they interact, and say which subclaim. Sample sizes and methods usually still run in every scenario.
+
+`example-study.md` shows a design whose two DGP factors are fully crossed, how a base case with one-at-a-time deviations would test the same subclaims with fewer scenarios, and a deviation kept to one dimension.
+
+When many real-world failure modes act on the method through the same channel, it is often enough to simulate the channel and its worst case, instead of each mode. `example-study.md` does this for the ways a prognostic score can fail.
 
 ## Sample sizes
 

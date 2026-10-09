@@ -5,7 +5,7 @@
       "id": 0,
       "name": "writeup-from-raw-results",
       "prompt": "I've got simulation results sitting in results.csv (columns: rep, dgp, estimator, est, se). Three estimators (gcomp, aipw, tmle), three DGPs (simple, moderate, complex), n=500, 1000 reps, true ATE is 1.0 for all three DGPs. Write me the simulation section for the paper.",
-      "expected_output": "Organized claim-by-claim, not table-by-table. Each piece of evidence sandwiched: goal stated, evidence shown, interpretation given. Captions name the claim they serve. Design choices get reasons. Should ask what the paper is actually claiming rather than dumping a table.",
+      "expected_output": "Organized claim-by-claim, not table-by-table. Each piece of evidence sandwiched: purpose stated, evidence shown, interpretation given. Captions name the claim they serve. Design choices get reasons. Should ask what the paper is actually claiming rather than dumping a table.",
       "files": [
         "results.csv"
       ],
@@ -23,11 +23,12 @@
       "id": 1,
       "name": "design-backwards-not-code-first",
       "prompt": "I'm writing a paper on a new doubly-robust estimator for the ATE under outcome-dependent sampling. I need to set up the simulation study. Can you help me get started?",
-      "expected_output": "Starts with the claims the paper makes, sharpens them into answerable goals, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
+      "expected_output": "Starts with the claims the paper makes, sharpens them into answerable aims stated as hypotheses with subclaims, mocks up tables/figures BEFORE proposing DGPs or writing code. Should not jump straight to DGP equations or an R script.",
       "files": [],
       "assertions": [
         "Establishes or asks about the paper's claims before proposing any data-generating process",
-        "Sharpens vague goals by naming what is unpinned (at least two of: performance measure, sample size, which DGPs, learners/nuisances, baseline)",
+        "Sharpens vague aims by naming what is unpinned (at least two of: performance measure, sample size, which DGPs, learners/nuisances, baseline)",
+        "States at least one sharpened aim as a hypothesis with an expected direction, and splits it into subclaims, each tied to the kind of DGP scenario or comparator that would test it",
         "Mocks up at least one table or figure (empty cells, or described axes and facets) before specifying DGPs",
         "Does not deliver executable simulation code as the primary or first deliverable",
         "Proposed DGPs are each tied to a stated claim rather than offered as generically reasonable",

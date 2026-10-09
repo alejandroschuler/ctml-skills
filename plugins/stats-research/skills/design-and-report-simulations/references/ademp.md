@@ -12,10 +12,15 @@ Derive each element from the simulation code, not from what anyone says the code
 
 ## A: Aims
 
-The claims the simulation is meant to support, stated specifically enough that they could turn out to be wrong.
+The aims are the ones from Stage 2, written for the reader: hypotheses that could turn out to be wrong, each with its subclaims, at the scope that Stage 2 describes. The DGPs and methods below are the scenarios and comparators that test those subclaims.
 
-**Weak:** "We conduct a simulation study to evaluate the proposed estimator."
-**Strong:** "We evaluate the finite-sample bias and 95% interval coverage of the proposed estimator, relative to the standard approach, when the outcome model is misspecified and the propensity model is correct."
+For example, the study in `example-study.md`, on prognostic score adjustment in randomized trials, states its three aims as questions. Written as hypotheses, they are:
+
+1. *Efficiency.* Adjusting for the estimated prognostic score together with the covariates gives smaller standard errors than adjusting for the covariates alone, and rarely larger ones. The gain is largest when the historical and trial populations match and the effect is additive on the link scale, where theory predicts local efficiency. It is smaller under a heterogeneous effect, it shrinks as the historical population shifts away from the trial population, and it is about zero when the score carries no information.
+2. *Validity.* Every estimator keeps 95% coverage in every scenario and a 5% type I error under the null, including when the score carries no information, as theory predicts for any prognostic model in a randomized trial.
+3. *Planning.* When the populations match, the proposed sample size formula reaches about 80% power. When the historical population has more explainable variance than the trial population, the formula returns too small a sample size, more so for larger shifts.
+
+`example-study.md` lists the subclaims with the scenario or comparator that tests each, and goes through the rest of the study.
 
 Properties a simulation can target include consistency, finite-sample unbiasedness, whether the method's own variance estimate recovers the true sampling variance, interval coverage, efficiency, and how each of these degrades under specific misspecification. Some aims are not about estimation: testing behavior, model selection, prediction accuracy, runtime.
 
@@ -25,7 +30,7 @@ Every performance measure below should trace back to an aim here. Drop a measure
 
 Enough detail that a reader could regenerate the data from the text alone, without opening the code. Morris et al. call these data-generating mechanisms; this skill calls each one a data-generating process (DGP).
 
-State the generating equations and every parameter value. Say which factors vary and at what levels: sample size, effect size, censoring rate, degree of misspecification, correlation structure. Say whether the design is fully factorial, partially factorial, or one-at-a-time from a reference configuration, since that determines which interactions the study can speak to. A one-at-a-time design cannot detect interactions, so say so in the discussion.
+State the generating equations and every parameter value. Say which factors vary and at what levels: sample size, effect size, censoring rate, degree of misspecification, correlation structure. Give each level its reason, which is usually the subclaim it tests. A table with one row per level and a column for the reason makes this easy to check, as in `example-study.md`. Say whether the design is one-at-a-time from a base case, partially factorial, or fully factorial, since that determines which interactions the study can speak to. `designing-dgps.md` says which to prefer. A one-at-a-time design cannot detect interactions, so say so in the discussion.
 
 If parameters came from a real analysis, say which. If the data are resampled from a dataset instead of drawn from a model, name the source dataset and say how the true value of the estimand was determined. Resampling keeps whatever effect is present in the source, and that effect is rarely zero and rarely known.
 
@@ -39,7 +44,7 @@ Check the code for these problems:
 
 The target quantity, its true value under each DGP, and how that true value was obtained.
 
-Say whether the target is an estimand, a null hypothesis, a model, or a prediction. Estimands need to be nonparametrically defined unless the study is explicitly restricted to a parametric setting (e.g. the goal is to estimate the population-level logistic regression coefficient).
+Say whether the target is an estimand, a null hypothesis, a model, or a prediction. Estimands need to be nonparametrically defined unless the study is explicitly restricted to a parametric setting (e.g. the target is the population-level logistic regression coefficient).
 
 Say how the truth is known: analytically, by construction, or by numerical approximation. An approximated truth has its own error. Make that error small relative to the Monte Carlo error of interest, and report it.
 
@@ -51,9 +56,9 @@ Enough detail to reimplement without the code, plus software and version.
 
 Tuning is part of the method definition: hyperparameters, the data split or the cross-validation scheme and its number of folds, bootstrap draws, convergence tolerance. So is the rule applied when a method fails to converge, because that rule changes what every downstream number means. For learners, report the setup that the `supervised-learning` skill records, including whether the selected settings fell inside their grids, and, for each edge they kept choosing, whether it was a hard limit or a plateau. Describe the data split too, as that skill records it. By default it is three independent draws of the full sample size in place of cross-validated cross-fitting.
 
-Say why each method is in the comparison. A known-flawed method can belong in the comparison if practitioners use it, and the text should give that reason. Note whether each method is available in accessible software, since that decides whether readers can act on the findings.
+Say why each method is in the comparison. A methods table with a motivation column does this compactly. In `example-study.md` it names the simplest baseline, the common baseline, an oracle as the best case, a useless score as the worst case, a variant, and the proposal. A known-flawed method can belong in the comparison if practitioners use it, and the text should give that reason. Note whether each method is available in accessible software, since that decides whether readers can act on the findings.
 
-If the study includes an oracle or semi-oracle (see `sharpening-goals.md`), say which nuisance functions take their true values from the DGP, and which claim or subclaim it helps test. Label each one as an oracle or semi-oracle in every table and figure, so that no reader takes it for a method they could run.
+If the study includes an oracle or semi-oracle (see `sharpening-aims.md`), say which nuisance functions take their true values from the DGP, and which claim or subclaim it helps test. Label each one as an oracle or semi-oracle in every table and figure, so that no reader takes it for a method they could run.
 
 ## P: Performance measures
 

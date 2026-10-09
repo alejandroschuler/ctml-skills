@@ -12,12 +12,12 @@ Most bad simulation work fails because the researcher did not state their hypoth
 ## The workflow
 
 ```
-                          ┌─ DGP or method changes ─┐
-                          ↓                         │
-1. Claims → 2. Goals → 3. Mockups → 4. DGPs & settings → 5. Build → 6. Pilot → full run
-     ↑                       ↑          ↑                                │         │
-     │                       └──────────┴──── design cannot show it ─────┘         │
-     └───────────────────────── results reshape the claim ─────────────────────────┘
+                         ┌─ DGP or method changes ─┐
+                         ↓                         │
+1. Claims → 2. Aims → 3. Mockups → 4. DGPs & settings → 5. Build → 6. Pilot → full run
+     ↑                      ↑          ↑                                │         │
+     │                      └──────────┴──── design cannot show it ─────┘         │
+     └──────────────────────── results reshape the claim ─────────────────────────┘
 ```
 
 The pilot study in Stage 6 is a required gate. It is where we can quickly test hypotheses without consuming a lot of time and computational resources.
@@ -29,7 +29,7 @@ When the work spans more than one stage, copy this checklist and check off an it
 ```
 Simulation progress:
 - [ ] 1. Claims: well-scoped, with an outline of the evidence that could support each claim
-- [ ] 2. Goals: a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
+- [ ] 2. Aims: hypotheses, each split into subclaims with the scenario or comparator that tests each; a skeptic could agree each was met or not; comparators pinned, oracle or semi-oracle considered
 - [ ] 3. Mockups: every table and figure drawn with empty cells and a caption describing expected results, before any code
 - [ ] 4. DGPs and settings: a reason for every parameter value and functional form; learners and split from supervised-learning skill; mockups redrawn to match
 - [ ] 5. Build: one pipeline for pilot, full run and every display; any piece runs alone; expensive steps cached
@@ -54,15 +54,19 @@ The second half matters as much as the first. A claim with no stated boundary is
 
 Sort the claims by what kind of evidence supports them. Theory usually supports asymptotic and structural claims. A single real-data application supports claims about practicality, runtime, and data-type handling. Simulations often support claims about finite-sample behavior under different operating conditions, and are best when they are supported by theory.
 
-## Stage 2: simulation goals
+## Stage 2: simulation aims
 
-Turn each claim into something a simulation can answer by recursively interrogating and splitting up ambiguous terms. `references/sharpening-goals.md` has a full worked example of this interrogation.
+Turn each claim into something a simulation can answer by recursively interrogating and splitting up ambiguous terms. `references/sharpening-aims.md` has a full worked example of this interrogation.
 
-The pattern: state the goal, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it. 
+The pattern: state the aim, list what is unpinned, rewrite. "Targeted maximum likelihood estimation (TMLE) is better than plug-in estimators" leaves *better by what measure*, *at what sample size*, *with what learners*, and *in which DGPs* all undetermined, which means no simulation can confirm or refute it.
 
-Pin down the comparators here too, and always consider an oracle or semi-oracle among them. An oracle is given something only the simulation knows, so no analyst could run it on real data. Oracles help test two kinds of claim. An ablation claim says how much one part of a method contributes to its performance, and a mechanism-of-action claim says why a method works. If one method's advantage disappears once every method gets the true propensity score, the advantage comes from how the methods cope with estimating it. An oracle also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-goals.md` works through a case and gives a reason an oracle is not always a ceiling.
+A finished aim is a hypothesis. It names the property and how it is measured, the comparator, the conditions, the expected direction, and the theory behind it, if any. Scope it at the level of a question that a reader of the paper would ask, such as whether to use the method. "We evaluate the proposed estimator" is too broad, because no result could contradict it. "At n = 250 the relative SE is 0.9" is too narrow, because it is one cell of a table. Most studies need one to three aims, usually each with its own main display.
 
-Stop when a skeptical reader could look at the planned output and agree the goal was met or not met. If two people could read the goal and disagree about whether a given table supports it, keep going.
+Split each aim into subclaims, one for each condition that theory or practice says could change the answer, and name the scenario or comparator that tests each one. Name each scenario by its condition, such as "a heterogeneous effect", and leave its equations for Stage 4. For example, in the study in `references/example-study.md`, the aim that prognostic adjustment reduces standard errors has subclaims for matched populations, a heterogeneous effect, a population shift, and a useless score.
+
+Pin down the comparators here too, and always consider an oracle or semi-oracle among them: a method given true values that only the simulation knows, so no analyst could run it on real data. An oracle can test an ablation claim, about how much one part of a method contributes to its performance, or a mechanism-of-action claim, about why a method works. It also gives an idea of best-case performance. Whether to include one, and in which display, depends on the claim or subclaim it would serve. `references/sharpening-aims.md` works through a case and gives a reason an oracle is not always a ceiling.
+
+Stop when a skeptical reader could look at the planned output and agree the aim was met or not met. If two people could read the aim and disagree about whether a given table supports it, keep going.
 
 ## Stage 3: mock up the tables and figures
 
@@ -87,7 +91,9 @@ Many simulations require supervised learning or generic regressions. See supervi
 
 Design DGPs to archetype different ends of spectra. Edge cases are what sharpen a claim from "works well" into "works well when [condition] and not when [other condition]", and that sharper claim is the more useful paper.
 
-Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default.
+Every parameter value and every functional form in a DGP needs a reason. It shows a specific phenomenon, it prevents a specific problem, or it is an unobjectionable default. Usually each scenario tests a subclaim from Stage 2, and that subclaim is its reason.
+
+Start from a base case, and add deviations from it one dimension at a time, each testing a subclaim. A full factorial design of the DGP factors is usually unnecessary, because it mixes the aims together and multiplies the compute. Cross two DGP factors only when a subclaim is about how they interact. Sample sizes and methods usually still run in every scenario.
 
 Stages 3 and 4 form a loop. Adding, dropping or changing a DGP or method can change a mockup before any code exists. For example, a DGP for a new extreme adds a column or a panel, a new comparator, oracle or learner library adds a row, and a DGP that cannot vary a factor the mockup assumed removes that axis. When you make such a change, redraw the affected display and its caption, and ask the Stage 3 questions of it again.
 
@@ -103,7 +109,7 @@ Three properties decide how cheap the rest of the project will be:
 - **Let any piece run alone.** The run function takes a subset of every factor: DGPs, sample sizes, repetitions, learners, estimators. That is what lets you rerun one DGP, add one estimator, or run one learner library across every estimator without touching the rest. It works only if each dataset's seed comes from its name (DGP, sample size, repetition) and never from its position in a loop.
 - **Cache the expensive steps.** Learner predictions are the usual example. For an ensemble, keep each base learner's predictions on the validation draw too, so that a new learner library is a cheap recombination of stored fits. Keep the cache in a local directory that git ignores. Key each entry on everything that determines it so it is clear when things need to be recomputed.
 
-Beyond those three, simulation code is written to be run and rewritten, not maintained. Fast, modular, and disposable beats polished. Everything should be smoke-tested on corner case inputs, but writing formal tests for all but the most complex parts of the code is likely overkill, and the user should consider turning anything with that complexity into a separate package with its own tests.
+Beyond those three, simulation code is written to be run and rewritten, not maintained: fast, modular and disposable. Smoke-test everything on corner-case inputs. Formal tests are likely overkill except for the most complex parts, and the user should consider moving those into a separate package with its own tests.
 
 `references/implementation.md` has the architecture, the caching rules, what keeps runtime sane, and what to save. `assets/simulation-scaffold.R` and `assets/simulation-scaffold.py` are working skeletons in that shape, to read and adapt. Their learners are placeholders: set up the real ones with the `supervised-learning` skill.
 
@@ -121,21 +127,23 @@ Three checks, in increasing cost:
 
 Unexpected results from the pilot can sometimes indicate obvious bugs with the code, or clear misunderstandings about the methods or DGPs. Besides this, pilots also help size the final simulation run.
 
-A contrast between two means over repetitions (bias, mean squared error, coverage, rejection rate) is itself the mean of a per-repetition difference `d_i`, since the difference of two averages is the average of the differences. Repetitions are independent, so that mean has Monte Carlo SE `sd(d)/sqrt(n_sim)`. Requiring `|mean(d)|` to be at least `k` of those SEs and solving for `n_sim` gives
+Size `n_sim` from the pilot. Each contrast that the mockup promises, in bias, mean squared error, coverage or rejection rate, is the mean of a per-repetition difference `d_i` between two cells, with Monte Carlo SE `sd(d)/sqrt(n_sim)`. Showing it at `k` of those SEs needs
 
 ```
 n_sim  >=  ( k * sd(d) / mean(d) )^2        k = 3 to see it, 5 to be comfortable
 ```
 
-The pilot only estimates `mean(d)` and `sd(d)`, and plugging in the estimates is optimistic exactly when the pilot was lucky. `references/piloting.md` has two guards for that: size on a lower bound for the gap (the tools report it as `n_sim_safe`), and treat a pilot whose own `|z|` is below 2 as too small to size anything. Run the check for every cell comparison the mockup promises, and let the largest requirement set `n_sim`. The same file has the derivation step by step, what `d_i` is for each performance measure, the bootstrap for measures that are not means, what to do when the answer comes back bad, and what to report about the pilot. For a claim of no difference, use that file's equivalence section instead of this formula. `assets/pilot_check.R` (base R) and `assets/pilot_check.py` (numpy, pandas, scipy) implement the check as functions to call on the pilot's results.
+The pilot's estimates are optimistic when the pilot was lucky. So size on a lower bound for the gap, which the tools report as `n_sim_safe`, and treat a pilot whose own `|z|` is below 2 as too small to size anything. Run the check for every contrast, and let the largest requirement set `n_sim`. For a claim of no difference, use the equivalence check in `references/piloting.md` instead of this formula.
 
-If the pilot cannot tell the gap from zero, the `n_sim` it implies is noise: enlarge the pilot, or, for a bias contrast, measure the gap directly on one very large draw as `references/piloting.md` describes. If the gap is still indistinguishable from zero, the design is dead as drawn. The fix is then upstream, in Stage 3 or Stage 4: amplify the signal by changing the DGP, or change what the table displays. That is exactly why this gate sits before the full run instead of after it.
+`assets/pilot_check.R` (base R) and `assets/pilot_check.py` (numpy, pandas, scipy) run the check on the pilot's results. `references/piloting.md` has the derivation, `d_i` for each measure, the bootstrap for measures that are not means, what to do when the answer is bad, and what to report about the pilot.
+
+If the pilot cannot tell the gap from zero, the `n_sim` it implies is noise. Enlarge the pilot, or, for a bias contrast, measure the gap on one very large draw (Cancellation in `references/piloting.md`). If the gap is still indistinguishable from zero, the design cannot show what the mockup promises. Fix it upstream, in Stage 3 or Stage 4: change the DGP to amplify the signal, or change what the table displays.
 
 Scale up only once all three checks clear: the code runs, the DGP diagnostics are sane, and the contrast is resolvable at the number of repetitions `n_sim` you are about to pay for. The full run is the Stage 5 code at that `n_sim`. Save its raw per-repetition results to disk, since every table and figure is derived from them.
 
 ## Iterating when results disagree with the claim
 
-Results that contradict the claim are the normal case, not a disaster, and a clear goal is what makes the contradiction legible in the first place. Without one you cannot tell whether an outcome is good or bad.
+Results that contradict the claim are the normal case, not a disaster, and a clear aim is what makes the contradiction legible in the first place. Without one you cannot tell whether an outcome is good or bad.
 
 The first step is to check for a bug, although the pilot should have caught most of them. Then revisit the theory to try and understand the result, and iterate on the claim. A claim that gains or corrects a condition is usually a better claim, so this is progress! Burying the result, or quietly dropping the DGP that produced it, is bad. Flag this explicitly when it comes up. A user looking at a disappointing simulation often wants help making the result go away, and the useful help is the opposite.
 
@@ -143,11 +151,11 @@ The first step is to check for a bug, although the pilot should have caught most
 
 Read `references/writing-the-writeup.md` before drafting. For a paper section, `assets/writeup-skeleton.md` is a fill-in skeleton in this shape. At a high level:
 
-**Organize by claim, not by output.** The section structure mirrors the claims, and each claim gets its evidence next to it.
+**Organize by claim, not by output.** The section structure mirrors the aims. Give each aim one subsection, and in it take the subclaims in turn, each next to its evidence.
 
-**Sandwich every piece of evidence.** Tell the reader the goal, give the evidence, then say how the evidence supports the goal. Be direct and prosaic about it; this is one place where spelling out the obvious is correct, because what is obvious to the author is not obvious to a reader meeting the design for the first time.
+**Sandwich every piece of evidence.** Tell the reader what the evidence will show, give the evidence, then say how it supports the aim or subclaim. Be direct and prosaic, because what is obvious to the author is not obvious to a reader meeting the design for the first time.
 
-**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the important one and the rest exist to serve it. The exact order is not as important as making sure that all the required detail is present for a reader to reasonably replicate the results without code. Element-by-element guidance, including what a reader needs in order to reimplement, is in `references/ademp.md`. Do this once for the whole study, or separately per claim when the claims need different setups.
+**Use ADEMP for the "tell 'em what you're going to tell 'em".** Before results, describe Aims, Data-generating processes, Estimands, Methods, and Performance measures. Aims is the most important element. It holds the hypotheses from Stage 2 with their subclaims, and the rest exist to serve it. The order matters less than completeness. A reader should be able to replicate the study from the text, without the code. `references/ademp.md` has guidance for each element. Do this once for the whole study, or separately per claim when the claims need different setups.
 
 **Every table and figure names its purpose.** The caption says which claim it serves. A display whose purpose(s) cannot be stated in one sentence is a display to cut.
 
@@ -155,11 +163,9 @@ Read `references/writing-the-writeup.md` before drafting. For a paper section, `
 
 ## Performance measures
 
-Which measures to compute depends entirely on the claim. Bias, empirical SE, mean squared error, coverage, and rejection rate are the standard set for claims about estimator accuracy and interval calibration, and `references/performance-measures.md` gives their definitions, their Monte Carlo standard errors, and how to pick the number of repetitions. That file is a resource, not a checklist. Claims about runtime, about model selection, about prediction, or about qualitative behavior need different measures or none of these. Reach for it when the claim is about an estimator's accuracy or its intervals; skip it otherwise.
+Which measures to compute depends on the claim. For a claim about an estimator's accuracy or its intervals, `references/performance-measures.md` gives the standard set (bias, empirical SE, mean squared error, coverage, rejection rate), their Monte Carlo SEs, and how to pick the number of repetitions, and `assets/performance_measures.R` computes them in base R from the raw per-repetition results. `references/performance-measures.md` is a resource, not a checklist. Claims about runtime, model selection, prediction or qualitative behavior need other measures or none of these.
 
-Reporting a Monte Carlo SE alongside a headline number keeps you from over-reading noise, and saying how many repetitions failed keeps the rest of the numbers interpretable.
-
-`assets/performance_measures.R` computes the standard set and their Monte Carlo SEs in base R, as functions to call on the raw per-repetition results. 
+Report a Monte Carlo SE with each headline number, so that you do not over-read noise, and say how many repetitions failed, so that the other numbers can be interpreted.
 
 ## Before calling a write-up done
 

@@ -1,6 +1,6 @@
 # Simulation write-up skeleton
 
-Organized by claim, not by table. Each claim states its goal, presents its evidence, then says how the evidence supports the goal.
+Organized by claim, not by table. One subsection per aim: state the aim, present its evidence, then say how the evidence supports each subclaim.
 
 Delete the bracketed prompts as real content replaces them.
 
@@ -10,9 +10,10 @@ Delete the bracketed prompts as real content replaces them.
 
 ### Aims
 
-[State the claims this simulation supports, specifically enough that they could turn out to be wrong. This is the most important part of the setup, and everything below serves it.]
+[State the Stage 2 aims, from the plan or reconstructed from the results, as hypotheses that could turn out to be wrong, each with its subclaims. This is the most important part of the setup, and everything below serves it. The Aims section of `references/ademp.md` has an example.]
 
-We evaluate [PROPERTY] of [METHOD(S)], relative to [BASELINE], under [CONDITION]. [One sentence per additional claim.]
+1. *[SHORT NAME].* [METHOD] gives [a smaller / larger / no worse] [MEASURE] than [COMPARATOR] when [CONDITION], as [THEORY] predicts. [Or: METHOD keeps MEASURE at TARGET when CONDITION.] [Under SCENARIO, EXPECTED RESULT. Under SCENARIO, EXPECTED RESULT. One sentence per subclaim.]
+2. *[SHORT NAME].* ...
 
 ### Data-generating processes
 
@@ -24,7 +25,7 @@ We consider [K] data-generating processes (DGPs), chosen to span [WHAT THE CLAIM
 |---|---|---|---|---|---|
 | | | | | | |
 
-[Say why these DGPs and what they span. Say what varies across them and what is held fixed. Name the factorial structure.]
+[Say why these DGPs and what they span: name the subclaim that each one tests. Say what varies across them and what is held fixed. Name the design: a base case with one-at-a-time deviations, or which factors are crossed and the subclaim that needs the cross.]
 
 Sample sizes [VALUES] were chosen because [REASON].
 
@@ -51,17 +52,17 @@ We report [MEASURES] because [WHICH CLAIM EACH ANSWERS]. [Definitions or a point
 
 ## Results
 
-### [Claim 1, stated as a heading a reader can act on]
+### [Aim 1, stated as a heading a reader can act on]
 
-**Goal.** [Tell them what you're going to tell them. What is this about to show, and why does it matter?]
+**What it tests.** [Tell them what you're going to tell them. What is this about to show, how is it measured, and why does it matter?]
 
 [TABLE or FIGURE. Caption names the claim it serves, not just the contents.]
 
-**What it shows.** [Tell them what you've told them. Point at the specific rows or panels. Say how they support the goal. State clearly where the evidence is weaker than you would like.]
+**What it shows.** [Tell them what you've told them. Go through the subclaims in turn, and point at the rows or panels for each. Say how they support the aim. State clearly where the evidence is weaker than you would like.]
 
-### [Claim 2 …]
+### [Aim 2 …]
 
-**Goal.** ...
+**What it tests.** ...
 
 [Evidence]
 
