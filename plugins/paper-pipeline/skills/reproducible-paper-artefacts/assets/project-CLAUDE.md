@@ -61,6 +61,21 @@ tier later is cheap. Pulling a wrong number back out of a manuscript is not.
   Read-only calls such as `snakemake -n` are fine.
 - Reference anything under `scratch/` from a `.tex` file.
 
+## Naming the paper from the code
+
+- Outside the Snakefile and this file, name the paper only to point at a
+  derivation or definition that the code implements, or at a choice that the
+  code must match, such as the order of a table's rows.
+- Name a computation by what it is, such as "the benchmark", and not by the
+  display that shows it, such as "Table 1". This applies to comments,
+  docstrings, and file, rule, function and test names.
+- When you name the paper, never use a number or a letter, because these
+  change when the paper is reordered. Use the label key with a few words on
+  what it is, as in "the penalty grid of `sec:penalty-grid`".
+- Commit messages, and citations of a published paper, may use numbers.
+- Apply this to the text you write. Do not edit code that a rule reads only to
+  fix a reference, because a comment edit there reruns the rule.
+
 ## Methods
 
 - A tracked setting is a methods setting that the code records as an

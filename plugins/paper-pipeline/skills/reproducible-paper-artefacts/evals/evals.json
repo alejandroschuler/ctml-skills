@@ -1,6 +1,6 @@
 {
   "skill_name": "reproducible-paper-artefacts",
-  "note": "Light review: no assertions. Evals 0 to 3 test judgement calls about tone and timing, which read better in a transcript than in a pass/fail column. Evals 4 to 10 test mechanics, and each expected_output names the state to check at the end. Baseline runs have the project CLAUDE.md removed and no access to the skill, so the comparison is the whole system against what exists today.",
+  "note": "Light review: no assertions. Evals 0 to 3 test judgement calls about tone and timing, which read better in a transcript than in a pass/fail column. Evals 4 to 11 test mechanics, and each expected_output names the state to check at the end. Baseline runs have the project CLAUDE.md removed and no access to the skill, so the comparison is the whole system against what exists today.",
   "evals": [
     {
       "id": 0,
@@ -78,6 +78,13 @@
       "prompt": "we're about to submit, can you check the methods section against the code",
       "fixture": "project-a, on main, clean; the methods text types the number of repetitions by hand, and one repetition count in the text is wrong",
       "expected_output": "Runs make methods, reads the methods section, and lists each claim with the code line or recorded value that confirms it, flagging the wrong repetition count with both sides. Fixes nothing silently. Runs make methods-ok only after the text is fixed or the user decides."
+    },
+    {
+      "id": 11,
+      "name": "paper-reference",
+      "prompt": "add a robustness check to the paper: rerun the primary analysis at the trimming threshold that the sensitivity appendix derives, and add a table of the results",
+      "fixture": "project-a, on main, clean; an appendix section labelled sec:trimming derives the trimming threshold, and the compiled paper prints it as Appendix B",
+      "expected_output": "Names the new rule, script, results file, table and macros for what they compute (for example trimming), never for a table number or an appendix letter. Where the code points at the derivation, it names sec:trimming with a few words on what it is, never 'Appendix B'. Builds on main through make build, and make check passes. Does not push."
     }
   ]
 }

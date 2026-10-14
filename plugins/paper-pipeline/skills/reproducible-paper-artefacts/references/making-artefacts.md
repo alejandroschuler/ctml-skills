@@ -10,6 +10,8 @@ and set helpers, and learner-grid tables are in `methods.md`.
   software, and two traps
 - The script: how it emits, and the checks the emit helpers make before each
   write
+- Naming the paper from the code: when code may name a part of the paper,
+  and how
 - Numbers: grain, macro names, collisions, rounding and formatting, and use in
   the text
 - What the provenance record sees: `track_read()`, what it misses, and
@@ -194,6 +196,51 @@ refuse, and nothing is written:
 `make notes` commits on a wip branch before it builds and `make build` refuses
 a dirty `main`, so a build through `make` passes these checks. A script run by
 hand usually does not, and that is deliberate.
+
+## Naming the paper from the code
+
+A paper under revision gets new section numbers, figure numbers and appendix
+letters, and the code does not change with them. So a comment that says
+"appendix D" or "Figure 2" goes stale with no edit to the code, and it then
+sends the reader to the wrong part of the paper. In one project under
+revision, 22 of the 99 lines of code that named a part of the paper by its
+number pointed at the wrong part. A fix is not free either. After a comment
+edit in code that a rule reads, as its script or as a declared input,
+Snakemake reruns the rule and every rule that depends on it, which can be
+hours of fits.
+
+So the code describes itself, and it names the paper only when the paper holds
+something that the code needs:
+
+- a derivation or a definition that the code implements and does not repeat,
+  such as the bound that sets the top of a penalty grid;
+- a choice in the paper that the code must match, such as the order of a
+  table's rows, so that the reader knows that a change to the paper needs a
+  change to the code.
+
+It then names the label key, with a few words on what that part of the paper
+is: "the largest penalty is the bound from the appendix on the penalty grid
+(`sec:penalty-grid`)". The label key stays the same when the paper is
+reordered. The words are for a reader who has only the PDF, where label keys
+do not show.
+
+A computation is named for what it is, such as `benchmark` or `convergence`,
+and not for the display that shows it, such as `table1`. A display name in a
+path costs the most: renaming `results/table1/` reruns every job that writes
+there.
+
+The Snakefile and the project `CLAUDE.md` may name every display, by label
+key. Mapping code to the paper is their purpose, and a comment edit in either
+file reruns nothing. The pipeline also records this map: the registry lists
+the artefact names, the `label` argument of `save_figure` and `save_table`
+goes into `BUILD.json`, and `make package` prints it.
+
+Commit messages may use numbers, because a commit message is dated. A
+citation of a published paper, such as "Table 2 of Smith and Jones (2024)",
+may use them too, because the numbers of a published paper do not change.
+
+The rule applies to text that you write. A reference that is already in code
+that a rule reads stays until the file changes for another reason.
 
 ## Numbers
 
