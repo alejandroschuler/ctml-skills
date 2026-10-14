@@ -172,7 +172,7 @@ methods.
 
 | When | Read |
 |---|---|
-| writing a Snakemake rule or a script, or naming a number | `references/making-artefacts.md` |
+| writing a Snakemake rule or a script, naming a number, or naming a part of the paper in code | `references/making-artefacts.md` |
 | promoting notes work, or git went wrong | `references/promotion-and-recovery.md` |
 | recording a methods setting, or reviewing the methods section | `references/methods.md` |
 | `make status` or `make check` reports a problem, or preparing a replication package (`make package`) | `references/status-and-repair.md` |
