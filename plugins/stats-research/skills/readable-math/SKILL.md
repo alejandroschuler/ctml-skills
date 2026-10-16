@@ -1,6 +1,6 @@
 ---
 name: readable-math
-description: "Reviews the mathematics of a LaTeX document after an edit: a notation review of definitions, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The symbol rules that it checks are in the writing-math skill, which also sets how densely to write derivations; the review does not check density. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
+description: "Reviews the mathematics of a LaTeX document after an edit: a notation review of definitions, scope and glosses, and a correctness review of the proofs and derivations, split across agents by argument. Invoke after editing any LaTeX (.tex) document, before declaring the task done. By default it reviews only the text that changed since the last review; pass full, or ask for a full check, to review the whole document. The symbol rules that it checks are in the writing-math skill. The writing-proofs skill sets how densely to write derivations, and the review does not check density. Edits to .qmd, .md, .rmd or other files do not call for it unless the user asks."
 argument-hint: "[full]"
 ---
 
@@ -22,7 +22,7 @@ The review has two parts, and they run at the same time:
 - The **notation review** checks the symbol rules of the `writing-math` skill, which you loaded before your first edit: definitions, scope, parsimony and glosses. One `stats-research:math-notation-reviewer` agent (Sonnet, high effort) reviews each document.
 - The **correctness review** checks that each step of the proofs and derivations is true. One `stats-research:math-correctness-reviewer` agent (Opus, high effort) reviews each group of arguments that you choose.
 
-Neither part checks how densely a derivation is written. The mode rules of `writing-math` set that, and you follow them as you write.
+Neither part checks how densely a derivation is written. The mode rules of `writing-proofs` set that, and you follow them as you write.
 
 ## Changes or full
 

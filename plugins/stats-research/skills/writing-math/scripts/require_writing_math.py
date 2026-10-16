@@ -3,12 +3,12 @@
 
 Before the first .tex edit in a conversation, and before the first one in each
 subagent, the hook refuses the edit and tells Claude to load the
-stats-research:writing-math skill. Claude then loads the skill and makes the
-edit again, and later edits pass. A marker file in the temp folder, one for
+stats-research:writing-math and stats-research:writing-proofs skills. Claude
+then loads the skills and makes the edit again, and later edits pass. A marker file in the temp folder, one for
 each session and subagent, records that the hook has asked.
 
 In the main conversation the first edit also passes when the transcript shows
-that the skill is already loaded. A subagent's hook input may carry the main
+that both skills are already loaded. A subagent's hook input may carry the main
 conversation's transcript, so a subagent is always asked once. Any other file,
 or input that does not parse, passes.
 """
@@ -19,11 +19,16 @@ import sys
 import tempfile
 from pathlib import Path
 
-LOADED = re.compile(r'"skill"\s*:\s*"(?:stats-research:)?writing-math"')
+SKILLS = ("writing-math", "writing-proofs")
+LOADED = {
+    name: re.compile(r'"skill"\s*:\s*"(?:stats-research:)?' + name + '"')
+    for name in SKILLS
+}
 REASON = (
     "Before the first edit to a .tex file, load the `stats-research:writing-math` "
-    "skill with the Skill tool, then make this edit again, following its rules. "
-    "If those rules are already in your context, make the edit again."
+    "and `stats-research:writing-proofs` skills with the Skill tool, then make "
+    "this edit again, following their rules. If those rules are already in your "
+    "context, make the edit again."
 )
 
 
@@ -42,11 +47,16 @@ def loaded_in_transcript(payload: dict) -> bool:
     path = payload.get("transcript_path")
     if not path:
         return False
+    missing = set(SKILLS)
     try:
         with open(Path(path).expanduser(), encoding="utf-8", errors="replace") as f:
-            return any(LOADED.search(line) for line in f)
+            for line in f:
+                missing -= {name for name in missing if LOADED[name].search(line)}
+                if not missing:
+                    return True
     except OSError:
         return False
+    return False
 
 
 def main() -> None:

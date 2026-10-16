@@ -36,7 +36,7 @@ fill in the missing steps yourself and check them.
 - The argument proves the claim as stated, not a weaker or a different claim.
 
 Do not report a step only because the text shows it briefly. How densely to
-write is the writer's decision, under the mode rules of writing-math. Report a
+write is the writer's decision, under the mode rules of writing-proofs. Report a
 brief step only when you cannot confirm that it is true.
 
 ## Output
