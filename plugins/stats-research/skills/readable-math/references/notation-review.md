@@ -2,7 +2,7 @@
 
 You review the notation of one LaTeX document against the symbol rules of
 writing-math: definitions, scope, parsimony and glosses. Do not judge how
-densely the proofs are written, because the writing-math mode sets that. The
+densely the proofs are written, because the writing-proofs mode sets that. The
 change report that you were given names the document's files, in reading
 order, and the regions to audit. Read the report first.
 
