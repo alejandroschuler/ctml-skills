@@ -27,7 +27,7 @@ After:
 \begin{theorem}[Asymptotic normality of AIPW]
 \label{thm:aipw-normal}
 Let $\hat\psi$ be the cross-fit AIPW estimator of \cref{eq:aipw}, and let $\sigma^2$ be the variance of the efficient influence function of \cref{eq:eif}.
-Suppose that the outcome $Y$ is bounded, that the propensity score $\pi$ and its estimate $\hat\pi$ are bounded away from 0 and 1, and that the nuisance estimators $\hat\pi$ and $\hat\mu$ are consistent in $L_2(P)$.
+Suppose that the outcome $Y$ is bounded, that the propensity score $\pi$ and its estimate $\hat\pi$ are bounded away from 0, and that the nuisance estimators $\hat\pi$ and $\hat\mu$ are consistent in $L_2(P)$.
 If
 \[
   \|\hat\pi - \pi\|_{L_2(P)} \, \|\hat\mu - \mu\|_{L_2(P)} = o_P(n^{-1/2}),
@@ -53,6 +53,7 @@ What changed:
 - The product-rate condition is the substantive assumption, so it moved to the If part, as a display. The bound on the outcome, overlap and consistency are regularity conditions, so they stay inline.
 - The conclusion is a display.
 - $M$ and $\epsilon$ were each used once, so words replace them.
+- The proof uses only the lower bound on the propensity score, so the upper bound is gone.
 - The remark about the bound on $Y$ moved to the paragraph after the statement.
 - The "If, in addition" sentence became a corollary. Its Assume sentence also holds the regularity condition $\sigma^2 > 0$ that the coverage needs.
 
@@ -88,7 +89,7 @@ This is the form for an appendix proof longer than about a page, or for a proof 
 ```latex
 \begin{proof}
 The idea is to write $\hat\psi - \psi$ as a sample average of $\varphi$ plus two remainders that are $o_P(n^{-1/2})$.
-\Cref{step:remainder} is the key step: it is where the rate condition enters.
+Step~\ref{step:remainder} is the key step: it is where the rate condition enters.
 In this proof, let $\epsilon > 0$ be the bound in (Overlap).
 \begin{enumerate}
 \item \label{step:expand}
@@ -102,9 +103,9 @@ In this proof, let $\epsilon > 0$ be the bound in (Overlap).
     $\|\hat\varphi - \varphi\|_{L_2(P)} = o_P(1)$.
 
     \emph{Proof:} (Bounded outcome), (Overlap) and (Consistency).
-  \item The claim of \cref{step:ep} holds.
+  \item The claim of step~\ref{step:ep} holds.
 
-    \emph{Proof:} \cref{step:phi} and \cref{lem:split}.
+    \emph{Proof:} step~\ref{step:phi} and \cref{lem:split}.
   \end{enumerate}
 \item \label{step:remainder}
   $R_2 = o_P(n^{-1/2})$.
@@ -112,12 +113,12 @@ In this proof, let $\epsilon > 0$ be the bound in (Overlap).
   \emph{Proof:} by the Cauchy--Schwarz inequality and (Overlap), $|R_2| \le \epsilon^{-1} \|\hat\pi - \pi\|_{L_2(P)} \|\hat\mu - \mu\|_{L_2(P)}$, which is $o_P(n^{-1/2})$ by the rate condition.
 \item The theorem holds.
 
-  \emph{Proof:} \cref{step:expand,step:ep,step:remainder} give $\sqrt{n}(\hat\psi - \psi) = \sqrt{n}(P_n - P)\varphi + o_P(1)$.
+  \emph{Proof:} steps~\ref{step:expand} to~\ref{step:remainder} give $\sqrt{n}(\hat\psi - \psi) = \sqrt{n}(P_n - P)\varphi + o_P(1)$.
   (Bounded outcome) and (Overlap) make $\sigma^2$ finite, so the central limit theorem gives the result.
 \end{enumerate}
 \end{proof}
 ```
 
-With cleveref, `\crefname{enumi}{step}{steps}` and `\crefname{enumii}{step}{steps}` in the preamble make `\cref` print "step 3".
+The steps are cited with a plain `\ref`, because `\cref` names a list item "item".
 
 Read alone, the claims of steps 1 to 4 give the plan. Each proof under a step names the conditions, steps and lemmas that it uses, so a reader can check that every condition of the theorem is used.

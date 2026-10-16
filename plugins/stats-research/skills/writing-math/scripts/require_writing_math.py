@@ -3,9 +3,10 @@
 
 Before the first .tex edit in a conversation, and before the first one in each
 subagent, the hook refuses the edit and tells Claude to load the
-stats-research:writing-math and stats-research:writing-proofs skills. Claude
-then loads the skills and makes the edit again, and later edits pass. A marker file in the temp folder, one for
-each session and subagent, records that the hook has asked.
+stats-research:writing-math and stats-research:writing-proofs skills.
+Claude then loads the skills and makes the edit again, and later edits pass.
+A marker file in the temp folder, one for each session and subagent, records
+that the hook has asked.
 
 In the main conversation the first edit also passes when the transcript shows
 that both skills are already loaded. A subagent's hook input may carry the main

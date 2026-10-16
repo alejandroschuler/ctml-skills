@@ -1,12 +1,12 @@
 {
   "skill_name": "writing-math",
-  "note": "Fixtures are described in `fixture` and not shipped, so build each one as a small folder before the run. The plugin's PreToolUse hook makes Claude load the skill before its first .tex edit, so eval 0 tests what the symbol rules change, and its assertions are checked on the edited files and the transcript. Eval 1 is a near-miss on a .qmd file, on which the hook does not fire, so it tests that the description alone does not trigger the skill. The evals for density and the mode line moved to writing-proofs with those rules.",
+  "note": "Fixtures are described in `fixture` and not shipped, so build each one as a small folder before the run. The plugin's PreToolUse hook makes Claude load the skill before its first .tex edit, so eval 0 tests what the symbol rules change (its assertions on asymptotic coverage and on the consistency condition test the correctness rules of writing-proofs, which the hook loads too), and its assertions are checked on the edited files and the transcript. Eval 1 is a near-miss on a .qmd file, on which the hook does not fire, so it tests that the description alone does not trigger the skill. The evals for density and the mode line moved to writing-proofs with those rules.",
   "evals": [
     {
       "id": 0,
       "name": "new-letter-has-global-meaning",
       "prompt": "add a corollary right after theorem 1 that gives a wald confidence interval for psi_0, with a short proof",
-      "fixture": "paper/ with main.tex, whose first line is the mode line % writing-math: paper, semiparametric statistics, and which inputs sections/20-setup.tex and sections/40-theory.tex. The setup file defines, with no scope, the Riesz representer \\alpha_0 of the target functional, its Riesz-regression estimate \\hat\\alpha, and the conditional variance of the outcome \\sigma^2(a, x) = Var(Y | A = a, X = x). Theorem 1 in sections/40-theory.tex states that \\sqrt{n}(\\hat\\psi - \\psi_0) converges in distribution to N(0, V), with V = Var \\varphi_0(O), under Assumptions 1 to 3 of the setup file. The text of sections/40-theory.tex uses neither \\alpha nor \\sigma. All the text is at one sentence per line.",
+      "fixture": "paper/ with main.tex, whose first line is the mode line % writing-math: paper, semiparametric statistics; refs: van der Vaart 1998, Tsiatis 2006, and which inputs sections/20-setup.tex and sections/40-theory.tex. The setup file defines, with no scope, the Riesz representer \\alpha_0 of the target functional, its Riesz-regression estimate \\hat\\alpha, and the conditional variance of the outcome \\sigma^2(a, x) = Var(Y | A = a, X = x). Theorem 1 in sections/40-theory.tex states that \\sqrt{n}(\\hat\\psi - \\psi_0) converges in distribution to N(0, V), with V = Var \\varphi_0(O), under Assumptions 1 to 3 of the setup file. The text of sections/40-theory.tex uses neither \\alpha nor \\sigma. All the text is at one sentence per line.",
       "expected_output": "Reads or searches the files that main.tex inputs before it chooses letters, and finds that \\alpha and \\sigma already have global meanings. Writes the confidence level with another letter, such as 1 - \\gamma, and writes the variance estimator with a symbol that does not use \\sigma, such as \\hat V for an estimate of the V of Theorem 1. Defines the normal quantile and the variance estimator at or before their first use. Says that the coverage holds asymptotically, and states the consistency of the variance estimator as a condition or proves it. Each new sentence is on its own line, and the text after each display starts on a new line.",
       "files": [],
       "assertions": [
@@ -16,7 +16,8 @@
         "Defines the normal quantile and the variance estimator at or before their first use",
         "Says that the coverage of the interval holds asymptotically",
         "States the consistency of the variance estimator as a condition of the corollary, or proves it",
-        "Puts each new sentence on its own line, and starts the text after each display on a new line"
+        "Puts each new sentence on its own line, and starts the text after each display on a new line",
+        "In the prose of the corollary and its proof, each content-bearing symbol, such as \\psi_0 and the variance estimator, has a short noun-phrase gloss in its sentence, unless the sentence or clause just before glossed it"
       ]
     },
     {
