@@ -7,6 +7,8 @@ description: "Sets the rules for writing mathematics in a LaTeX (.tex) document:
 
 These rules apply to every `.tex` document that you write or edit. After you edit, the `readable-math` review checks the symbol rules and whether the mathematics is correct. No reviewer checks how densely you write a derivation, so follow the mode rules below as you write.
 
+To state a theorem, proposition, lemma or corollary, also follow the `writing-proofs` skill.
+
 ## Symbols
 
 ### Define before use
