@@ -16,6 +16,8 @@ paper repo, and change one kind of thing at a time.
 8. Re-break the lines and fix the typed names, if the user agrees
 9. Build and compare
 10. Check and commit
+11. Move the appendix text out of theory/, for a paper in the layout before
+    overleaf-tools 0.9.0
 
 ## 1. Before you start
 
@@ -70,18 +72,20 @@ For each inline result:
    hand-written subsection, often titled "Proof of Theorem N" and labelled
    `pf:<something>`. The checker's `stray-proof` lines point at these.
 3. Choose the shape from the table in `SKILL.md`. A proof that lived in the
-   appendix takes the deferred shape, and the `textAtEnd` block replaces the
-   hand-written subsection. If the old label is not `pf:<slug>`, rename it
-   everywhere it is cited.
+   appendix takes the deferred shape, with `category=<slug>`. Its
+   hand-written heading stays where it is in the appendix file, and
+   `\printProofs[<slug>]` replaces the proof under it. If the old label of the
+   heading is not `pf:<slug>`, rename it everywhere it is cited. If the old
+   proof had no heading of its own, add `\subsection{Proof of
+   \autoref{thm:<slug>}}` and `\label{pf:<slug>}` above the `\printProofs`
+   line, as the template does.
 4. Write `theory/<slug>.tex`. Replace the statement in its section file with
-   `\input{theory/<slug>}`, and delete the old appendix subsection with its
-   proof.
+   `\input{theory/<slug>}`. In the appendix file, delete the old proof and any
+   statement restated under the heading, because `\printProofs` restates it.
 5. Delete sentences that the pointer now makes redundant, such as "The proof
    is deferred to the appendix." Leave all other prose as it is.
 
-`\printProofs` orders the proofs by the body. If the old appendix used another
-order and the author wants to keep it, use categories (see
-`references/proof-at-the-end.md`).
+The appendix keeps its old order, because each heading stays where it was.
 
 A hand-written proof whose statement is gone, which prints as "Proof of ??",
 is a question for the author: delete it, or restore its statement.
@@ -181,3 +185,40 @@ a reason. Commit in the paper repo, with one commit each for the results, the
 figures, the sections, the line breaks and the typed names, and messages that
 say what moved.
 Push by the paper repo's rules, and ask first if it has none.
+
+## 11. Move the appendix text out of theory/
+
+A paper set up before overleaf-tools 0.9.0 keeps the heading of each deferred
+proof in a `textAtEnd` block in its `theory/` file, and prints the proofs
+with one `\printProofs`, in the order of the body. The checker reports
+`text-at-end` and `deferred-shape` errors for it. The move changes no text in
+the PDF. Do "1. Before you start" and "2. Build a baseline" first. Read the
+open Overleaf comments on the `theory/` files with the `overleaf-comments`
+skill, if it is installed, because comments on moved text can be lost.
+
+1. Copy the plugin's `deferproofs.sty` over the paper's copy. Keep each change
+   that the paper's `CLAUDE.md` records for its copy, such as a pointer on a
+   line of its own or another proof name.
+2. Take the deferred results in the order that they print: for each
+   `\printProofs`, the results of its category in the order of the body. For
+   each result:
+   1. Add `category=<slug>` to the options of its statement. Replace a shared
+      category, such as `category=rate`, with the slug.
+   2. Move the text of its `textAtEnd` block (the heading, the label and any
+      sentences) to the appendix file, at the place of the `\printProofs` that
+      printed it and after the blocks that you moved before it. Delete the
+      `textAtEnd` block from the `theory/` file.
+   3. Add `\printProofs[<slug>]` after the moved text.
+3. Delete the old `\printProofs` lines and the comments that describe them.
+4. Other text in a `theory/` file, outside the result and its proof, prints
+   where the file is input. Move it to the file that inputs it, next to the
+   `\input` line.
+5. Run the checker until it reports no `text-at-end` or `deferred-shape`
+   error, and no `theory-text` error other than those of step 7. Build and
+   compare as in "9. Build and compare": the text of the PDF must not change
+   at all.
+6. Update the paper's `CLAUDE.md` from `assets/paper-CLAUDE.md`, and commit
+   with no other change.
+7. Text that says how a cited source gives a result is its proof, but a
+   `proof` environment adds a "Proof." header to the PDF. Ask the author
+   before you make that change, and make it a commit of its own.

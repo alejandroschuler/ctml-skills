@@ -4,10 +4,24 @@ This paper follows the `tex-hygiene` skill of the overleaf-tools plugin.
 
 - Every theorem, proposition, lemma and corollary lives with its proof in
   `theory/<slug>.tex`, where `<slug>` is its label without the prefix.
-  `\input` the file where the statement belongs. A proof that belongs in the
-  appendix uses `propositionE` (or `theoremE`, `lemmaE`, `corollaryE`) with
-  `proofE`, and the one `\printProofs` in the appendix prints it, so a new
-  result needs no appendix edit.
+  `\input` the file where the statement belongs. A `theory/` file holds only
+  the statement and its proof: no heading, no `textAtEnd` block, and no
+  lead-in, definition or recap. Those go in the section or appendix file.
+- A proof that belongs in the appendix uses `propositionE` (or `theoremE`,
+  `lemmaE`, `corollaryE`) with `category=<slug>`, and `proofE`. The appendix
+  file prints it under its own heading:
+
+  ```latex
+  \subsection{Proof of \autoref{thm:<slug>}}
+  \label{pf:<slug>}
+
+  \printProofs[<slug>]
+  ```
+
+  To move a proof, move this block. To reorder the appendices, rename their
+  files so that the numbers sort in the new order, and reorder their `\input`
+  lines. No `theory/` file changes. A new deferred result needs its block in
+  an appendix file, or the build stops with an error from `deferproofs.sty`.
 - Every TikZ figure lives in `tikz/<slug>.tex`, which starts with a header
   comment and holds the whole `figure` environment. `\input` it where the
   figure belongs.
@@ -31,8 +45,8 @@ This paper follows the `tex-hygiene` skill of the overleaf-tools plugin.
   front of `\ref`, as in `Lemma~\ref{...}`. The proof headings and pointers
   that the templates write keep `\autoref`.
 - `deferproofs.sty` holds the proof-at-the-end setup. Build with
-  `latexmk -pdf main.tex`. The build writes `main-pratenddefaultcategory.tex`;
-  never edit or commit it.
+  `latexmk -pdf main.tex`. The build writes a `main-pratend<slug>.tex` file
+  for each deferred result; never edit or commit them.
 - Run the skill's checker on this folder before each push.
 
 ## Overleaf

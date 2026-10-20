@@ -1,8 +1,8 @@
 %% deferproofs.sty
 %%
 %% Keeps each result and its proof together in one file, theory/<slug>.tex,
-%% and prints the proof in the appendix. Part of the tex-hygiene skill in the
-%% overleaf-tools plugin of ctml-skills.
+%% and prints the proof where an appendix file asks for it. Part of the
+%% tex-hygiene skill in the overleaf-tools plugin of ctml-skills.
 %%
 %% Copy this file next to main.tex. Load it after the theorem declarations,
 %% and after hyperref and cleveref:
@@ -17,12 +17,22 @@
 %%   - the pointer from the statement to its proof, set in front of the first
 %%     word of the next paragraph;
 %%   - a \printProofs that prints nothing, instead of stopping the build, when
-%%     no deferred result has been stated yet.
+%%     no deferred result has been stated yet;
+%%   - an error at the end of the build for each category whose proofs no
+%%     \printProofs printed, so that no proof is lost.
+%%
+%% Each deferred result has category=<slug>, and an appendix file prints it
+%% under a heading of its own:
+%%
+%%   \subsection{Proof of \autoref{thm:<slug>}}
+%%   \label{pf:<slug>}
+%%
+%%   \printProofs[<slug>]
 %%
 %% A paper that defines other result environments adds its own aliases after
 %% this package, for example \newEndThm{claimE}{claim}.
 \NeedsTeXFormat{LaTeX2e}[2021/06/01]
-\ProvidesPackage{deferproofs}[2026/09/28 v1.0 proof-at-the-end setup for theory/ files]
+\ProvidesPackage{deferproofs}[2026/10/19 v1.1 proof-at-the-end setup for theory/ files]
 
 \RequirePackage[conf={end, restate}]{proof-at-the-end}
 
@@ -32,10 +42,11 @@
 \newEndThm{corollaryE}{corollary}
 \newEndProof{proofE}
 
-%% Each deferred proof gets a numbered appendix subsection from the textAtEnd
-%% block in its theory file, so the proof header does not repeat the
-%% subsection title. An empty proof name prints the default "Proof.", because
-%% thmtools, which proof-at-the-end loads, treats it that way.
+%% Each deferred proof gets a numbered appendix subsection from the heading
+%% that the appendix file writes above its \printProofs, so the proof header
+%% does not repeat the subsection title. An empty proof name prints the
+%% default "Proof.", because thmtools, which proof-at-the-end loads, treats it
+%% that way.
 \pratendSetGlobal{text proof=}
 
 %% The pointer to a deferred proof ("The proof is in subsection A.3.") goes in
@@ -86,9 +97,37 @@
 %% the stock command stops the build. A file left by an earlier build would
 %% print stale proofs. So the file is read only when this build wrote to it.
 \RenewDocumentCommand\printProofs{O{defaultcategory}}{%
+  \csgundef{deferproofs@unprinted@#1}%
   \ifcsdef{pratendmacrocat#1}%
     {\input{\prefixPrAtEndFiles#1.tex}}%
     {\PackageWarning{deferproofs}{No deferred proofs in category `#1' to print}}%
 }
+
+%% A proof that no \printProofs prints is lost without an error, for example
+%% when its result has no category and no \printProofs without a category
+%% exists, when no appendix file prints its category, or when its statement
+%% comes after the \printProofs of its category. Every deferred proof goes through
+%% the package's proofEndOrig environment, which writes the proof to the file
+%% of its category when \ifproofend is true. The hook at the end of that
+%% environment records the category as unprinted, \printProofs clears the
+%% record, and the end of the build stops on each record left.
+\newcommand\deferproofs@categories{}
+\newcommand\deferproofs@collect[1]{%
+  \edef\deferproofs@category{#1}%
+  \xifinlist{\deferproofs@category}{\deferproofs@categories}{}%
+    {\listxadd\deferproofs@categories{\deferproofs@category}}%
+  \csgdef{deferproofs@unprinted@\deferproofs@category}{}%
+}
+\AddToHook{env/proofEndOrig/end}{\ifproofend\deferproofs@collect{\category}\fi}
+\newcommand\deferproofs@check[1]{%
+  \ifcsdef{deferproofs@unprinted@#1}{%
+    \PackageError{deferproofs}{%
+      The proof in category `#1' is never printed}{%
+      Each deferred result needs category=<slug> in its options, and an
+      appendix file needs \string\printProofs[<slug>] after the statement.
+      A result with no category is in `defaultcategory'.}%
+  }{}%
+}
+\AtEndDocument{\forlistloop\deferproofs@check\deferproofs@categories}
 
 \endinput

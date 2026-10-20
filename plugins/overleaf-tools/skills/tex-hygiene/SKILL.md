@@ -1,6 +1,6 @@
 ---
 name: tex-hygiene
-description: "Keeps the LaTeX source of a paper in fixed places, so that agents can edit it in parallel and merge cleanly. Each theorem, proposition, lemma and corollary lives with its proof in its own file in theory/, and proof-at-the-end prints the proof in the appendix. Each TikZ figure has its own file in tikz/. The text lives in numbered section files of at most about 200 lines, so that sections/ reads as the table of contents, and is written one sentence per line, with cleveref naming each cross-reference. Use when adding, moving, splitting, restating or deleting a result, proof, TikZ figure or section in a .tex paper, writing or re-breaking its paragraphs, citing a result, section, figure or equation, starting a new paper, moving proofs to the appendix, or tidying or checking a paper's layout, even when the user does not name the convention. Covers any LaTeX manuscript, including an Overleaf clone and the paper/ repo of a reproducible-paper-artefacts project, but not notes."
+description: "Keeps the LaTeX source of a paper in fixed places, so that agents can edit it in parallel and merge cleanly. Each theorem, proposition, lemma and corollary lives with its proof in its own file in theory/, and the appendix files hold the headings and say where proof-at-the-end prints each proof. Each TikZ figure has its own file in tikz/. The text lives in numbered section files of at most about 200 lines, so that sections/ reads as the table of contents, and is written one sentence per line, with cleveref naming each cross-reference. Use when adding, moving, splitting, restating or deleting a result, proof, TikZ figure or section in a .tex paper, writing or re-breaking its paragraphs, citing a result, section, figure or equation, starting a new paper, moving proofs to the appendix or reordering it, or tidying or checking a paper's layout, even when the user does not name the convention. Covers any LaTeX manuscript, including an Overleaf clone or a reproducible-paper-artefacts paper/ repo, but not notes."
 ---
 
 # TeX hygiene
@@ -9,9 +9,13 @@ A paper's source stays easy to read and to change when every result, every
 figure and every section has exactly one home:
 
 - **Results.** Each theorem, proposition, lemma and corollary lives with its
-  proof in `theory/<slug>.tex`. The body inputs the file where the statement
-  belongs. When the proof belongs in the appendix, the `proof-at-the-end`
-  package prints it there, so a new result never needs an appendix edit.
+  proof in `theory/<slug>.tex`, and the file holds nothing else. The body
+  inputs the file where the statement belongs. When the proof belongs in the
+  appendix, the `proof-at-the-end` package prints it at the line of the
+  appendix file that names it.
+- **Appendix.** Each appendix file holds its headings and all of its text
+  that is not a statement or a proof, so the appendix files set the order of
+  the appendix.
 - **Figures.** Each TikZ figure lives in `tikz/<slug>.tex`, which holds the
   whole `figure` environment. The body inputs the file where the figure
   belongs.
@@ -27,9 +31,11 @@ Copy from it rather than writing the setup from memory.
 
 `<slug>` is the label without its prefix. `thm:nu-clt` lives in
 `theory/nu-clt.tex`, and `fig:snu-decomposition` lives in
-`tikz/snu-decomposition.tex`. The appendix subsection of a deferred proof is
-labelled `pf:<slug>`, with the same slug. Use lowercase words joined by
-hyphens. When you rename a label, rename the file and the `pf:` label with it.
+`tikz/snu-decomposition.tex`. A deferred proof has the category `<slug>`,
+and its appendix subsection has the label `pf:<slug>`, with the same slug,
+unless it shares a heading with another proof (see "The appendix"). Use
+lowercase words joined by hyphens. When you rename a label, rename the file,
+the category, the `\printProofs[<slug>]` line and the `pf:` label with it.
 
 A paper that already uses this layout under another folder name, such as
 `theorems/`, keeps that name unless the author asks for the rename. Give the
@@ -64,7 +70,7 @@ The shape of a result's file depends on where its statement and proof go:
 
 | Statement | Proof | Environments in the file | Template |
 |---|---|---|---|
-| body | appendix | `textAtEnd`, then `propositionE` and `proofE` | `theory/mean-consistency.tex` |
+| body | appendix | `propositionE` with `category=<slug>`, and `proofE` | `theory/mean-consistency.tex` |
 | body | right after the statement | `proposition` and `proof` | `theory/chebyshev.tex` |
 | appendix | right after the statement | `lemma` and `proof`, input in the appendix | `theory/chebyshev.tex` |
 | anywhere | none, for a cited or standard result | `theorem` alone | `theory/chebyshev.tex` without the proof |
@@ -74,14 +80,15 @@ Use the environment for the result's kind. The deferred ones are `theoremE`,
 and remarks are not results, so they stay in the prose where they are
 introduced.
 
+A lead-in, a definition or a recap of the setup goes in the section file
+before the `\input` line, or in the appendix file before the `\printProofs`
+line. The sentences that say how a cited source gives a restated result are
+its proof, so they go in a `proof` environment. Do not use `textAtEnd`.
+
 The deferred shape is the usual one:
 
 ```latex
-\begin{textAtEnd}
-\subsection{Proof of \autoref{thm:nu-clt}}
-\label{pf:nu-clt}
-\end{textAtEnd}
-\begin{propositionE}[Limit law][text link={The proof is in \autoref{pf:nu-clt}.}]
+\begin{propositionE}[Limit law][text link={The proof is in \autoref{pf:nu-clt}.}, category=nu-clt]
 \label{thm:nu-clt}
 ...statement...
 \end{propositionE}
@@ -91,15 +98,13 @@ The deferred shape is the usual one:
 \end{proofE}
 ```
 
-- The `textAtEnd` block gives the proof a numbered appendix subsection with
-  the label `pf:<slug>`. The proof then shows in the table of contents, and
-  `\autoref{pf:<slug>}` works from anywhere. The block sits in the result's
-  own file, which is why a new result needs no appendix edit.
+- `category=<slug>` sends the proof to the `\printProofs[<slug>]` line of an
+  appendix file. Each deferred result has a category of its own.
 - `text link` is the pointer to the proof. `deferproofs.sty` sets it in front
   of the first word of the next paragraph. Before a heading, a list, a theorem
   or a display, it sets the pointer on a line of its own instead.
 - An untitled result keeps the empty first bracket:
-  `\begin{propositionE}[][text link={...}]`.
+  `\begin{propositionE}[][text link={...}, category=<slug>]`.
 - For a sketch in the body and the full proof in the appendix, put a plain
   `\begin{proof}[Proof sketch]` after the statement and the full proof in
   `proofE`.
@@ -108,35 +113,53 @@ The deferred shape is the usual one:
 
 ## The appendix
 
+Each appendix is a file in `sections/`, such as `sections/A1-proofs.tex`,
+input after `\appendix` in the root file:
+
 ```latex
-\appendix
 \section{Proofs}
+\label{sec:proofs}
 
 \subsection{Supporting lemmas}
 \input{theory/chebyshev}   % stated and proved here, with plain environments
 
-\printProofs               % every deferred proof, in body order
+\subsection{Proof of \autoref{thm:nu-clt}}
+\label{pf:nu-clt}
+
+\printProofs[nu-clt]       % the restated proposition, then its proof
 ```
 
-`\printProofs` prints each deferred proof under its own subsection, with the
-statement restated above it under its original number.
+`\printProofs[<slug>]` prints the deferred result of that category: the
+statement, restated under its original number, then the proof. The block of
+a deferred proof is its heading, its `pf:` label, any text that goes with it,
+and its `\printProofs` line, all in the appendix file.
 
-Every deferred statement has to come before `\printProofs`. The package prints
-only the proofs that it has collected by that point, so a `proofE` stated
-later disappears without an error. This is why a result stated in the
-appendix uses the plain environments.
+- **Move a proof.** Move its block, in the same file or to another appendix
+  file.
+- **Reorder the appendices.** Rename their files with `git mv` so that the
+  numbers sort in the new order, keep each slug, and reorder the `\input`
+  lines after `\appendix` to match. Make it a commit with no other change,
+  and read the Overleaf comments first, as for any rename in "Section files".
+  The letters follow the new order.
+- **Two proofs under one heading.** Put both `\printProofs` lines under the
+  heading, with any text between them, and let both pointers name its `pf:`
+  label.
+- **No `\printProofs` without a category.** It prints the deferred results
+  that have no category, in the order of the body, so the appendix file
+  cannot place them.
 
-To group the proofs or change their order, tag results with
-`category=<name>` in the options bracket, give their `textAtEnd` blocks the
-same `[category=<name>]`, and add a `\printProofs[<name>]` for each group.
-Keep the default when the order does not matter, so that a new result still
-needs no appendix edit.
+A statement has to come before its `\printProofs` line. The package prints
+only what it has collected by that line. A result stated and proved in the
+appendix uses the plain environments. `deferproofs.sty` stops the build with
+an error when a deferred proof is never printed, for example when its result
+has no category, its category has no `\printProofs` line, or its statement
+comes after that line.
 
 ## Traps
 
 Read `references/proof-at-the-end.md` when a deferred proof misbehaves, when
-you group proofs with categories, when you change `deferproofs.sty`, or when a
-paper moves to a new document class or a new TeX Live. It explains how the
+you change `deferproofs.sty`, or when a paper moves to a new document class or
+a new TeX Live. It explains how the
 package works and what `deferproofs.sty` changes. These traps come up most:
 
 - The package writes each deferred proof to a file and reads it back in the
@@ -292,7 +315,8 @@ shows the sentence that changed, not its whole paragraph.
 ## Day-to-day edits
 
 - **New result.** Copy the matching template to `theory/<slug>.tex` and input
-  it where the statement belongs.
+  it where the statement belongs. For a deferred proof, add its block to the
+  appendix file where the proof belongs, as in "The appendix".
 - **New figure.** Copy the template's `tikz/mean-tails.tex` to
   `tikz/<slug>.tex`, replace the drawing and the header, and input it where
   the figure belongs.
@@ -300,18 +324,20 @@ shows the sentence that changed, not its whole paragraph.
   number at its place, and start the file with its heading. Add its `\input`
   line to the root file at the same place.
 - **A file of text passes about 200 lines.** Split it as in "Section files".
-- **Move a result or a figure.** Move its `\input` line.
+- **Move a result or a figure.** Move its `\input` line. A deferred proof
+  stays where its block is in the appendix.
+- **Move a proof or reorder the appendix.** Move blocks and files as in "The
+  appendix". Do not edit `theory/` files for it.
 - **Move a section.** Give its file a free number at the new place, and move
   its `\input` line. For a folder, rename the folder and move all of its
   `\input` lines together.
 - **Edit a result.** Find the file from the label and edit it there. The
-  appendix prints from a generated file, so a jump from the PDF appendix to
-  the source can land in `main-pratenddefaultcategory.tex`. Do not edit that
-  file.
-- **Delete a result, a figure or a section.** Remove its `\input` line and its
-  file, then search for `\cref`, `\Cref`, `\autoref`, `\eqref` and `\ref`
-  calls to its labels. Do not renumber the other section files to close the
-  gap.
+  appendix prints from generated files, so a jump from the PDF appendix to
+  the source can land in `main-pratend<slug>.tex`. Do not edit that file.
+- **Delete a result, a figure or a section.** Remove its `\input` line, its
+  file and, for a deferred proof, its block in the appendix. Then search for
+  `\cref`, `\Cref`, `\autoref`, `\eqref` and `\ref` calls to its labels. Do not
+  renumber the other section files to close the gap.
 - **A coauthor's inline result or figure.** Coauthors on Overleaf may write a
   theorem or a TikZ picture inline. Move it into its own file, as for a new
   one.
@@ -379,9 +405,10 @@ Read the log for undefined or multiply defined references.
    `\newEndThm{claimE}{claim}`. If the preamble already loads
    `proof-at-the-end` itself, remove that code, since `deferproofs.sty`
    replaces it.
-3. Put `\section{Proofs}` with `\printProofs` in the appendix.
+3. Write the appendix in `sections/A1-proofs.tex`, with a block for each
+   deferred proof, as in "The appendix".
 4. Add `*-pratend*.tex` to the paper's `.gitignore`. The package writes
-   `main-pratenddefaultcategory.tex` on every build.
+   `main-pratend<slug>.tex` for each deferred result on every build.
 5. Add the sections in `${CLAUDE_SKILL_DIR}/assets/paper-CLAUDE.md` to the
    paper repo's `CLAUDE.md`, so that later sessions keep the layout and pull
    first.
@@ -392,3 +419,8 @@ Read `references/migration.md` first. You pull, build a baseline and record
 its numbering, and take the checker's errors as the worklist. Then you move one
 result or figure at a time, then the sections, build again, and compare the
 numbering and the text with the baseline.
+
+A paper set up before overleaf-tools 0.9.0 has a `textAtEnd` block in each
+deferred result's file and one `\printProofs`. The checker reports
+`text-at-end` and `deferred-shape` errors for it. Follow "Move the appendix
+text out of theory/" in `references/migration.md`.
