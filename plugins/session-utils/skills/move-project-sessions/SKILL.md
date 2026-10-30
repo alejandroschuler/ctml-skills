@@ -208,6 +208,32 @@ planned. Restore from that folder before you run the script again.
 Any other `ABORT` works the same way: the script exits with code 3, nothing
 changes, and the message says what to inspect.
 
+## Moving only some sessions to another project
+
+Use this when the folder stays and the user wants a few chats, with their
+linked subchats, to appear under a different project. The main script moves a
+whole folder, so it does not fit. Use `scripts/move_sessions.py` instead.
+
+1. Find the desktop ids with `list_sessions`. Add each subchat: its
+   `startedBy` field names its parent.
+2. Run the dry run. It changes nothing:
+
+   ```bash
+   python3 "<skill dir>/scripts/move_sessions.py" \
+     --from "/old/folder" --to "/new/folder" local_<id1> local_<id2>
+   ```
+
+3. Tell the user to quit the desktop app with Cmd-Q and to run the same
+   command with `--apply` in Terminal.app. Write the script's absolute path
+   in full. Then the user relaunches the app.
+
+The new folder must already have a transcript folder, so a session must have
+run there before. The script rewrites only the session `cwd`, in the sidebar
+record and in the transcript. It leaves file paths inside the chat as they
+are. It backs up the files it changes to
+`~/.claude/projects/_move-backups/sessions-<time>/` and refuses to run while
+the app runs.
+
 ## The four stores
 
 The paths here are for macOS. "Other operating systems" below gives the
