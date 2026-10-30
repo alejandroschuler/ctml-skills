@@ -1,6 +1,6 @@
 {
   "name": "stats-research",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Design and report simulation studies, set up and tune supervised learners (including Riesz regression), and state results and structure proofs, and write and review the mathematics of LaTeX papers.",
   "author": {
     "name": "Alejandro Schuler"

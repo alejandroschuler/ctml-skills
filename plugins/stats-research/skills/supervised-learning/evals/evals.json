@@ -46,7 +46,7 @@
       "id": 3,
       "name": "simulation-split-default",
       "prompt": "I'm running a simulation that compares AIPW and TMLE at n = 500 and n = 2000, with a super learner over tuned xgboost, MARS and a GLM for both nuisance functions. How should I set up the cross-fitting and the super learner's cross-validation?",
-      "expected_output": "Recommends replacing cross-fitting and the super learner's inner cross-validation with three independent draws of the same size n for each dataset: fit every setting on the training draw, choose or weight the settings on the validation draw (which is also where the edge check reads the risks), and run AIPW and TMLE on the estimation draw, with no refit. Justifies this as an emulation of cross-validated cross-fitting at n: the rotation gives each role nearly the whole sample, so each draw gets n, and it costs one fit per setting instead of K(V+1). Says the reported sample size is the size of one draw. Names the cases that need the nested scheme itself: a claim about the scheme, or a variance or coverage claim that rests on a nuisance fit converging to the wrong function, a non-orthogonal estimator, or a noisy learner.",
+      "expected_output": "Recommends replacing cross-fitting and the super learner's inner cross-validation with three independent draws of the same size n for each dataset: fit every setting on the training draw, choose or weight the settings on the validation draw (which is also where the edge check reads the risks), and run AIPW and TMLE on the estimation draw, with no refit. Justifies this as an emulation of cross-validated cross-fitting at n: the rotation gives each role nearly the whole sample, so each draw gets n, and it costs one fit per setting instead of the K(K+1)/2 of the nested scheme. Says the reported sample size is the size of one draw. Names the cases that need the nested scheme itself: a claim about the scheme, or a variance or coverage claim that rests on a nuisance fit converging to the wrong function, a non-orthogonal estimator, or a noisy learner.",
       "files": [],
       "assertions": [
         "Recommends three independent draws of the same size per dataset, one to fit the learners, one to validate them and one for the estimators, in place of cross-fitting and inner cross-validation",
@@ -98,6 +98,20 @@
         "Explains that on a plateau the smallest penalty keeps winning however far the path extends, because noise decides among settings whose risks barely differ",
         "Says the significant z does not call for an extension, because the standard error of the average over reps shrinks with the number of reps, and the drop is far too small to matter",
         "Says the plateau means the data want almost no penalty, and that this is worth reporting"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "aligned-inner-folds",
+      "prompt": "I'm estimating an average treatment effect with AIPW on a cohort of 4000 patients. I plan 10-fold cross-fitting, and in each training set a super learner over xgboost at 10 settings, MARS and an elastic net, with its weights chosen by 10-fold cross-validation. My plan is to call CV.SuperLearner with cvControl = list(V = 10) and innerCvControl = list(list(V = 10)). Is that a sensible way to run it?",
+      "expected_output": "Keeps cross-validated cross-fitting but recommends aligning the inner folds with the outer folds and writing the loop over pairs of folds in place of CV.SuperLearner, which draws new inner folds in each training set and refits every one, 10 x 11 = 110 fits per setting. With aligned folds, the cross-validation in the training set without fold k uses the other 9 outer folds as its folds, and one fit on every fold except j and k predicts fold j for the training set without k and fold k for the training set without j. That is 45 pair fits and 10 outer fits, 55 per setting. Says the choice for fold k still uses no data from fold k. For xgboost, passes both held-out folds of a pair fit as eval_set entries with early stopping off, and averages each round's loss over the inner folds of each training set. For the elastic net, fits the glmnet path on each pair's training set instead of running cv.glmnet.",
+      "files": [],
+      "assertions": [
+        "Recommends that the cross-validation inside each training set use the other outer folds as its folds, instead of new random inner folds",
+        "Recommends one fit per setting for each pair of folds, trained without both, whose predictions serve the inner cross-validations of the two training sets that leave out one fold of the pair",
+        "Counts the fits per setting: 45 pair fits and 10 outer fits, 55 in all, against 110 when each training set draws its own inner folds",
+        "Says that CV.SuperLearner, or any routine that nests one cross-validation inside another, does not share fits across training sets, so the loop over pairs has to be written by hand",
+        "Says the choice for outer fold k still uses no data from fold k"
       ]
     }
   ]
