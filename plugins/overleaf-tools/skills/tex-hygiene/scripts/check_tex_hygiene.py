@@ -24,18 +24,28 @@ and \\iffalse blocks. Its rules:
                   more than one figure
   slug            a file name does not match its label: thm:<slug> belongs in
                   theory/<slug>.tex, and fig:<slug> in tikz/<slug>.tex
-  deferred-shape  a deferred result lacks its proofE, its textAtEnd block with
-                  \\label{pf:<slug>}, or its text link
+  theory-text     a theory/ file holds a heading or other text outside its
+                  result and proof. Headings, lead-ins and recaps belong in
+                  the section or appendix file around the \\input or the
+                  \\printProofs, so that the appendix files set the order.
+  text-at-end     a textAtEnd block, whose text prints in the appendix but is
+                  written somewhere else
+  deferred-shape  a deferred result lacks its proofE, its text link, or a
+                  category=<slug> that matches its file, or its text link
+                  names a pf: label that no file outside theory/ defines
   after-print     a deferred result comes after the \\printProofs that prints
-                  it, so LaTeX drops its proof without an error
-  no-print        there are deferred results but no \\printProofs
-  unused-print    a \\printProofs has no deferred result before it
+                  it, so its proof is lost (deferproofs.sty stops the build)
+  no-print        a deferred result has no \\printProofs of its category
+  unused-print    a \\printProofs has no deferred result before it, or a pf:
+                  label outside theory/ is named by no text link, as a
+                  heading left after its result was deleted
   header          a tikz/ file does not start with a header comment
   verbatim        verbatim material inside a deferred result or its proofE
   hash            a macro parameter # inside proofE, which proof-at-the-end
                   doubles when it writes the proof out
   twice           a theory/, tikz/ or sections/ file is read more than once,
-                  which defines its labels twice
+                  which defines its labels twice, or a category is printed
+                  by more than one \\printProofs
   orphan          a file in theory/, tikz/ or sections/ that nothing reads
   missing         an \\input target that does not exist
   old-pointer     preamble code for the run-in proof pointer that puts the
@@ -155,6 +165,9 @@ GENERATED_DIRS = {"artefacts"}
 SECTION_NAME = re.compile(r"^(\d{2}|A\d)-(.+)$")
 SENTENCE_END = re.compile(r"[.?!]+['\")}]*[ \t]+(?=[A-Z]|\\([A-Za-z]+))")
 HEADING = re.compile(r"\\(section|subsection|subsubsection|paragraph)\*?\s*[\[{]")
+MACRO_DEF = re.compile(
+    r"\\(?:(?:re)?newcommand|providecommand|DeclareMathOperator|(?:New|Renew|Declare|Provide)"
+    r"DocumentCommand|def|gdef|edef|xdef|let)(?![a-zA-Z@])")
 NOTE_MODE = re.compile(r"^\s*%\s*writing-math:\s*note\b", re.M | re.I)
 # Words typed in front of \ref that \cref or \eqref would print, each with the
 # kind of label that it names. Appendix, condition, step and item are left
@@ -207,7 +220,9 @@ class Result:
     deferred: bool
     seq: int
     category: str = "defaultcategory"
+    has_category: bool = False
     has_text_link: bool = False
+    pointer: str | None = None  # the pf: label that the text link names
     label: str | None = None
     nested: bool = False
 
@@ -227,20 +242,12 @@ class TikzPicture:
 
 
 @dataclass
-class TextAtEnd:
-    file: Path
-    category: str = "defaultcategory"
-
-
-@dataclass
 class FileInfo:
     path: Path
     reads: int = 0
     results: list[Result] = field(default_factory=list)
     figures: list[Figure] = field(default_factory=list)
     deferred_proofs: int = 0
-    pf_labels: list[str] = field(default_factory=list)
-    textatend_categories: list[str] = field(default_factory=list)
     body: bool = False  # read inside the document body, not from the preamble
 
 
@@ -489,7 +496,7 @@ class Walker:
         self.results: list[Result] = []
         self.tikzpictures: list[TikzPicture] = []
         self.proofs: list[tuple[Path, int, str, str]] = []  # file, line, env, context
-        self.pf_outside: list[tuple[Path, int, str]] = []  # file, line, label
+        self.pf_labels: list[tuple[Path, int, str]] = []  # file, line, label
         self.prints: list[tuple[int, str, Path, int]] = []  # seq, category, file, line
         self.section_reads: list[tuple[Path, Path, int]] = []  # file, reader, line
         self.stack: list[tuple[str, object]] = []
@@ -643,9 +650,10 @@ class Walker:
             obj = Figure(path, line)
             self.info(path).figures.append(obj)
         elif env == "textAtEnd":
-            opts, _ = read_group(text, pos, "[")
-            obj = TextAtEnd(path, category_of(opts or ""))
-            self.info(path).textatend_categories.append(obj.category)
+            self.add("text-at-end", "error", path, line,
+                     "a textAtEnd block prints its text in the appendix, but the text "
+                     "lives here. Write the heading, the label and the text in the "
+                     "appendix file, above the \\printProofs line that they belong to.")
         elif env == "tikzpicture" and self.in_body:
             fig = next((o for _, o in reversed(self.stack) if isinstance(o, Figure)), None)
             self.tikzpictures.append(TikzPicture(path, line, fig))
@@ -666,7 +674,10 @@ class Walker:
         r = Result(path, line, env, deferred, self.seq)
         if deferred:
             r.category = category_of(opts)
+            r.has_category = re.search(r"category\s*=", opts) is not None
             r.has_text_link = "text link" in opts
+            m = re.search(r"\\(?:autoref|cref|Cref|ref)\*?\s*\{(pf:[^{}]+)\}", opts)
+            r.pointer = m.group(1).strip() if m else None
         r.nested = any(isinstance(o, Result) for _, o in self.stack)
         self.results.append(r)
         self.info(path).results.append(r)
@@ -681,15 +692,13 @@ class Walker:
     def label(self, label: str, path: Path, line: int) -> None:
         """A label belongs to the innermost open environment, so the label of an
         equation inside a statement is not taken for the statement's own."""
-        if label.startswith("pf:") and not self.under(path, self.theory):
-            self.pf_outside.append((path, line, label))
+        if label.startswith("pf:"):
+            self.pf_labels.append((path, line, label))
         if not self.stack:
             return
         _, obj = self.stack[-1]
         if isinstance(obj, (Result, Figure)) and obj.label is None:
             obj.label = label
-        elif isinstance(obj, TextAtEnd):
-            self.info(obj.file).pf_labels.append(label)
 
 
 # --------------------------------------------------------------------------
@@ -715,11 +724,6 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, sections: Path,
             hint = f" It looks like the proof of {ref}; move it into {tdir}/{slug_of(ref)}.tex." if ref else \
                    f" Move it into the {tdir}/ file of its result."
             w.add("stray-proof", "error", path, line, f"{env} is outside {tdir}/." + hint)
-    for path, line, label in w.pf_outside:
-        w.add("stray-proof", "warning", path, line,
-              f"\\label{{{label}}} outside {tdir}/ marks a hand-written proof section. "
-              f"Move the proof into {tdir}/{slug_of(label)}.tex with its statement, and "
-              "let the textAtEnd block there carry the label.")
 
     for t in w.tikzpictures:
         if not w.under(t.file, tikz):
@@ -765,15 +769,49 @@ def check(paper: Path, root: Path, theory: Path, tikz: Path, sections: Path,
                   "or use the plain environments.")
         else:
             cat = "" if r.category == "defaultcategory" else f"[{r.category}]"
+            fix = (f"Add a heading with its pf: label and \\printProofs{cat} to the "
+                   "appendix file where the proof belongs.")
+            if not cat:
+                slug = slug_of(r.label) or "<slug>"
+                fix = (f"Give it category={slug}, and add a heading with its pf: label and "
+                       f"\\printProofs[{slug}] to the appendix file where the proof belongs.")
             w.add("no-print", "error", r.file, r.line,
                   f"{r.label or r.env} is deferred but there is no \\printProofs{cat} after "
-                  "it. Add one to the appendix.")
+                  f"it, so its proof is lost. {fix}")
     for s, c, f, ln in w.prints:
         if not any(r.deferred and r.category == c and r.seq < s for r in w.results):
             w.add("unused-print", "warning", f, ln,
                   f"\\printProofs{'' if c == 'defaultcategory' else '[' + c + ']'} has no "
                   "deferred result before it. It prints nothing with deferproofs.sty, and "
-                  "stops the build without it.")
+                  "stops the build without it. If its result is gone, delete the block: "
+                  "the heading, its pf: label and this line.")
+    by_category: dict[str, list[tuple[Path, int]]] = {}
+    for s, c, f, ln in w.prints:
+        firsts = [r.seq for r in w.results if r.deferred and r.category == c]
+        if firsts and s > min(firsts):
+            by_category.setdefault(c, []).append((f, ln))
+    for c, places in by_category.items():
+        if len(places) > 1:
+            f, ln = places[1]
+            name = "\\printProofs" + ("" if c == "defaultcategory" else f"[{c}]")
+            where = ", ".join(f"{w.rel(pf)}:{pl}" for pf, pl in places)
+            w.add("twice", "error", f, ln,
+                  f"{name} appears {len(places)} times after its statement ({where}), so "
+                  "its proof prints more than once. Keep one.")
+    defined = {label for path, _, label in w.pf_labels if not w.under(path, theory)}
+    named = {r.pointer for r in w.results if r.deferred and r.pointer}
+    for path, line, label in w.pf_labels:
+        if not w.under(path, theory) and label not in named:
+            w.add("unused-print", "warning", path, line,
+                  f"no text link names \\label{{{label}}}. If its result is gone, delete "
+                  "the block: the heading, this label and its \\printProofs line.")
+    for r in w.results:
+        if r.deferred and r.pointer and r.pointer not in defined:
+            cat = r.category if r.has_category else (slug_of(r.label) or r.file.stem)
+            w.add("deferred-shape", "error", r.file, r.line,
+                  f"the text link names {r.pointer}, which no file outside {tdir}/ defines. "
+                  f"In the appendix file, put \\label{{{r.pointer}}} under the heading "
+                  f"above \\printProofs[{cat}].")
 
     check_pointer(w, root)
     check_generated(w, paper, root)
@@ -817,16 +855,18 @@ def check_theory_file(w: Walker, fi: FileInfo) -> None:
                   f"{r.env} has no proofE, so the body gets no pointer and the appendix "
                   "gets the statement without a proof. Add the proofE, or use the plain "
                   "environment.")
-        if f"pf:{stem}" not in fi.pf_labels:
-            w.add("deferred-shape", "warning", path, r.line,
-                  f"no textAtEnd block with \\label{{pf:{stem}}}, so the proof gets no "
-                  "appendix subsection of its own.")
-        for c in fi.textatend_categories:
-            if c != r.category:
-                w.add("deferred-shape", "error", path, r.line,
-                      f"the textAtEnd block is in category {c} and the result in "
-                      f"{r.category}, so the proof heading and the proof print in "
-                      "different places. Give both the same category.")
+        if not r.has_category:
+            w.add("deferred-shape", "error", path, r.line,
+                  f"{r.env} has no category, so its proof prints only through a "
+                  "\\printProofs with no category, in the order of the body. Add "
+                  f"category={stem} to its options, and \\printProofs[{stem}] to the "
+                  "appendix file where the proof belongs.")
+        elif r.category != stem:
+            w.add("deferred-shape", "error", path, r.line,
+                  f"{r.env} is in category {r.category}, not {stem}. Give each deferred "
+                  f"result the category of its file, category={stem}, and its own "
+                  f"\\printProofs[{stem}] in the appendix file, so that the appendix "
+                  "file alone sets the order of the proofs.")
         if not r.has_text_link:
             w.add("deferred-shape", "warning", path, r.line,
                   f"no text link option, so the pointer is the package default, a page "
@@ -835,6 +875,54 @@ def check_theory_file(w: Walker, fi: FileInfo) -> None:
         w.add("deferred-shape", "error", path, r.line,
               f"proofE follows a plain {r.env}. Use the E environment for the statement, "
               "or a plain proof.")
+    check_theory_text(w, path)
+
+
+def check_theory_text(w: Walker, path: Path) -> None:
+    """A theory/ file holds its result and its proof, and nothing outside them.
+    Each heading, sentence or other environment at the top level of the file is
+    reported once. A textAtEnd block has a rule of its own."""
+    allowed = (w.results_envs | w.deferred_envs | PROOF_PLAIN | w.proof_deferred
+               | {"restatable", "theoremEnd"})
+    text = clean(path.read_text(encoding="utf-8", errors="replace"))
+    text = re.sub(r"\\endinput(?![a-zA-Z@])", lambda m: " " * len(m.group(0)), text)
+    depth = 0
+    pos = 0
+    pieces: list[tuple[int, str]] = []
+
+    def outside(a: int, b: int) -> None:
+        chunk = text[a:b]
+        m = re.search(r"\S", chunk)
+        if m:
+            start = a + m.start()
+            pieces.append((line_of(text, start), " ".join(text[start:b].split())[:50]))
+
+    for m in re.finditer(r"\\(begin|end)\s*\{([^{}\s]+)\}", text):
+        env = m.group(2)
+        if m.group(1) == "begin":
+            if depth == 0:
+                outside(pos, m.start())
+                base = env.rstrip("*")
+                if base not in allowed and "proof" not in base.lower() and env != "textAtEnd":
+                    pieces.append((line_of(text, m.start()), m.group(0)))
+            depth += 1
+        else:
+            depth = max(depth - 1, 0)
+            if depth == 0:
+                pos = m.end()
+    if depth == 0:
+        outside(pos, len(text))
+    for line, snippet in pieces:
+        if MACRO_DEF.match(snippet):
+            w.add("theory-text", "warning", path, line,
+                  f"holds a macro definition outside its result and proof (\"{snippet}\"). "
+                  "Define it in the preamble.")
+            continue
+        what = "a heading" if HEADING.match(snippet) else f"text outside its result and proof (\"{snippet}\")"
+        w.add("theory-text", "error", path, line,
+              f"holds {what}. A {w.rel(w.theory)}/ file holds only a statement and its "
+              "proof. Move this to the section or appendix file, next to the \\input "
+              "line or the \\printProofs line where it belongs.")
 
 
 def check_tikz_file(w: Walker, fi: FileInfo) -> None:
@@ -1137,9 +1225,10 @@ def check_generated(w: Walker, paper: Path, root: Path) -> None:
         w.add("generated", "error", paper / t, None,
               "proof-at-the-end writes this file on every build, and git tracks it. "
               f"Run `git rm --cached {t}` and ignore *-pratend*.tex.")
-    if not any(r.deferred for r in w.results):
+    first = next((r for r in w.results if r.deferred), None)
+    if first is None:
         return
-    name = f"{root.stem}-pratenddefaultcategory.tex"
+    name = f"{root.stem}-pratend{first.category}.tex"
     ignored = subprocess.run(["git", "-C", str(paper), "check-ignore", "-q", name],
                              capture_output=True, text=True)
     if ignored.returncode == 1:

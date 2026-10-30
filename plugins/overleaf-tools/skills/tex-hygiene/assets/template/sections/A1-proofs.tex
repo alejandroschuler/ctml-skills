@@ -7,6 +7,11 @@
 % environments, and its file is input where it belongs.
 \input{theory/chebyshev}
 
-% Every deferred proof, in the order its statement appears in the body. Each
-% one brings its own subsection heading from the textAtEnd block in its file.
-\printProofs
+% A deferred proof prints at the \printProofs line of its category, which is
+% the slug of its theory/ file. The heading, the label and every sentence
+% around the proof live in this file, not in theory/. Move the block to move
+% the proof.
+\subsection{Proof of \autoref{thm:mean-consistency}}
+\label{pf:mean-consistency}
+
+\printProofs[mean-consistency]

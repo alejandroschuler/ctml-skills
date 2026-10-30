@@ -1,13 +1,13 @@
 {
   "skill_name": "tex-hygiene",
-  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split. Evals 12 and 13 test the section numbers: a new section between two others, and a paper from before the numbering rule. Evals 14 and 15 test the cross-reference rule: a new sentence that cites results, and a coauthor's typed names after a pull.",
+  "note": "Light review: no assertions yet. Each fixture is a small paper repo; a copy of assets/template/ is the natural base for the ones that already follow the layout. Evals 0 to 4 test the mechanics and each expected_output names what the result must show, checked by building the paper and running scripts/check_tex_hygiene.py. Evals 5 to 7 test judgement: an existing folder name, and two near-misses that must not trigger the layout rules. Evals 8 to 11 test the text rules: a split at a heading, a file left whole, a paragraph re-broken on edit, and a note that is not split. Evals 12 and 13 test the section numbers: a new section between two others, and a paper from before the numbering rule. Evals 14 and 15 test the cross-reference rule: a new sentence that cites results, and a coauthor's typed names after a pull. Evals 16 and 17 test the appendix rule: a reorder that touches only the appendix files, and a paper from before the rule.",
   "evals": [
     {
       "id": 0,
       "name": "add-deferred-lemma",
       "prompt": "add a lemma to section 2 saying the cross-fit empirical process term is O_P(n^{-1/2}) times the L2 norm, with the proof in the appendix",
-      "fixture": "paper that follows the layout: deferproofs.sty loaded, theory/ with two results, \\printProofs in the appendix",
-      "expected_output": "Creates theory/<slug>.tex with a textAtEnd block labelled pf:<slug>, lemmaE with text link and \\label{thm:<slug>} or lem:<slug>, and proofE. Inputs it in the section 2 file. Does not edit the appendix. The checker reports no errors and the paper builds with the pointer and the appendix proof in place."
+      "fixture": "paper that follows the layout: deferproofs.sty loaded, theory/ with two results, sections/A1-proofs.tex with a heading and \\printProofs[<slug>] for each deferred proof",
+      "expected_output": "Creates theory/<slug>.tex with lemmaE, a text link that names pf:<slug>, category=<slug>, \\label{lem:<slug>} or thm:<slug>, and proofE, and no heading or other text. Inputs it in the section 2 file. Adds a block to sections/A1-proofs.tex: \\subsection{Proof of \\autoref{lem:<slug>}}, \\label{pf:<slug>} and \\printProofs[<slug>]. The checker reports no errors and the paper builds with the pointer and the appendix proof in place."
     },
     {
       "id": 1,
@@ -28,7 +28,7 @@
       "name": "fix-typo-in-theorem",
       "prompt": "proposition 3 has a typo, the rate should be n^{-1/4} not n^{1/4}",
       "fixture": "paper that follows the layout; proposition 3 is theory/nu-clt.tex",
-      "expected_output": "Finds the result from its label, edits theory/nu-clt.tex only, and does not touch main-pratenddefaultcategory.tex or restructure anything."
+      "expected_output": "Finds the result from its label, edits theory/nu-clt.tex only, and does not touch the generated main-pratend*.tex files or restructure anything."
     },
     {
       "id": 4,
@@ -113,6 +113,20 @@
       "prompt": "I pulled from overleaf, Bo rewrote the intro. can you check the tex",
       "fixture": "paper that follows the layout and has been built; Bo's intro has Lemma~\\ref{thm:nu-clt}, where thm:nu-clt is a proposition, Section~\\ref{sec:setup}, Appendix~\\ref{sec:proofs}, and Assumption~\\ref{it:positivity} on an enumerate item; the other sections use \\cref",
       "expected_output": "Runs the checker. Fixes Lemma~\\ref{thm:nu-clt} to \\cref{thm:nu-clt} and reports that the PDF printed the wrong name. Changes Section~\\ref{sec:setup} to \\cref{sec:setup} in the intro, which was edited. Leaves Appendix~\\ref{sec:proofs} and Assumption~\\ref{it:positivity} as they are."
+    },
+    {
+      "id": 16,
+      "name": "reorder-appendix",
+      "prompt": "put the proof of the main theorem first in appendix A, and swap appendices A and B",
+      "fixture": "paper that follows the layout, with sections/A1-proofs.tex holding three proof blocks (heading, pf: label, \\printProofs[<slug>]) of which the main theorem's is the last, and sections/A2-simulation-details.tex",
+      "expected_output": "Moves the main theorem's block, with its heading, label and any text around it, to the top of the proofs in A1-proofs.tex. Swaps the appendices with git mv (A1-simulation-details.tex and A2-proofs.tex, each slug kept) and swaps their \\input lines after \\appendix, in a commit with no other change. Edits no theory/ file. The checker reports no section-order problem, and the build shows the new order with every pointer resolved."
+    },
+    {
+      "id": 17,
+      "name": "old-appendix-layout",
+      "prompt": "check the tex layout before I push",
+      "fixture": "paper set up under overleaf-tools 0.8.0: each deferred result's theory/ file starts with a textAtEnd block holding its proof heading and pf: label, one theory/ file has a lead-in paragraph before its lemma, and the appendix has one \\printProofs",
+      "expected_output": "Runs the checker, which reports text-at-end, theory-text and deferred-shape errors. Explains that the headings and text belong in the appendix files, and offers the move in section 11 of references/migration.md, which leaves the PDF text unchanged. Does the move only after the user agrees, and then checks that pdftotext output is unchanged and the checker is clean."
     }
   ]
 }
